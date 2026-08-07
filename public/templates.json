@@ -1,1040 +1,384 @@
 {
-  "version": 1,
-  "placeholder": true,
+  "version": 2,
+  "source": "VIAGO Canva \"Viago Rank & Event Recognition\"",
   "templates": [
     {
-      "id": "rank-bronze",
+      "id": "elite-emerald",
+      "label": "Elite Emerald",
       "category": "Rank",
-      "label": "Bronze",
-      "accent": "#C87B3E",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-bronze-45-bg.jpg",
-          "fg": "art/rank-bronze-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-bronze-916-bg.jpg",
-          "fg": "art/rank-bronze-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
+      "accent": "#28e07a",
+      "art": "art/elite-emerald.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
       },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "BRONZE",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#C87B3E",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#C87B3E"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
+      "name": {
+        "x": 0.48657,
+        "y": 0.18333,
+        "maxWidth": 0.46972,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
     },
     {
-      "id": "rank-silver",
-      "category": "Rank",
-      "label": "Silver",
-      "accent": "#C3CCD6",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-silver-45-bg.jpg",
-          "fg": "art/rank-silver-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-silver-916-bg.jpg",
-          "fg": "art/rank-silver-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
-      },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "SILVER",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#C3CCD6",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#C3CCD6"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
-    },
-    {
-      "id": "rank-gold",
-      "category": "Rank",
-      "label": "Gold",
-      "accent": "#E8B23A",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-gold-45-bg.jpg",
-          "fg": "art/rank-gold-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-gold-916-bg.jpg",
-          "fg": "art/rank-gold-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
-      },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "GOLD",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#E8B23A",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#E8B23A"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
-    },
-    {
-      "id": "rank-platinum",
-      "category": "Rank",
-      "label": "Platinum",
-      "accent": "#9FB6CC",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-platinum-45-bg.jpg",
-          "fg": "art/rank-platinum-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-platinum-916-bg.jpg",
-          "fg": "art/rank-platinum-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
-      },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "PLATINUM",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#9FB6CC",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#9FB6CC"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
-    },
-    {
-      "id": "rank-sapphire",
-      "category": "Rank",
-      "label": "Sapphire",
-      "accent": "#3A7BE0",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-sapphire-45-bg.jpg",
-          "fg": "art/rank-sapphire-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-sapphire-916-bg.jpg",
-          "fg": "art/rank-sapphire-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
-      },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "SAPPHIRE",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#3A7BE0",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#3A7BE0"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
-    },
-    {
-      "id": "rank-ruby",
-      "category": "Rank",
-      "label": "Ruby",
-      "accent": "#D6294A",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-ruby-45-bg.jpg",
-          "fg": "art/rank-ruby-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-ruby-916-bg.jpg",
-          "fg": "art/rank-ruby-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
-      },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "RUBY",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#D6294A",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#D6294A"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
-    },
-    {
-      "id": "rank-emerald",
-      "category": "Rank",
-      "label": "Emerald",
-      "accent": "#1FB273",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-emerald-45-bg.jpg",
-          "fg": "art/rank-emerald-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-emerald-916-bg.jpg",
-          "fg": "art/rank-emerald-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
-      },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "EMERALD",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#1FB273",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#1FB273"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
-    },
-    {
-      "id": "rank-diamond",
-      "category": "Rank",
-      "label": "Diamond",
-      "accent": "#7FD8E8",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-diamond-45-bg.jpg",
-          "fg": "art/rank-diamond-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-diamond-916-bg.jpg",
-          "fg": "art/rank-diamond-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
-      },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "DIAMOND",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#7FD8E8",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#7FD8E8"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
-    },
-    {
-      "id": "rank-black-diamond",
-      "category": "Rank",
-      "label": "Black Diamond",
+      "id": "jacksonville-we",
+      "label": "Jacksonville (We are)",
+      "category": "Event",
       "accent": "#8dfa00",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/rank-black-diamond-45-bg.jpg",
-          "fg": "art/rank-black-diamond-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/rank-black-diamond-916-bg.jpg",
-          "fg": "art/rank-black-diamond-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
+      "art": "art/jacksonville-we.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.28375,
+        "y": 0.41574,
+        "w": 0.4275,
+        "h": 0.31667
       },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "CONGRATULATIONS",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.34,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Rank",
-          "default": "BLACK DIAMOND",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#8dfa00",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#8dfa00"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
+      "name": {
+        "x": 0.50062,
+        "y": 0.79722,
+        "maxWidth": 0.28263,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "cyprus-we",
+      "label": "Cyprus (We are)",
+      "category": "Event",
+      "accent": "#8dfa00",
+      "art": "art/cyprus-we.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.27875,
+        "y": 0.4037,
+        "w": 0.4275,
+        "h": 0.31667
+      },
+      "name": {
+        "x": 0.50062,
+        "y": 0.79722,
+        "maxWidth": 0.28263,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "kenya",
+      "label": "Kenya",
+      "category": "Event",
+      "accent": "#8dfa00",
+      "art": "art/kenya.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.27875,
+        "y": 0.41852,
+        "w": 0.4275,
+        "h": 0.31667
+      },
+      "name": {
+        "x": 0.50062,
+        "y": 0.80093,
+        "maxWidth": 0.66263,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "club-4",
+      "label": "Club 4",
+      "category": "Club",
+      "accent": "#a855f7",
+      "art": "art/club-4.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.2875,
+        "y": 0.4287,
+        "w": 0.425,
+        "h": 0.3213
+      },
+      "name": {
+        "x": 0.50125,
+        "y": 0.85,
+        "maxWidth": 0.32775,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "emerald",
+      "label": "Emerald",
+      "category": "Rank",
+      "accent": "#28e07a",
+      "art": "art/emerald.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.5463,
+        "y": 0.28333,
+        "w": 0.3787,
+        "h": 0.50833
+      },
+      "name": {
+        "x": 0.49954,
+        "y": 0.16667,
+        "maxWidth": 0.37824,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "gold",
+      "label": "Gold",
+      "category": "Rank",
+      "accent": "#e8b23a",
+      "art": "art/gold.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.48796,
+        "y": 0.16019,
+        "maxWidth": 0.40815,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "sapphire",
+      "label": "Sapphire",
+      "category": "Rank",
+      "accent": "#3a7be0",
+      "art": "art/sapphire.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.48796,
+        "y": 0.20648,
+        "maxWidth": 0.45037,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "silver",
+      "label": "Silver",
+      "category": "Rank",
+      "accent": "#c3ccd6",
+      "art": "art/silver.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.4875,
+        "y": 0.18426,
+        "maxWidth": 0.53306,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "jacksonville-im",
+      "label": "Jacksonville (I am)",
+      "category": "Event",
+      "accent": "#8dfa00",
+      "art": "art/jacksonville-im.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.28375,
+        "y": 0.41574,
+        "w": 0.4275,
+        "h": 0.31667
+      },
+      "name": {
+        "x": 0.50062,
+        "y": 0.79722,
+        "maxWidth": 0.28263,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "amplified",
+      "label": "Amplified Bonus",
+      "category": "Club",
+      "accent": "#22d3ee",
+      "art": "art/amplified.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.0425,
+        "y": 0.69722,
+        "w": 0.4825,
+        "h": 0.25833
+      },
+      "name": {
+        "x": 0.73938,
+        "y": 0.76759,
+        "maxWidth": 0.42987,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "cyprus-im",
+      "label": "Cyprus (I am)",
+      "category": "Event",
+      "accent": "#8dfa00",
+      "art": "art/cyprus-im.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.28,
+        "y": 0.40278,
+        "w": 0.4275,
+        "h": 0.32963
+      },
+      "name": {
+        "x": 0.50062,
+        "y": 0.79352,
+        "maxWidth": 0.28263,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "mission-30",
+      "label": "Mission 30",
+      "category": "Club",
+      "accent": "#8dfa00",
+      "art": "art/mission-30.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.2475,
+        "y": 0.33148,
+        "w": 0.505,
+        "h": 0.39074
+      },
+      "name": {
+        "x": 0.5,
+        "y": 0.845,
+        "maxWidth": 0.62,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
     },
     {
       "id": "welcome",
-      "category": "Welcome",
       "label": "Welcome",
+      "category": "Club",
       "accent": "#8dfa00",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/welcome-45-bg.jpg",
-          "fg": "art/welcome-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/welcome-916-bg.jpg",
-          "fg": "art/welcome-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
+      "art": "art/welcome.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
       },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "WELCOME TO THE TEAM",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.3,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Big line",
-          "default": "WELCOME",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.082,
-            "weight": 800,
-            "color": "#8dfa00",
-            "tracking": 0.06,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#8dfa00"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.096,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Bottom line",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
-    },
-    {
-      "id": "event",
-      "category": "Event",
-      "label": "Event",
-      "accent": "#B06CF0",
-      "formats": {
-        "4:5": {
-          "w": 1080,
-          "h": 1350,
-          "bg": "art/event-45-bg.jpg",
-          "fg": "art/event-45-fg.png",
-          "personTop": 0.155,
-          "personHeight": 0.64
-        },
-        "9:16": {
-          "w": 1080,
-          "h": 1920,
-          "bg": "art/event-916-bg.jpg",
-          "fg": "art/event-916-fg.png",
-          "personTop": 0.2,
-          "personHeight": 0.6
-        }
-      },
-      "fields": [
-        {
-          "key": "eyebrow",
-          "label": "Top line",
-          "default": "SEE YOU THERE",
-          "style": {
-            "x": 0.5,
-            "y": 0.088,
-            "size": 0.038,
-            "weight": 600,
-            "color": "#ffffff",
-            "tracking": 0.3,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "rank",
-          "label": "Event name",
-          "default": "EVENT",
-          "style": {
-            "x": 0.5,
-            "y": 0.145,
-            "size": 0.078,
-            "weight": 800,
-            "color": "#B06CF0",
-            "tracking": 0.05,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86,
-            "gradient": [
-              "#ffffff",
-              "#B06CF0"
-            ]
-          }
-        },
-        {
-          "key": "name",
-          "label": "Name",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.795,
-            "size": 0.09,
-            "weight": 800,
-            "color": "#ffffff",
-            "tracking": 0.005,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        },
-        {
-          "key": "sub",
-          "label": "Date and place",
-          "default": "",
-          "style": {
-            "x": 0.5,
-            "y": 0.868,
-            "size": 0.036,
-            "weight": 500,
-            "color": "#c9d3dd",
-            "tracking": 0.2,
-            "case": "upper",
-            "align": "center",
-            "maxWidth": 0.86
-          }
-        }
-      ]
+      "name": {
+        "x": 0.50139,
+        "y": 0.89722,
+        "maxWidth": 0.92,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
     }
   ]
 }
