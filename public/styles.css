@@ -160,7 +160,9 @@ button,input,label{font-family:inherit}
 .cat{
   appearance:none; background:transparent; color:var(--txt-3);
   border:1px solid var(--line-soft); border-radius:99px;
-  padding:6px 13px; font-size:11.5px; font-weight:500; letter-spacing:.03em;
+  padding:0 17px; min-height:44px;            /* 44px is the minimum comfortable tap target */
+  display:inline-flex; align-items:center;
+  font-size:13px; font-weight:500; letter-spacing:.03em;
   cursor:pointer; transition:.18s;
 }
 .cat:hover{color:var(--txt-2); border-color:rgba(190,210,230,.2)}
@@ -233,7 +235,7 @@ button,input,label{font-family:inherit}
   text-transform:uppercase; color:var(--txt-3); flex:none; width:34px;
 }
 input[type=range]{
-  -webkit-appearance:none; appearance:none; flex:1; height:26px;
+  -webkit-appearance:none; appearance:none; flex:1; height:44px;
   background:transparent; cursor:pointer;
 }
 input[type=range]::-webkit-slider-runnable-track{
