@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Recognition Flyers</title>
 <meta name="theme-color" content="#080c12">
-<meta name="description" content="Make a recognition flyer in under a minute.">
+<meta name="description" content="Make a VIAGO recognition flyer in under a minute.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Geist+Mono:wght@400;600&family=Josefin+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -25,27 +25,25 @@
 
 <main class="shell">
 
-  <!-- ── stage ─────────────────────────────────────────────── -->
   <section class="stage" id="stage">
     <div class="stage-inner">
       <div class="canvas-wrap" id="canvasWrap">
-        <canvas id="flyer" width="1080" height="1350"></canvas>
+        <canvas id="flyer" width="1080" height="1080"></canvas>
         <div class="hint" id="dragHint">Drag the photo to move it</div>
         <div class="veil" id="veil" hidden>
           <div class="spinner" aria-hidden="true"></div>
-          <p id="veilText">Cutting out the background</p>
+          <p id="veilText">Working</p>
           <p class="veil-sub" id="veilSub"></p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── deck ──────────────────────────────────────────────── -->
   <section class="deck">
 
     <div class="panel">
       <div class="panel-head"><span class="num">01</span><h2>Pick a flyer</h2></div>
-      <div class="cats" id="cats" role="tablist"></div>
+      <div class="cats" id="cats"></div>
       <div class="chips" id="templates"></div>
     </div>
 
@@ -61,41 +59,39 @@
       </div>
       <div class="photo-tools" id="photoTools" hidden>
         <label class="slider">
-          <span>Size</span>
-          <input type="range" id="scale" min="30" max="130" value="100">
+          <span>Zoom</span>
+          <input type="range" id="zoom" min="100" max="300" value="100">
         </label>
-        <div class="mini-row">
-          <button class="btn btn-tiny" id="recut">Redo cutout</button>
-          <button class="btn btn-tiny" id="nocut">Use photo as-is</button>
-        </div>
+        <label class="toggle">
+          <input type="checkbox" id="cutout">
+          <span class="track" aria-hidden="true"><span class="knob"></span></span>
+          <span class="toggle-txt">Cut out the background<small>Leave off for a normal photo</small></span>
+        </label>
       </div>
-      <p class="note" id="cutNote"></p>
+      <p class="note" id="note"></p>
     </div>
 
     <div class="panel">
-      <div class="panel-head"><span class="num">03</span><h2>Type the words</h2></div>
-      <div class="fields" id="fields"></div>
+      <div class="panel-head"><span class="num">03</span><h2>Type the name</h2></div>
+      <div class="field">
+        <label for="nameInput">Name</label>
+        <input id="nameInput" type="text" placeholder="Their name" autocomplete="off">
+      </div>
     </div>
 
     <div class="panel">
-      <div class="panel-head"><span class="num">04</span><h2>Size and save</h2></div>
-      <div class="formats" id="formats">
-        <button class="fmt is-on" data-fmt="4:5"><i class="box b45"></i><b>Post</b><small>4:5 WhatsApp</small></button>
-        <button class="fmt" data-fmt="9:16"><i class="box b916"></i><b>Story</b><small>9:16 Instagram</small></button>
-      </div>
+      <div class="panel-head"><span class="num">04</span><h2>Save it</h2></div>
       <button class="btn btn-primary btn-block" id="download">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16"/></svg>
         Download flyer
       </button>
-      <p class="note">Saves a full quality PNG, ready to post.</p>
+      <p class="note">Saves a full quality PNG at the template's own size, ready to post.</p>
     </div>
 
   </section>
 </main>
 
-<footer class="foot">
-  <span>Placeholder artwork. Real VIAGO templates drop straight in.</span>
-</footer>
+<footer class="foot"><span>VIAGO recognition templates</span></footer>
 
 <script type="module" src="app.js"></script>
 </body>

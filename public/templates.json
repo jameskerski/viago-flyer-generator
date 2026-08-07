@@ -30,8 +30,251 @@
       }
     },
     {
+      "id": "emerald",
+      "label": "Emerald",
+      "category": "Rank",
+      "accent": "#28e07a",
+      "art": "art/emerald.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.5463,
+        "y": 0.28333,
+        "w": 0.3787,
+        "h": 0.50833
+      },
+      "name": {
+        "x": 0.49954,
+        "y": 0.16667,
+        "maxWidth": 0.37824,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "sapphire",
+      "label": "Sapphire",
+      "category": "Rank",
+      "accent": "#3a7be0",
+      "art": "art/sapphire.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.48796,
+        "y": 0.20648,
+        "maxWidth": 0.45037,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "gold",
+      "label": "Gold",
+      "category": "Rank",
+      "accent": "#e8b23a",
+      "art": "art/gold.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.48796,
+        "y": 0.16019,
+        "maxWidth": 0.40815,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "silver",
+      "label": "Silver",
+      "category": "Rank",
+      "accent": "#c3ccd6",
+      "art": "art/silver.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.4875,
+        "y": 0.18426,
+        "maxWidth": 0.53306,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "club-4",
+      "label": "Club 4",
+      "category": "Club",
+      "accent": "#a855f7",
+      "art": "art/club-4.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.2875,
+        "y": 0.4287,
+        "w": 0.425,
+        "h": 0.3213
+      },
+      "name": {
+        "x": 0.50125,
+        "y": 0.85,
+        "maxWidth": 0.32775,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "mission-30",
+      "label": "Mission 30",
+      "category": "Club",
+      "accent": "#8dfa00",
+      "art": "art/mission-30.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.2475,
+        "y": 0.33148,
+        "w": 0.505,
+        "h": 0.39074
+      },
+      "name": {
+        "x": 0.5,
+        "y": 0.845,
+        "maxWidth": 0.62,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "amplified",
+      "label": "Amplified Bonus",
+      "category": "Club",
+      "accent": "#22d3ee",
+      "art": "art/amplified.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.0425,
+        "y": 0.69722,
+        "w": 0.4825,
+        "h": 0.25833
+      },
+      "name": {
+        "x": 0.73938,
+        "y": 0.76759,
+        "maxWidth": 0.42987,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "welcome",
+      "label": "Welcome",
+      "category": "Club",
+      "accent": "#8dfa00",
+      "art": "art/welcome.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.50139,
+        "y": 0.89722,
+        "maxWidth": 0.92,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "jacksonville-im",
+      "label": "Jacksonville (Individual)",
+      "category": "Event",
+      "accent": "#8dfa00",
+      "art": "art/jacksonville-im.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.28375,
+        "y": 0.41574,
+        "w": 0.4275,
+        "h": 0.31667
+      },
+      "name": {
+        "x": 0.50062,
+        "y": 0.79722,
+        "maxWidth": 0.28263,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
       "id": "jacksonville-we",
-      "label": "Jacksonville (We are)",
+      "label": "Jacksonville (Couple)",
       "category": "Event",
       "accent": "#8dfa00",
       "art": "art/jacksonville-we.jpg",
@@ -57,8 +300,35 @@
       }
     },
     {
+      "id": "cyprus-im",
+      "label": "Cyprus (Individual)",
+      "category": "Event",
+      "accent": "#8dfa00",
+      "art": "art/cyprus-im.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.28,
+        "y": 0.40278,
+        "w": 0.4275,
+        "h": 0.32963
+      },
+      "name": {
+        "x": 0.50062,
+        "y": 0.79352,
+        "maxWidth": 0.28263,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
       "id": "cyprus-we",
-      "label": "Cyprus (We are)",
+      "label": "Cyprus (Couple)",
       "category": "Event",
       "accent": "#8dfa00",
       "art": "art/cyprus-we.jpg",
@@ -103,276 +373,6 @@
         "y": 0.80093,
         "maxWidth": 0.66263,
         "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "club-4",
-      "label": "Club 4",
-      "category": "Club",
-      "accent": "#a855f7",
-      "art": "art/club-4.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "circle",
-        "x": 0.2875,
-        "y": 0.4287,
-        "w": 0.425,
-        "h": 0.3213
-      },
-      "name": {
-        "x": 0.50125,
-        "y": 0.85,
-        "maxWidth": 0.32775,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "emerald",
-      "label": "Emerald",
-      "category": "Rank",
-      "accent": "#28e07a",
-      "art": "art/emerald.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.5463,
-        "y": 0.28333,
-        "w": 0.3787,
-        "h": 0.50833
-      },
-      "name": {
-        "x": 0.49954,
-        "y": 0.16667,
-        "maxWidth": 0.37824,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "gold",
-      "label": "Gold",
-      "category": "Rank",
-      "accent": "#e8b23a",
-      "art": "art/gold.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.48796,
-        "y": 0.16019,
-        "maxWidth": 0.40815,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "sapphire",
-      "label": "Sapphire",
-      "category": "Rank",
-      "accent": "#3a7be0",
-      "art": "art/sapphire.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.48796,
-        "y": 0.20648,
-        "maxWidth": 0.45037,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "silver",
-      "label": "Silver",
-      "category": "Rank",
-      "accent": "#c3ccd6",
-      "art": "art/silver.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.4875,
-        "y": 0.18426,
-        "maxWidth": 0.53306,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "jacksonville-im",
-      "label": "Jacksonville (I am)",
-      "category": "Event",
-      "accent": "#8dfa00",
-      "art": "art/jacksonville-im.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "circle",
-        "x": 0.28375,
-        "y": 0.41574,
-        "w": 0.4275,
-        "h": 0.31667
-      },
-      "name": {
-        "x": 0.50062,
-        "y": 0.79722,
-        "maxWidth": 0.28263,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "amplified",
-      "label": "Amplified Bonus",
-      "category": "Club",
-      "accent": "#22d3ee",
-      "art": "art/amplified.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.0425,
-        "y": 0.69722,
-        "w": 0.4825,
-        "h": 0.25833
-      },
-      "name": {
-        "x": 0.73938,
-        "y": 0.76759,
-        "maxWidth": 0.42987,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "cyprus-im",
-      "label": "Cyprus (I am)",
-      "category": "Event",
-      "accent": "#8dfa00",
-      "art": "art/cyprus-im.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "circle",
-        "x": 0.28,
-        "y": 0.40278,
-        "w": 0.4275,
-        "h": 0.32963
-      },
-      "name": {
-        "x": 0.50062,
-        "y": 0.79352,
-        "maxWidth": 0.28263,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "mission-30",
-      "label": "Mission 30",
-      "category": "Club",
-      "accent": "#8dfa00",
-      "art": "art/mission-30.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "circle",
-        "x": 0.2475,
-        "y": 0.33148,
-        "w": 0.505,
-        "h": 0.39074
-      },
-      "name": {
-        "x": 0.5,
-        "y": 0.845,
-        "maxWidth": 0.62,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "welcome",
-      "label": "Welcome",
-      "category": "Club",
-      "accent": "#8dfa00",
-      "art": "art/welcome.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.50139,
-        "y": 0.89722,
-        "maxWidth": 0.92,
-        "size": 0.04722,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",

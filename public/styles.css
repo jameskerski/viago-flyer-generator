@@ -186,6 +186,11 @@ button,input,label{font-family:inherit}
   width:100%; height:5px; border-radius:99px;
   background:linear-gradient(90deg, var(--acc), rgba(255,255,255,.06));
 }
+.chip .thumb{
+  display:block; width:86px; height:86px; border-radius:8px;
+  background-size:cover; background-position:center top;
+  background-color:#0a0e14; border:1px solid rgba(190,210,230,.12);
+}
 .chip b{font-size:12.5px; font-weight:600; letter-spacing:-.005em; white-space:nowrap}
 .chip.is-on{
   border-color:var(--acc); color:var(--txt);
@@ -284,9 +289,28 @@ input[type=range]::-moz-range-thumb{
 }
 .fmt.is-on small{color:rgba(141,250,0,.75)}
 
+/* ── background-removal toggle ───────────────────────────── */
+.toggle{display:flex; align-items:center; gap:11px; cursor:pointer; user-select:none}
+.toggle input{position:absolute; opacity:0; pointer-events:none}
+.toggle .track{
+  flex:none; width:42px; height:24px; border-radius:99px;
+  background:rgba(190,210,230,.16); border:1px solid var(--line-soft);
+  position:relative; transition:background .18s, border-color .18s;
+}
+.toggle .knob{
+  position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%;
+  background:var(--txt-3); transition:transform .18s, background .18s;
+}
+.toggle input:checked + .track{background:rgba(141,250,0,.28); border-color:var(--lime)}
+.toggle input:checked + .track .knob{transform:translateX(18px); background:var(--lime)}
+.toggle input:focus-visible + .track{box-shadow:0 0 0 3px rgba(141,250,0,.2)}
+.toggle-txt{font-size:13px; color:var(--txt-2); line-height:1.3}
+.toggle-txt small{display:block; font-size:11px; color:var(--txt-3); margin-top:2px}
+
 .note{
   margin:10px 0 0; font-size:11.5px; line-height:1.5; color:var(--txt-3);
 }
+.note:empty{margin:0}
 .note.warn{color:#ffbe5c}
 
 .foot{
