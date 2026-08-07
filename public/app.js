@@ -162,6 +162,10 @@ function drawName(t, W, H) {
   if (s.vAlign === 'middle') {
     const blockH = (lines.length - 1) * lineH + ascent + descent;
     firstBaseline = y - blockH / 2 + ascent;
+  } else if (s.vAlign === 'top') {
+    // y is the FIRST line's baseline; extra lines stack downward. Used where
+    // there is room below but not above, as on the rank flyers.
+    firstBaseline = y;
   } else {
     // y is the baseline of the LAST line; extra lines stack upward
     firstBaseline = y - (lines.length - 1) * lineH;

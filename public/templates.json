@@ -134,15 +134,19 @@
         "h": 0.51019
       },
       "name": {
-        "x": 0.4875,
-        "y": 0.18426,
-        "maxWidth": 0.53306,
-        "size": 0.04722,
+        "x": 0.48889,
+        "y": 0.15,
+        "maxWidth": 0.62,
+        "size": 0.05463,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "wrap": true,
+        "maxLines": 2,
+        "lineHeight": 1.12,
+        "vAlign": "top"
       }
     },
     {
@@ -161,15 +165,19 @@
         "h": 0.51019
       },
       "name": {
-        "x": 0.48796,
-        "y": 0.16019,
-        "maxWidth": 0.40815,
-        "size": 0.04722,
+        "x": 0.48889,
+        "y": 0.15,
+        "maxWidth": 0.62,
+        "size": 0.05463,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "wrap": true,
+        "maxLines": 2,
+        "lineHeight": 1.12,
+        "vAlign": "top"
       }
     },
     {
@@ -188,15 +196,19 @@
         "h": 0.51019
       },
       "name": {
-        "x": 0.48796,
-        "y": 0.20648,
-        "maxWidth": 0.45037,
-        "size": 0.04722,
+        "x": 0.48889,
+        "y": 0.15,
+        "maxWidth": 0.62,
+        "size": 0.05463,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "wrap": true,
+        "maxLines": 2,
+        "lineHeight": 1.12,
+        "vAlign": "top"
       }
     },
     {
@@ -215,15 +227,19 @@
         "h": 0.50833
       },
       "name": {
-        "x": 0.49954,
-        "y": 0.16667,
-        "maxWidth": 0.37824,
-        "size": 0.04722,
+        "x": 0.48889,
+        "y": 0.15,
+        "maxWidth": 0.62,
+        "size": 0.05463,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "wrap": true,
+        "maxLines": 2,
+        "lineHeight": 1.12,
+        "vAlign": "top"
       }
     },
     {
@@ -242,15 +258,19 @@
         "h": 0.51019
       },
       "name": {
-        "x": 0.48657,
-        "y": 0.18333,
-        "maxWidth": 0.46972,
-        "size": 0.04722,
+        "x": 0.48889,
+        "y": 0.15,
+        "maxWidth": 0.62,
+        "size": 0.05463,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "wrap": true,
+        "maxLines": 2,
+        "lineHeight": 1.12,
+        "vAlign": "top"
       }
     },
     {
