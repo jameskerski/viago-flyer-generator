@@ -1,80 +1,150 @@
-# Recognition Flyer Tool
+# VIAGO Recognition Flyer Tool
 
-Own-built replacement for Snapp (app.getsnapp.ai/viago). Leaders pick a template,
-drop in a photo, type a name, and download a post or story flyer.
+Leaders pick a flyer, drop in a photo, type a name, download. Replaces Snapp
+(app.getsnapp.ai/viago).
 
-Live: https://viago-flyers.pages.dev
+**Live:** https://viago-flyers.pages.dev
+
+---
 
 ## How it works
 
-One canvas, three layers, rendered at full export resolution so the preview is
-literally the file you download:
+Each template is a flat piece of artwork with a **window** cut into it, either a
+rectangle or a circle. The photo goes into that window. Nobody is cut out and
+stood on the artwork, which is how Snapp works but not how these templates are
+drawn.
 
-1. `bg` — background art (JPEG, opaque)
-2. person cutout (transparent PNG)
-3. `fg` — foreground art (PNG with alpha: scrims, rules, corner marks) + live text
+Everything renders on one `<canvas>` at the template's full export size, so the
+preview is literally the file that downloads. Draw order:
 
-Text is positioned in fractions of canvas width/height, so a single template
-definition serves both 4:5 and 9:16 without a second layout.
+1. the artwork (`public/art/<id>.jpg`)
+2. the photo, clipped to the window, scaled to cover it, plus the leader's drag
+   and zoom
+3. the name
+
+There is no build step, no framework and no database. It is plain HTML, CSS and
+one JavaScript file.
 
 ```
 public/
-  index.html  styles.css  app.js
-  templates.json      template definitions (no database)
-  art/                background + foreground layers
-  _routes.json        keeps the Function off static requests
+  index.html        the page
+  app.js            renderer and all UI logic
+  styles.css
+  templates.json    every template's geometry and text styling
+  art/              14 template images
+  _routes.json      keeps the Function off static requests (see Gotchas)
 functions/
-  api/cutout.js       background removal endpoint
+  api/cutout.js     optional background removal endpoint
 tools/
-  gen_templates.py    regenerates the placeholder artwork
+  build_templates.py     regenerates templates.json from Canva exports
+  rework_amplified.py    the pixel edit applied to the Amplified artwork
+  amplified-original.jpg untouched Amplified export, so that edit is repeatable
 ```
+
+## templates.json
+
+One entry per template. The important parts:
+
+```jsonc
+{
+  "id": "gold",
+  "category": "Ranks",          // General | Ranks | Events, and tab order
+  "label": "Gold",              // what the leader sees
+  "art": "art/gold.jpg",
+  "w": 1080, "h": 1080,         // export size
+  "photo": {                    // the window, as fractions of w/h
+    "shape": "rect",            // rect | circle
+    "x": 0.55093, "y": 0.28981, "w": 0.3787, "h": 0.51019
+  },
+  "name": {
+    "x": 0.48889, "y": 0.15,    // x is the centre, y is a baseline
+    "size": 0.05463,            // fraction of width, so it scales
+    "maxWidth": 0.62,
+    "font": "Josefin Sans", "weight": 700, "color": "#ffffff",
+    "align": "center", "case": "upper",
+    "wrap": true, "maxLines": 2, "lineHeight": 1.12,
+    "vAlign": "top"             // top | middle | (omit for baseline)
+  }
+}
+```
+
+`vAlign` decides where extra lines go:
+
+- omitted: `y` is the **last** line's baseline, extra lines stack **upward**
+- `"top"`: `y` is the **first** line's baseline, extra lines stack **downward**
+- `"middle"`: the block is centred on `y` using real glyph metrics
+
+Long names **wrap before they shrink**. The line breaks are decided at the
+template's own font size and then held; the size only scales down if a line
+still will not fit. Do not re-wrap after shrinking, or a long name collapses
+back onto one tiny line.
+
+## Changing a template
+
+**Move the photo window or the name:** edit `templates.json`. Nothing else.
+
+**Replace the artwork:** drop a new file at `public/art/<id>.jpg` at the same
+pixel size, then check the window still lines up.
+
+**Add a template from Canva:** export the page twice, once as-is and once with
+the photo placeholder and the name text deleted. `tools/build_templates.py`
+diffs the two: whatever changed is the photo window and the name box. Circles
+are detected by their fill ratio landing near pi/4.
 
 ## Background removal
 
-`POST /api/cutout`, FormData field `file`, returns a transparent PNG.
+Optional, off by default, because these templates want an ordinary photo in a
+frame. `POST /api/cutout` takes FormData `file` and returns a transparent PNG.
 
-Provider is picked by whichever secret exists on the Pages project:
-
-| Secret | Provider | Cost |
+| Secret on the Pages project | Provider | Cost |
 |---|---|---|
 | `FAL_KEY` | fal.ai BiRefNet v2 | ~$0.001 per photo |
 | `REPLICATE_API_TOKEN` | Replicate | ~$0.002 per photo |
 
-With neither set, the endpoint returns 501 and the browser falls back to doing
-the cutout on the device. That works, but it downloads a ~40MB model the first
-time, which is exactly what we do not want on a slow connection in Africa. Set a
-key to turn the fast path on. No code change needed.
+`FAL_KEY` is set. With no key the endpoint returns 501 and the browser falls
+back to removing the background on the device, which works but downloads a
+~40MB model first.
 
 ```bash
 npx wrangler pages secret put FAL_KEY --project-name viago-flyers
 ```
 
-## Swapping in the real templates
-
-Replace the files in `public/art/` keeping the same names and pixel sizes:
-
-```
-<id>-45-bg.jpg   1080x1350     <id>-916-bg.jpg   1080x1920
-<id>-45-fg.png   1080x1350     <id>-916-fg.png   1080x1920
-```
-
-Then adjust `personTop`, `personHeight` and the `fields` styling for each
-template in `public/templates.json`. Nothing else changes.
+**The key is not in this repo and must never be committed.**
 
 ## Deploy
 
 ```bash
-export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_PAGES_TOKEN   # from Doppler voyai/dev
+export CLOUDFLARE_API_TOKEN=...        # a token with Pages edit rights
 export CLOUDFLARE_ACCOUNT_ID=...
 npx wrangler pages deploy public --project-name viago-flyers --branch main
 ```
 
-## Ruled out: auto-generating from the VIAGO back office
+## Gotchas, all learned the hard way
 
-Killed by the Chairman 2026-08-07. Two reasons, both fatal:
+- **Cloudflare edges update unevenly.** After deploying, request the same file
+  about six times and only test once every response has the new content.
+  Otherwise a test hits a stale edge and reports a fixed bug as still broken.
+- **`_routes.json` matters.** Without it the Function intercepts every request,
+  including static files, and returns intermittent 522s.
+- **`[hidden]` loses to flex and grid `display` rules**, hence
+  `[hidden]{display:none !important}`.
+- **The canvas has an intrinsic 1080px width.** Ancestors need `min-width:0`
+  and `max-width:100%` or the page overflows sideways on a phone.
+- **The sticky preview must be `pointer-events:none`** with the canvas
+  re-enabled, or its decorative gradient eats taps meant for the controls.
+- **Every tap target is at least 44px.** Verified at 320, 390 and 430px wide.
+  The name input stays at 16px font so iOS does not zoom when it is focused.
 
-- The back office has no photos, so there is nothing to cut out.
-- Back office names are often not the names used publicly for recognition.
+## Deliberately not built
 
-Leaders type the name and upload the photo. That is the design, not a stopgap.
-Do not re-propose back-office automation.
+Auto-generating flyers from VIAGO back office data. Ruled out: the back office
+holds no photos, and the names there are often not the names used publicly for
+recognition. Leaders type the name. That is the design, not a stopgap.
+
+## Source artwork
+
+The templates come from a Canva design owned by Matt. The exports here already
+have the placeholder picture and the word NAME removed. The artwork is
+**flattened**, so parts of a template cannot be moved without redoing them
+pixel by pixel (see `tools/rework_amplified.py`). For any real layout change,
+get the layered source from whoever designed them.
