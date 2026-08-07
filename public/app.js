@@ -112,22 +112,64 @@ function drawName(t, W, H) {
   const family = s.font || 'Josefin Sans';
   const weight = s.weight || 700;
   const maxW = (s.maxWidth ?? 0.86) * W;
-  let px = s.size * W;
-  const track = () => (s.tracking ?? 0.02) * px;
+  const maxLines = s.wrap ? (s.maxLines || 3) : 1;
+  const words = text.split(/\s+/).filter(Boolean);
 
-  let w = measure(text, px, weight, family, track());
-  let guard = 0;
-  while (w > maxW && px > 10 && guard++ < 40) {
-    px *= Math.max(0.86, maxW / w);
-    w = measure(text, px, weight, family, track());
+  const trackFor = (px) => (s.tracking ?? 0.02) * px;
+
+  // greedily break into lines that fit; a single line when wrap is off
+  const linesAt = (px) => {
+    if (!s.wrap) return [text];
+    const tr = trackFor(px);
+    const out = [];
+    let cur = '';
+    for (const word of words) {
+      const cand = cur ? cur + ' ' + word : word;
+      if (!cur || measure(cand, px, weight, family, tr) <= maxW) cur = cand;
+      else { out.push(cur); cur = word; }
+    }
+    if (cur) out.push(cur);
+    return out;
+  };
+
+  // shrink until every line fits the width AND we are inside the line budget,
+  // so a long name never runs past its area and into the photo
+  let px = s.size * W;
+  let lines = linesAt(px);
+  for (let guard = 0; guard < 60; guard++) {
+    const widest = Math.max(...lines.map((l) => measure(l, px, weight, family, trackFor(px))));
+    if (widest <= maxW && lines.length <= maxLines) break;
+    if (px < 9) break;
+    px *= 0.94;
+    lines = linesAt(px);
+  }
+
+  // real glyph metrics, so centring is optical rather than guessed
+  setFont(px, weight, family, trackFor(px));
+  const m = ctx.measureText(lines[0]);
+  const ascent = m.actualBoundingBoxAscent || px * 0.72;
+  const descent = m.actualBoundingBoxDescent || px * 0.05;
+  const lineH = (s.lineHeight ?? 1.15) * px;
+
+  const x = (s.x ?? 0.5) * W;
+  const y = (s.y ?? 0.5) * H;
+  let firstBaseline;
+  if (s.vAlign === 'middle') {
+    const blockH = (lines.length - 1) * lineH + ascent + descent;
+    firstBaseline = y - blockH / 2 + ascent;
+  } else {
+    // y is the baseline of the LAST line; extra lines stack upward
+    firstBaseline = y - (lines.length - 1) * lineH;
   }
 
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,.6)';
   ctx.shadowBlur = px * 0.22;
   ctx.textBaseline = 'alphabetic';
-  paint(text, (s.x ?? 0.5) * W, (s.y ?? 0.5) * H, px, weight, family,
-        track(), s.align || 'center', s.color || '#ffffff');
+  lines.forEach((line, i) => {
+    paint(line, x, firstBaseline + i * lineH, px, weight, family,
+          trackFor(px), s.align || 'center', s.color || '#ffffff');
+  });
   ctx.restore();
 }
 

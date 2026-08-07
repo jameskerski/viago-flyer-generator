@@ -3,11 +3,11 @@
   "source": "VIAGO Canva \"Viago Rank & Event Recognition\"",
   "templates": [
     {
-      "id": "elite-emerald",
-      "label": "Elite Emerald",
+      "id": "silver",
+      "label": "Silver",
       "category": "Rank",
-      "accent": "#28e07a",
-      "art": "art/elite-emerald.jpg",
+      "accent": "#c3ccd6",
+      "art": "art/silver.jpg",
       "w": 1080,
       "h": 1080,
       "photo": {
@@ -18,63 +18,9 @@
         "h": 0.51019
       },
       "name": {
-        "x": 0.48657,
-        "y": 0.18333,
-        "maxWidth": 0.46972,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "emerald",
-      "label": "Emerald",
-      "category": "Rank",
-      "accent": "#28e07a",
-      "art": "art/emerald.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.5463,
-        "y": 0.28333,
-        "w": 0.3787,
-        "h": 0.50833
-      },
-      "name": {
-        "x": 0.49954,
-        "y": 0.16667,
-        "maxWidth": 0.37824,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "sapphire",
-      "label": "Sapphire",
-      "category": "Rank",
-      "accent": "#3a7be0",
-      "art": "art/sapphire.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.48796,
-        "y": 0.20648,
-        "maxWidth": 0.45037,
+        "x": 0.4875,
+        "y": 0.18426,
+        "maxWidth": 0.53306,
         "size": 0.04722,
         "font": "Josefin Sans",
         "weight": 700,
@@ -111,11 +57,11 @@
       }
     },
     {
-      "id": "silver",
-      "label": "Silver",
+      "id": "sapphire",
+      "label": "Sapphire",
       "category": "Rank",
-      "accent": "#c3ccd6",
-      "art": "art/silver.jpg",
+      "accent": "#3a7be0",
+      "art": "art/sapphire.jpg",
       "w": 1080,
       "h": 1080,
       "photo": {
@@ -126,9 +72,63 @@
         "h": 0.51019
       },
       "name": {
-        "x": 0.4875,
-        "y": 0.18426,
-        "maxWidth": 0.53306,
+        "x": 0.48796,
+        "y": 0.20648,
+        "maxWidth": 0.45037,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "emerald",
+      "label": "Emerald",
+      "category": "Rank",
+      "accent": "#28e07a",
+      "art": "art/emerald.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.5463,
+        "y": 0.28333,
+        "w": 0.3787,
+        "h": 0.50833
+      },
+      "name": {
+        "x": 0.49954,
+        "y": 0.16667,
+        "maxWidth": 0.37824,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "elite-emerald",
+      "label": "Elite Emerald",
+      "category": "Rank",
+      "accent": "#28e07a",
+      "art": "art/elite-emerald.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.48657,
+        "y": 0.18333,
+        "maxWidth": 0.46972,
         "size": 0.04722,
         "font": "Josefin Sans",
         "weight": 700,
@@ -181,14 +181,18 @@
       },
       "name": {
         "x": 0.5,
-        "y": 0.845,
+        "y": 0.8,
         "maxWidth": 0.62,
         "size": 0.0425,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "vAlign": "middle",
+        "wrap": true,
+        "maxLines": 2,
+        "lineHeight": 1.1
       }
     },
     {
@@ -208,14 +212,18 @@
       },
       "name": {
         "x": 0.73938,
-        "y": 0.76759,
-        "maxWidth": 0.42987,
+        "y": 0.7454,
+        "maxWidth": 0.39276,
         "size": 0.0425,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "wrap": true,
+        "maxLines": 3,
+        "lineHeight": 1.12,
+        "vAlign": "middle"
       }
     },
     {
