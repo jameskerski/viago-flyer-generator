@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recognition Flyers</title>
+<meta name="theme-color" content="#080c12">
+<meta name="description" content="Make a recognition flyer in under a minute.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="mark">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="mark-txt">RECOGNITION<em>STUDIO</em></span>
+  </div>
+  <div class="status" id="status" role="status" aria-live="polite">
+    <span class="status-led"></span><span id="statusText">Ready</span>
+  </div>
+</header>
+
+<main class="shell">
+
+  <!-- ── stage ─────────────────────────────────────────────── -->
+  <section class="stage" id="stage">
+    <div class="stage-inner">
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="flyer" width="1080" height="1350"></canvas>
+        <div class="hint" id="dragHint">Drag the photo to move it</div>
+        <div class="veil" id="veil" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <p id="veilText">Cutting out the background</p>
+          <p class="veil-sub" id="veilSub"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── deck ──────────────────────────────────────────────── -->
+  <section class="deck">
+
+    <div class="panel">
+      <div class="panel-head"><span class="num">01</span><h2>Pick a flyer</h2></div>
+      <div class="cats" id="cats" role="tablist"></div>
+      <div class="chips" id="templates"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="num">02</span><h2>Add the photo</h2></div>
+      <div class="photo-row">
+        <label class="btn btn-primary" for="file">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span id="fileBtnText">Choose photo</span>
+        </label>
+        <input id="file" type="file" accept="image/*" hidden>
+        <button class="btn btn-ghost" id="clearPhoto" hidden>Remove</button>
+      </div>
+      <div class="photo-tools" id="photoTools" hidden>
+        <label class="slider">
+          <span>Size</span>
+          <input type="range" id="scale" min="30" max="130" value="100">
+        </label>
+        <div class="mini-row">
+          <button class="btn btn-tiny" id="recut">Redo cutout</button>
+          <button class="btn btn-tiny" id="nocut">Use photo as-is</button>
+        </div>
+      </div>
+      <p class="note" id="cutNote"></p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="num">03</span><h2>Type the words</h2></div>
+      <div class="fields" id="fields"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><span class="num">04</span><h2>Size and save</h2></div>
+      <div class="formats" id="formats">
+        <button class="fmt is-on" data-fmt="4:5"><i class="box b45"></i><b>Post</b><small>4:5 WhatsApp</small></button>
+        <button class="fmt" data-fmt="9:16"><i class="box b916"></i><b>Story</b><small>9:16 Instagram</small></button>
+      </div>
+      <button class="btn btn-primary btn-block" id="download">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16"/></svg>
+        Download flyer
+      </button>
+      <p class="note">Saves a full quality PNG, ready to post.</p>
+    </div>
+
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Placeholder artwork. Real VIAGO templates drop straight in.</span>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

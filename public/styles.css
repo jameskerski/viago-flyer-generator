@@ -1,0 +1,316 @@
+/* ============================================================
+   Recognition Studio — backstage control deck
+   Dark room, one lime light, everything else gets out of the way.
+   ============================================================ */
+
+:root{
+  --lime:#8dfa00;
+  --lime-dim:#6cc400;
+  --ink:#080c12;
+  --ink-2:#0d131b;
+  --surface:#111823;
+  --surface-2:#151d29;
+  --line:rgba(141,250,0,.14);
+  --line-soft:rgba(190,210,230,.10);
+  --txt:#e8eef5;
+  --txt-2:#93a3b5;
+  --txt-3:#5f7186;
+  --radius:14px;
+  --pad:clamp(14px, 4vw, 22px);
+  --font:'Geist', ui-sans-serif, system-ui, sans-serif;
+  --mono:'Geist Mono', ui-monospace, monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+/* our flex/grid display rules would otherwise beat the hidden attribute */
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:var(--font);
+  color:var(--txt);
+  background:var(--ink);
+  background-image:
+    radial-gradient(120% 55% at 50% -8%, rgba(141,250,0,.10), transparent 62%),
+    linear-gradient(rgba(190,210,230,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(190,210,230,.022) 1px, transparent 1px);
+  background-size:auto, 34px 34px, 34px 34px;
+  background-attachment:fixed;
+  min-height:100dvh;
+  overflow-x:hidden;
+}
+button,input,label{font-family:inherit}
+
+/* ── top bar ─────────────────────────────────────────────── */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:12px var(--pad); padding-top:max(12px, env(safe-area-inset-top));
+  background:rgba(8,12,18,.82);
+  backdrop-filter:blur(14px) saturate(140%);
+  border-bottom:1px solid var(--line-soft);
+}
+.mark{display:flex; align-items:center; gap:9px; min-width:0}
+.mark .dot{
+  width:9px; height:9px; border-radius:50%; background:var(--lime); flex:none;
+  box-shadow:0 0 0 3px rgba(141,250,0,.16), 0 0 16px rgba(141,250,0,.75);
+}
+.mark-txt{
+  font-family:var(--mono); font-size:11.5px; font-weight:600;
+  letter-spacing:.22em; white-space:nowrap;
+}
+.mark-txt em{font-style:normal; color:var(--lime); margin-left:.22em}
+
+.status{
+  display:flex; align-items:center; gap:7px;
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.12em;
+  color:var(--txt-3); text-transform:uppercase; white-space:nowrap;
+}
+.status-led{
+  width:6px; height:6px; border-radius:50%; background:var(--txt-3); flex:none;
+  transition:background .25s, box-shadow .25s;
+}
+.status.busy .status-led{background:var(--lime); box-shadow:0 0 10px var(--lime); animation:pulse 1.05s ease-in-out infinite}
+.status.ok .status-led{background:var(--lime); box-shadow:0 0 10px var(--lime)}
+.status.bad .status-led{background:#ff5a5a; box-shadow:0 0 10px #ff5a5a}
+@keyframes pulse{50%{opacity:.28}}
+
+/* ── layout ──────────────────────────────────────────────── */
+.shell{
+  display:grid; gap:0; grid-template-columns:minmax(0,1fr);
+  max-width:1180px; margin:0 auto; padding:0 0 4px;
+}
+/* grid and flex children default to min-width:auto, which lets the
+   horizontal template strip stretch the whole page. Pin them to 0. */
+.shell > *, .deck > *, .panel, .chips, .stage, .stage-inner{min-width:0}
+
+/* ── stage ───────────────────────────────────────────────── */
+.stage{
+  position:sticky; top:53px; z-index:30;
+  padding:14px var(--pad) 16px;
+  background:linear-gradient(180deg, rgba(8,12,18,.96) 72%, rgba(8,12,18,0));
+}
+/* only the flyer itself takes taps; the gradient around it must not
+   eat touches meant for the controls sitting underneath */
+.stage, .stage-inner{pointer-events:none}
+.canvas-wrap{pointer-events:auto}
+
+.stage-inner{display:flex; justify-content:center; max-width:100%; min-width:0}
+.canvas-wrap{
+  position:relative; line-height:0; max-width:100%; min-width:0;
+  border-radius:var(--radius); overflow:hidden;
+  border:1px solid var(--line-soft);
+  box-shadow:0 26px 60px -22px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.5);
+  touch-action:none;
+}
+#flyer{
+  display:block;
+  width:auto; height:auto;
+  max-width:100%; max-height:min(46dvh, 430px);
+  cursor:grab; background:#0a0e14;
+}
+#flyer:active{cursor:grabbing}
+
+.hint{
+  position:absolute; left:50%; bottom:9px; transform:translateX(-50%);
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:rgba(232,238,245,.62); background:rgba(8,12,18,.62);
+  padding:5px 10px; border-radius:99px; backdrop-filter:blur(6px);
+  pointer-events:none; opacity:0; transition:opacity .3s; line-height:1;
+}
+.hint.show{opacity:1}
+
+.veil{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:12px; padding:20px;
+  background:rgba(8,12,18,.88); backdrop-filter:blur(3px); text-align:center;
+}
+.veil p{margin:0; font-size:13.5px; color:var(--txt); line-height:1.45}
+.veil .veil-sub{font-family:var(--mono); font-size:10.5px; color:var(--txt-3); letter-spacing:.06em}
+.spinner{
+  width:30px; height:30px; border-radius:50%;
+  border:2px solid rgba(141,250,0,.18); border-top-color:var(--lime);
+  animation:spin .75s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── deck ────────────────────────────────────────────────── */
+.deck{display:grid; grid-template-columns:minmax(0,1fr); gap:12px; padding:4px var(--pad) 26px}
+
+.panel{
+  background:linear-gradient(180deg, var(--surface), var(--ink-2));
+  border:1px solid var(--line-soft);
+  border-radius:var(--radius);
+  padding:16px 15px 17px;
+  /* keep the sticky preview from parking on top of whatever we scroll to */
+  scroll-margin-top:calc(46dvh + 96px);
+}
+.panel .field input{scroll-margin-top:calc(46dvh + 150px)}
+.panel-head{display:flex; align-items:baseline; gap:10px; margin-bottom:13px}
+.panel-head .num{
+  font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.1em;
+  color:var(--lime); opacity:.85;
+}
+.panel-head h2{
+  margin:0; font-size:15px; font-weight:600; letter-spacing:-.01em; color:var(--txt);
+}
+
+/* ── categories + template chips ─────────────────────────── */
+.cats{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap}
+.cat{
+  appearance:none; background:transparent; color:var(--txt-3);
+  border:1px solid var(--line-soft); border-radius:99px;
+  padding:6px 13px; font-size:11.5px; font-weight:500; letter-spacing:.03em;
+  cursor:pointer; transition:.18s;
+}
+.cat:hover{color:var(--txt-2); border-color:rgba(190,210,230,.2)}
+.cat.is-on{color:var(--ink); background:var(--lime); border-color:var(--lime); font-weight:600}
+
+.chips{
+  display:flex; gap:8px; overflow-x:auto; padding:2px 0 8px;
+  scrollbar-width:thin; scrollbar-color:rgba(141,250,0,.3) transparent;
+  -webkit-overflow-scrolling:touch;
+}
+.chips::-webkit-scrollbar{height:4px}
+.chips::-webkit-scrollbar-thumb{background:rgba(141,250,0,.28); border-radius:4px}
+.chip{
+  appearance:none; cursor:pointer; flex:none;
+  display:flex; flex-direction:column; align-items:flex-start; gap:7px;
+  background:var(--surface-2); border:1px solid var(--line-soft);
+  border-radius:11px; padding:10px 13px 11px; min-width:104px;
+  color:var(--txt-2); transition:.18s;
+  scroll-margin-top:calc(46dvh + 120px);
+}
+.chip:hover{border-color:rgba(190,210,230,.22); color:var(--txt)}
+.chip .swatch{
+  width:100%; height:5px; border-radius:99px;
+  background:linear-gradient(90deg, var(--acc), rgba(255,255,255,.06));
+}
+.chip b{font-size:12.5px; font-weight:600; letter-spacing:-.005em; white-space:nowrap}
+.chip.is-on{
+  border-color:var(--acc); color:var(--txt);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--acc) 13%, var(--surface-2)), var(--surface-2));
+  box-shadow:0 0 0 1px var(--acc), 0 6px 20px -10px var(--acc);
+}
+
+/* ── buttons ─────────────────────────────────────────────── */
+.btn{
+  appearance:none; cursor:pointer; border:1px solid transparent;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border-radius:11px; padding:13px 18px; min-height:46px;
+  font-size:14px; font-weight:600; letter-spacing:-.005em;
+  transition:transform .12s, filter .18s, background .18s, border-color .18s;
+}
+.btn:active{transform:translateY(1px)}
+.btn-primary{
+  background:var(--lime); color:#06090d;
+  box-shadow:0 8px 26px -12px rgba(141,250,0,.9);
+}
+.btn-primary:hover{filter:brightness(1.07)}
+.btn-primary[disabled]{opacity:.4; pointer-events:none; box-shadow:none}
+.btn-ghost{background:transparent; color:var(--txt-2); border-color:var(--line-soft)}
+.btn-ghost:hover{color:var(--txt); border-color:rgba(190,210,230,.24)}
+.btn-block{width:100%}
+.btn-tiny{
+  padding:8px 12px; min-height:34px; font-size:11.5px; font-weight:500;
+  background:transparent; color:var(--txt-3); border-color:var(--line-soft);
+}
+.btn-tiny:hover{color:var(--txt-2); border-color:rgba(190,210,230,.22)}
+
+.photo-row{display:flex; gap:9px; align-items:center}
+.photo-row .btn-primary{flex:1}
+.photo-tools{margin-top:14px; display:grid; gap:11px}
+.mini-row{display:flex; gap:8px; flex-wrap:wrap}
+
+.slider{display:flex; align-items:center; gap:12px}
+.slider span{
+  font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--txt-3); flex:none; width:34px;
+}
+input[type=range]{
+  -webkit-appearance:none; appearance:none; flex:1; height:26px;
+  background:transparent; cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:3px; border-radius:99px; background:rgba(190,210,230,.16);
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:20px; height:20px; margin-top:-8.5px;
+  border-radius:50%; background:var(--lime); border:3px solid var(--ink);
+  box-shadow:0 0 0 1px var(--lime), 0 0 14px rgba(141,250,0,.5);
+}
+input[type=range]::-moz-range-track{height:3px; border-radius:99px; background:rgba(190,210,230,.16)}
+input[type=range]::-moz-range-thumb{
+  width:15px; height:15px; border-radius:50%; background:var(--lime);
+  border:3px solid var(--ink); box-shadow:0 0 0 1px var(--lime);
+}
+
+/* ── text fields ─────────────────────────────────────────── */
+.fields{display:grid; gap:11px}
+.field label{
+  display:block; margin-bottom:6px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--txt-3);
+}
+.field input{
+  width:100%; appearance:none;
+  background:var(--ink); color:var(--txt);
+  border:1px solid var(--line-soft); border-radius:10px;
+  padding:12px 13px; font-size:16px; /* 16px stops iOS zoom-on-focus */
+  transition:border-color .18s, box-shadow .18s;
+}
+.field input::placeholder{color:var(--txt-3)}
+.field input:focus{
+  outline:none; border-color:var(--lime);
+  box-shadow:0 0 0 3px rgba(141,250,0,.14);
+}
+
+/* ── formats ─────────────────────────────────────────────── */
+.formats{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:13px}
+.fmt{
+  appearance:none; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  background:var(--surface-2); border:1px solid var(--line-soft);
+  border-radius:11px; padding:13px 10px; color:var(--txt-2); transition:.18s;
+}
+.fmt b{font-size:13px; font-weight:600; color:var(--txt)}
+.fmt small{font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; color:var(--txt-3)}
+.fmt .box{display:block; border:1.5px solid currentColor; border-radius:3px; opacity:.55; margin-bottom:2px}
+.fmt .b45{width:19px; height:24px}
+.fmt .b916{width:15px; height:27px}
+.fmt.is-on{
+  border-color:var(--lime); color:var(--lime);
+  background:linear-gradient(180deg, rgba(141,250,0,.11), var(--surface-2));
+}
+.fmt.is-on small{color:rgba(141,250,0,.75)}
+
+.note{
+  margin:10px 0 0; font-size:11.5px; line-height:1.5; color:var(--txt-3);
+}
+.note.warn{color:#ffbe5c}
+
+.foot{
+  padding:0 var(--pad) calc(24px + env(safe-area-inset-bottom));
+  text-align:center;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--txt-3); opacity:.65;
+}
+
+/* ── desktop ─────────────────────────────────────────────── */
+@media (min-width:900px){
+  .shell{
+    grid-template-columns:minmax(320px, 440px) 1fr;
+    gap:26px; padding:22px var(--pad) 10px; align-items:start;
+  }
+  .stage{
+    position:sticky; top:78px; padding:0; background:none;
+  }
+  #flyer{max-height:min(74dvh, 760px)}
+  .deck{padding:0 0 30px}
+  .panel{padding:19px 20px 20px; scroll-margin-top:100px}
+  .panel .field input{scroll-margin-top:100px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important; transition-duration:.01ms !important}
+}
