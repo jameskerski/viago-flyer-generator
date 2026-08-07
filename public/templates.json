@@ -3,144 +3,9 @@
   "source": "VIAGO Canva \"Viago Rank & Event Recognition\"",
   "templates": [
     {
-      "id": "silver",
-      "label": "Silver",
-      "category": "Rank",
-      "accent": "#c3ccd6",
-      "art": "art/silver.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.4875,
-        "y": 0.18426,
-        "maxWidth": 0.53306,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "gold",
-      "label": "Gold",
-      "category": "Rank",
-      "accent": "#e8b23a",
-      "art": "art/gold.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.48796,
-        "y": 0.16019,
-        "maxWidth": 0.40815,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "sapphire",
-      "label": "Sapphire",
-      "category": "Rank",
-      "accent": "#3a7be0",
-      "art": "art/sapphire.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.48796,
-        "y": 0.20648,
-        "maxWidth": 0.45037,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "emerald",
-      "label": "Emerald",
-      "category": "Rank",
-      "accent": "#28e07a",
-      "art": "art/emerald.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.5463,
-        "y": 0.28333,
-        "w": 0.3787,
-        "h": 0.50833
-      },
-      "name": {
-        "x": 0.49954,
-        "y": 0.16667,
-        "maxWidth": 0.37824,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "elite-emerald",
-      "label": "Elite Emerald",
-      "category": "Rank",
-      "accent": "#28e07a",
-      "art": "art/elite-emerald.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.48657,
-        "y": 0.18333,
-        "maxWidth": 0.46972,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
       "id": "club-4",
       "label": "Club 4",
-      "category": "Club",
+      "category": "General",
       "accent": "#a855f7",
       "art": "art/club-4.jpg",
       "w": 800,
@@ -167,7 +32,7 @@
     {
       "id": "mission-30",
       "label": "Mission 30",
-      "category": "Club",
+      "category": "General",
       "accent": "#8dfa00",
       "art": "art/mission-30.jpg",
       "w": 800,
@@ -181,7 +46,7 @@
       },
       "name": {
         "x": 0.5,
-        "y": 0.8,
+        "y": 0.813,
         "maxWidth": 0.62,
         "size": 0.0425,
         "font": "Josefin Sans",
@@ -198,7 +63,7 @@
     {
       "id": "amplified",
       "label": "Amplified Bonus",
-      "category": "Club",
+      "category": "General",
       "accent": "#22d3ee",
       "art": "art/amplified.jpg",
       "w": 800,
@@ -206,9 +71,9 @@
       "photo": {
         "shape": "rect",
         "x": 0.0425,
-        "y": 0.69722,
+        "y": 0.65556,
         "w": 0.4825,
-        "h": 0.25833
+        "h": 0.3
       },
       "name": {
         "x": 0.73938,
@@ -229,7 +94,7 @@
     {
       "id": "welcome",
       "label": "Welcome",
-      "category": "Club",
+      "category": "General",
       "accent": "#8dfa00",
       "art": "art/welcome.jpg",
       "w": 1080,
@@ -254,9 +119,144 @@
       }
     },
     {
+      "id": "silver",
+      "label": "Silver",
+      "category": "Ranks",
+      "accent": "#c3ccd6",
+      "art": "art/silver.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.4875,
+        "y": 0.18426,
+        "maxWidth": 0.53306,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "gold",
+      "label": "Gold",
+      "category": "Ranks",
+      "accent": "#e8b23a",
+      "art": "art/gold.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.48796,
+        "y": 0.16019,
+        "maxWidth": 0.40815,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "sapphire",
+      "label": "Sapphire",
+      "category": "Ranks",
+      "accent": "#3a7be0",
+      "art": "art/sapphire.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.48796,
+        "y": 0.20648,
+        "maxWidth": 0.45037,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "emerald",
+      "label": "Emerald",
+      "category": "Ranks",
+      "accent": "#28e07a",
+      "art": "art/emerald.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.5463,
+        "y": 0.28333,
+        "w": 0.3787,
+        "h": 0.50833
+      },
+      "name": {
+        "x": 0.49954,
+        "y": 0.16667,
+        "maxWidth": 0.37824,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
+      "id": "elite-emerald",
+      "label": "Elite Emerald",
+      "category": "Ranks",
+      "accent": "#28e07a",
+      "art": "art/elite-emerald.jpg",
+      "w": 1080,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.55093,
+        "y": 0.28981,
+        "w": 0.3787,
+        "h": 0.51019
+      },
+      "name": {
+        "x": 0.48657,
+        "y": 0.18333,
+        "maxWidth": 0.46972,
+        "size": 0.04722,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper"
+      }
+    },
+    {
       "id": "jacksonville-im",
       "label": "Jacksonville (Individual)",
-      "category": "Event",
+      "category": "Events",
       "accent": "#8dfa00",
       "art": "art/jacksonville-im.jpg",
       "w": 800,
@@ -283,7 +283,7 @@
     {
       "id": "jacksonville-we",
       "label": "Jacksonville (Couple)",
-      "category": "Event",
+      "category": "Events",
       "accent": "#8dfa00",
       "art": "art/jacksonville-we.jpg",
       "w": 800,
@@ -310,7 +310,7 @@
     {
       "id": "cyprus-im",
       "label": "Cyprus (Individual)",
-      "category": "Event",
+      "category": "Events",
       "accent": "#8dfa00",
       "art": "art/cyprus-im.jpg",
       "w": 800,
@@ -337,7 +337,7 @@
     {
       "id": "cyprus-we",
       "label": "Cyprus (Couple)",
-      "category": "Event",
+      "category": "Events",
       "accent": "#8dfa00",
       "art": "art/cyprus-we.jpg",
       "w": 800,
@@ -364,7 +364,7 @@
     {
       "id": "kenya",
       "label": "Kenya",
-      "category": "Event",
+      "category": "Events",
       "accent": "#8dfa00",
       "art": "art/kenya.jpg",
       "w": 800,
