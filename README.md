@@ -69,9 +69,12 @@ export CLOUDFLARE_ACCOUNT_ID=...
 npx wrangler pages deploy public --project-name viago-flyers --branch main
 ```
 
-## Not built yet
+## Ruled out: auto-generating from the VIAGO back office
 
-Phase 4: read rank advancements from the daily Freedom Nation leaderboard pull
-(`mc:~/.mctl/scripts/freedom_nation_leaderboard.py`) and pre-generate flyers, so
-leaders never type a name. This is the reason to own the tool rather than rent
-Snapp.
+Killed by the Chairman 2026-08-07. Two reasons, both fatal:
+
+- The back office has no photos, so there is nothing to cut out.
+- Back office names are often not the names used publicly for recognition.
+
+Leaders type the name and upload the photo. That is the design, not a stopgap.
+Do not re-propose back-office automation.
