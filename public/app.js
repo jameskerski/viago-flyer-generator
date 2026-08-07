@@ -132,16 +132,21 @@ function drawName(t, W, H) {
     return out;
   };
 
-  // shrink until every line fits the width AND we are inside the line budget,
-  // so a long name never runs past its area and into the photo
+  // Prefer wrapping over shrinking. Decide the line break-up first, at the
+  // template's own size, and only then shrink if a line still will not fit.
+  // Re-wrapping after every shrink is unstable: a smaller size lets the words
+  // collapse back onto one tiny line instead of staying wrapped.
   let px = s.size * W;
   let lines = linesAt(px);
-  for (let guard = 0; guard < 60; guard++) {
-    const widest = Math.max(...lines.map((l) => measure(l, px, weight, family, trackFor(px))));
-    if (widest <= maxW && lines.length <= maxLines) break;
-    if (px < 9) break;
+  for (let guard = 0; guard < 60 && lines.length > maxLines && px > 9; guard++) {
     px *= 0.94;
     lines = linesAt(px);
+  }
+  // now hold those lines and only scale down to fit the width
+  for (let guard = 0; guard < 60; guard++) {
+    const widest = Math.max(...lines.map((l) => measure(l, px, weight, family, trackFor(px))));
+    if (widest <= maxW || px < 9) break;
+    px *= 0.94;
   }
 
   // real glyph metrics, so centring is optical rather than guessed
