@@ -292,7 +292,7 @@ input[type=range]::-moz-range-thumb{
 .fmt.is-on small{color:rgba(141,250,0,.75)}
 
 /* ── background-removal toggle ───────────────────────────── */
-.toggle{display:flex; align-items:center; gap:11px; cursor:pointer; user-select:none}
+.toggle{display:flex; align-items:center; gap:11px; min-height:44px; cursor:pointer; user-select:none}
 .toggle input{position:absolute; opacity:0; pointer-events:none}
 .toggle .track{
   flex:none; width:42px; height:24px; border-radius:99px;
