@@ -113,7 +113,8 @@ button,input,label{font-family:inherit}
 
 .hint{
   position:absolute; left:50%; bottom:9px; transform:translateX(-50%);
-  font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+  white-space:nowrap;                      /* wrapped to 3 lines on a 320px phone */
+  font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase;
   color:rgba(232,238,245,.62); background:rgba(8,12,18,.62);
   padding:5px 10px; border-radius:99px; backdrop-filter:blur(6px);
   pointer-events:none; opacity:0; transition:opacity .3s; line-height:1;
