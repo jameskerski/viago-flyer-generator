@@ -1,11 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "viago-template-studio",
+  "name": "viago-template-studio-worker",
   "main": "worker/index.js",
   "compatibility_date": "2026-08-08",
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist/studio",
     "run_worker_first": ["/api/studio/*"]
+  },
+  "vars": {
+    "CF_ACCESS_AUD": "26cfba579cd198e792f7c9ebeb4ef533209bd3a2d94452636bf39dd43cd10a3e",
+    "CF_TEAM_DOMAIN": "https://delicate-thunder-f5d6.cloudflareaccess.com",
+    "GITHUB_BRANCH": "main",
+    "GITHUB_OWNER": "jameskerski",
+    "GITHUB_REPOSITORY": "viago-flyer-generator"
   }
 }
