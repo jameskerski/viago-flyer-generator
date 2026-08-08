@@ -23,6 +23,8 @@ npm run studio
 
 Open `http://127.0.0.1:4173/studio/`. The server binds to localhost, not a public interface. Do not deploy the `studio/` directory or its write API as a public administration endpoint.
 
+The same server also supports public-generator review through `npm run app` at `http://127.0.0.1:4173/`. Never review either surface through `file://`; see [Local Review](LOCAL_REVIEW.md).
+
 ## Create a new template
 
 1. Choose **New template** and select the approved clean JPEG. The Studio displays its filename, intrinsic dimensions, preview, and SHA-256 checksum.

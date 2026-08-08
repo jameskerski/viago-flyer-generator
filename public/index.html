@@ -13,6 +13,14 @@
 </head>
 <body>
 
+<div class="local-protocol-warning" id="localProtocolWarning" hidden role="alert">
+  <strong>Local review needs the VIAGO localhost server.</strong>
+  Run <code>npm run app</code>, then open <code>http://127.0.0.1:4173/</code>. Do not review this application through <code>file://</code>.
+</div>
+<script>
+if (window.location.protocol === 'file:') document.querySelector('#localProtocolWarning').hidden = false;
+</script>
+
 <header class="topbar">
   <div class="mark">
     <span class="dot" aria-hidden="true"></span>

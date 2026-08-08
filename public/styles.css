@@ -41,6 +41,13 @@ body{
 }
 button,input,label{font-family:inherit}
 
+.local-protocol-warning{
+  padding:14px var(--pad); border-bottom:1px solid var(--lime);
+  background:var(--ink-2); color:var(--txt); font-size:13px; line-height:1.5;
+}
+.local-protocol-warning strong{display:block; color:var(--lime)}
+.local-protocol-warning code{font-family:var(--mono); color:var(--txt-2)}
+
 /* ── top bar ─────────────────────────────────────────────── */
 .topbar{
   position:sticky; top:0; z-index:40;

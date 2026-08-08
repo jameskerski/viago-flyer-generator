@@ -9,6 +9,20 @@
 Leaders pick a flyer, drop in a photo, type a name, download. Replaces Snapp
 (app.getsnapp.ai/viago).
 
+## Local review
+
+```text
+PUBLIC GENERATOR
+npm run app
+http://127.0.0.1:4173/
+
+TEMPLATE STUDIO
+npm run studio
+http://127.0.0.1:4173/studio/
+```
+
+Never review through `file://`. ES-module and `fetch('templates.json')` behavior differs for local files, so an empty static shell is not a valid product review. See [`docs/LOCAL_REVIEW.md`](docs/LOCAL_REVIEW.md).
+
 **Historical deployment:** `https://viago-flyers.pages.dev` was documented in
 the received baseline as running under the former owner's account. It is not
 evidence of Viago operational ownership. The Viago production URL remains an

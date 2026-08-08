@@ -190,15 +190,19 @@ export function createStudioServer({ root = DEFAULT_ROOT, port = 4173 } = {}) {
 }
 
 function cliArgs(argv) {
-  const result = { root: DEFAULT_ROOT, port: 4173 };
+  const result = { root: DEFAULT_ROOT, port: 4173, appOnlyAnnouncement: false };
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === '--root') result.root = resolve(argv[++index]);
     else if (argv[index] === '--port') result.port = Number(argv[++index]);
+    else if (argv[index] === '--app') result.appOnlyAnnouncement = true;
   }
   return result;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename)) {
-  const app = createStudioServer(cliArgs(process.argv.slice(2)));
-  app.listen().then((address) => console.log(`VIAGO Template Studio: http://127.0.0.1:${address.port}/studio/`));
+  const options = cliArgs(process.argv.slice(2));
+  const app = createStudioServer(options);
+  app.listen().then((address) => console.log(options.appOnlyAnnouncement
+    ? `VIAGO public generator: http://127.0.0.1:${address.port}/`
+    : `VIAGO Template Studio: http://127.0.0.1:${address.port}/studio/`));
 }

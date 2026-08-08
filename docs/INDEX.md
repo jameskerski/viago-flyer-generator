@@ -8,6 +8,7 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 
 ## Start here
 
+- [Local public-generator and Template Studio review](LOCAL_REVIEW.md)
 - [Phase B canonical-repository record](PHASE_B_RECORD.md)
 - [Template contract v1](TEMPLATE_CONTRACT.md)
 - [Phase C/D completion record](PHASE_C_D_RECORD.md)

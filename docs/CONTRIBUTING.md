@@ -4,6 +4,8 @@
 
 Keep this a small static application. Do not introduce Next.js, React, a database, authentication, accounts, a CMS, a redesign, or workflow change without a separately approved architecture/product decision.
 
+Use `npm run app` and `http://127.0.0.1:4173/` for public local review. Never use `file://`; follow [`LOCAL_REVIEW.md`](LOCAL_REVIEW.md).
+
 ## Change process
 
 1. State the objective defect or authorized maintenance need.
