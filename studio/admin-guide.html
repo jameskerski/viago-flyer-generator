@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VIAGO Template Studio — Admin Instructions</title>
+  <style>
+    :root { color-scheme: dark; --bg:#070b10; --panel:#101720; --line:#263241; --text:#f4f7fb; --muted:#a8b4c3; --green:#8dfa00; --blue:#69d3ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:16px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:radial-gradient(circle at top,#101b20 0,#070b10 38%); color:var(--text); }
+    header { border-bottom:1px solid var(--line); background:#070b10ee; padding:30px 20px; }
+    header div, main { width:min(1020px,100%); margin:auto; }
+    .eyebrow { color:var(--green); font-size:.78rem; font-weight:800; letter-spacing:.16em; }
+    h1 { margin:.25rem 0 0; font-size:clamp(2rem,5vw,3.5rem); line-height:1.05; }
+    h1 span { display:block; color:var(--muted); font-size:.48em; margin-top:.35rem; }
+    main { padding:28px 20px 70px; }
+    nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:28px; }
+    nav a { color:var(--text); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:8px 12px; background:#0e151d; }
+    section { margin:18px 0; padding:clamp(20px,4vw,34px); background:linear-gradient(145deg,#111923,#0d131b); border:1px solid var(--line); border-radius:20px; }
+    h2 { margin:0 0 14px; font-size:clamp(1.45rem,3vw,2rem); }
+    h2 b { display:inline-grid; place-items:center; width:34px; height:34px; margin-right:10px; border-radius:8px; background:var(--green); color:#071000; font-size:1rem; vertical-align:4px; }
+    h3 { margin:22px 0 8px; }
+    p, li { max-width:72ch; }
+    li + li { margin-top:7px; }
+    .url { display:block; overflow-wrap:anywhere; color:var(--blue); font-weight:750; }
+    .note, .gap { padding:15px 17px; border-radius:12px; background:#0b1218; border-left:4px solid var(--blue); }
+    .gap { border-color:#ffbf69; color:#ffe1b6; }
+    figure { margin:22px 0 0; }
+    .shot { position:relative; overflow:hidden; border:1px solid #344455; border-radius:14px; background:#05070a; }
+    .shot img { display:block; width:100%; height:auto; }
+    figcaption { color:var(--muted); font-size:.9rem; margin-top:8px; }
+    .pin { position:absolute; display:grid; place-items:center; width:30px; height:30px; border:3px solid #071000; border-radius:50%; background:var(--green); color:#071000; font-weight:900; box-shadow:0 0 0 3px #ffffffaa; }
+    .p1 { top:8%; left:5%; } .p2 { top:42%; left:5%; } .p3 { top:11%; right:5%; } .p4 { top:43%; right:5%; }
+    .p5 { top:25%; left:4%; } .p6 { top:62%; left:4%; } .p7 { bottom:12%; right:4%; }
+    .steps { counter-reset:step; padding-left:0; list-style:none; }
+    .steps li { position:relative; padding-left:38px; }
+    .steps li::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:0; display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:#20303d; color:var(--green); font-weight:850; }
+    code { color:#baff58; }
+    .checks { columns:2; list-style:none; padding:0; }
+    .checks li::before { content:"□"; color:var(--green); margin-right:9px; font-size:1.25em; }
+    footer { color:var(--muted); text-align:center; padding:26px; }
+    @media (max-width:650px) { .checks { columns:1; } section { border-radius:14px; } .pin { width:25px; height:25px; font-size:.8rem; } }
+    @media print { body { background:#fff; color:#111; } header,section { background:#fff; color:#111; } nav { display:none; } section { break-inside:avoid; } }
+  </style>
+</head>
+<body>
+  <header><div><div class="eyebrow">PRIVATE ADMIN JOB AID</div><h1>VIAGO Template Studio<span>Admin Instructions</span></h1></div></header>
+  <main>
+    <nav aria-label="Guide sections">
+      <a href="#open">Open</a><a href="#new">New template</a><a href="#photo">Photo</a><a href="#name">Name</a><a href="#test">Test</a><a href="#publish">Publish</a><a href="#edit">Edit</a><a href="#retire">Retire</a>
+    </nav>
+
+    <section id="open"><h2><b>1</b>Open the Template Studio</h2>
+      <a class="url" href="https://viago-template-studio-worker.noisy-bread-8a99.workers.dev/">viago-template-studio-worker.noisy-bread-8a99.workers.dev</a>
+      <ol class="steps"><li>Open the private link.</li><li>Choose the Good Life Trainings Google sign-in.</li><li>Select your <strong>@goodlifetrainings.com</strong> account.</li></ol>
+      <p class="note">Only Good Life Trainings domain users may enter.</p>
+      <p class="gap"><strong>Screenshot placeholder:</strong> capture the Google account chooser and first Studio screen after visual review. The current protected session was not signed out merely to manufacture this image.</p>
+    </section>
+
+    <section id="new"><h2><b>2</b>Create a new template</h2>
+      <ol class="steps"><li>Set <strong>Draft source</strong> to <strong>New template</strong>.</li><li>Choose the clean production JPEG.</li><li>Enter the Template ID and user-facing label.</li><li>Choose category, position, and accent color.</li></ol>
+      <p><strong>Template ID:</strong> lowercase letters, numbers, and hyphens. Examples: <code>welcome-new-member</code>, <code>cancun-2027</code>, <code>jacksonville-couple</code>.</p>
+      <figure><div class="shot"><img src="admin-guide-assets/new-template-fields.png" alt="New-template start and identity fields"><span class="pin p1">1</span><span class="pin p2">2</span><span class="pin p3">3</span><span class="pin p4">4</span></div><figcaption>1 Draft source · 2 Clean JPEG · 3 Template ID and label · 4 Category, order, and accent</figcaption></figure>
+    </section>
+
+    <section><h2><b>3</b>Prepare the Canva file</h2>
+      <p>Upload the <strong>clean JPEG</strong> exported from Canva.</p>
+      <p><strong>Remove only:</strong> the sample/person photo and dynamic placeholder name.</p>
+      <p><strong>Keep:</strong> logos, event text, permanent wording, borders, backgrounds, and decorations.</p>
+      <p class="gap"><strong>Screenshot placeholder:</strong> an approved before/clean Canva pair is needed. No source artwork was changed or invented for this guide.</p>
+    </section>
+
+    <section id="photo"><h2><b>4</b>Set the photo area</h2>
+      <ol class="steps"><li>Select <strong>Edit overlays</strong>.</li><li>Select <strong>Draw photo region</strong> and drag over the flyer.</li><li>Select <strong>Move/resize photo</strong> to adjust it.</li><li>Choose Rectangle or Circle / ellipse.</li></ol>
+      <p>The visible numbers are for advanced fine-tuning. Position the area visually first.</p>
+      <figure><div class="shot"><img src="admin-guide-assets/photo-and-name.png" alt="Photo and name controls"><span class="pin p5">1</span><span class="pin p6">2</span></div><figcaption>1 Photo shape and optional sample · 2 Name test presets and controls</figcaption></figure>
+    </section>
+
+    <section id="name"><h2><b>5</b>Set the name</h2>
+      <p>Select <strong>Move name/width</strong>. Drag the name anchor to position it and the width handle to set its available width.</p>
+      <p>Use the Studio's controls for preview name, position, width, font, weight, size, color, alignment, uppercase/preserve case, tracking, max lines, line height, vertical alignment, and word wrapping.</p>
+    </section>
+
+    <section id="test"><h2><b>6</b>Test the template</h2>
+      <ol class="steps"><li>Check <strong>Short</strong>.</li><li>Check <strong>Two-word</strong>.</li><li>Check <strong>Long</strong>.</li><li>Test a sample photo when available.</li><li>Use <strong>Edit overlays</strong> to position things and <strong>Production preview</strong> to see the actual result.</li></ol>
+      <figure><div class="shot"><img src="admin-guide-assets/production-preview.png" alt="Production preview with a long test name"><span class="pin p7">5</span></div><figcaption>Production Preview hides the editing overlays.</figcaption></figure>
+    </section>
+
+    <section><h2><b>7</b>Validate</h2>
+      <ol class="steps"><li>Select <strong>Validate template</strong>.</li><li>Wait for the result.</li><li>If it fails, correct the reported issue and validate again.</li></ol>
+      <p class="note"><strong>Validation does not publish.</strong> Success says “Template is valid for hosted publication.”</p>
+      <figure><div class="shot"><img src="admin-guide-assets/validation-success.png" alt="Validation success state"></div></figure>
+    </section>
+
+    <section id="publish"><h2><b>8</b>Publish</h2>
+      <p><strong>Publish is the action that changes the live flyer generator.</strong></p>
+      <ol class="steps"><li>Validate successfully.</li><li>Select <strong>Generate review artifact</strong> if needed.</li><li>Select <strong>Prepare promotion</strong>.</li><li>Review template, category, order, artwork, preview, and plan.</li><li>Type <code>PROMOTE</code>.</li><li>Select <strong>Publish template</strong>.</li><li>Wait for success and record the identifier shown.</li></ol>
+      <figure><div class="shot"><img src="admin-guide-assets/publish-confirmation.png" alt="Current publish review and typed PROMOTE confirmation"><span class="pin p1">1</span><span class="pin p6">2</span><span class="pin p7">3</span></div><figcaption>1 Validation passed · 2 Review the plan · 3 Type PROMOTE, then publish</figcaption></figure>
+      <p class="note">The current hosted Studio still uses the typed PROMOTE confirmation. Deployment may take a short period.</p>
+    </section>
+
+    <section><h2><b>9</b>Verify the live template</h2>
+      <p>Open <a class="url" href="https://viago-flyer-generator.pages.dev/">viago-flyer-generator.pages.dev</a></p>
+      <ul><li>Correct category and position</li><li>Correct thumbnail</li><li>Photo area works</li><li>Normal and long names look right</li><li>Downloaded PNG looks right</li></ul>
+    </section>
+
+    <section id="edit"><h2><b>10</b>Edit an existing template</h2>
+      <ol class="steps"><li>Set Draft source to <strong>Existing template</strong>.</li><li>Choose the exact template.</li><li>Make approved changes.</li><li>Preview, validate, prepare the plan, type PROMOTE, and publish.</li></ol>
+      <p class="note">Editing and previewing do not affect the public generator until Publish is confirmed.</p>
+      <figure><div class="shot"><img src="admin-guide-assets/start-and-identity.png" alt="Existing template selector and identity fields"><span class="pin p1">1</span><span class="pin p3">2</span></div></figure>
+    </section>
+
+    <section id="retire"><h2><b>11</b>Retire an old template</h2><p class="gap"><strong>Template retirement is not yet available from the Studio interface.</strong> Contact the platform owner. Do not overwrite an old template to hide it.</p></section>
+
+    <section><h2><b>12</b>If something looks wrong</h2><ul><li>Do not repeatedly publish trying to fix it.</li><li>Stop and reopen the current template.</li><li>Confirm artwork and Production Preview.</li><li>Validate again.</li><li>If unsure, contact the platform owner.</li></ul></section>
+
+    <section><h2><b>13</b>Quick checklist</h2>
+      <h3>Before Publish</h3><ul class="checks"><li>Clean JPEG uploaded</li><li>Correct template name</li><li>Correct category and order</li><li>Photo area checked</li><li>Short name checked</li><li>Long name checked</li><li>Production Preview checked</li><li>Validation passed</li></ul>
+      <h3>After Publish</h3><ul class="checks"><li>Appears in public generator</li><li>Photo works</li><li>Name works</li><li>Download checked</li></ul>
+    </section>
+  </main>
+  <footer>VIAGO Template Studio · Internal admin instructions · Review draft</footer>
+</body>
+</html>
