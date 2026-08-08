@@ -17,7 +17,8 @@ async function actor(request, env) {
   const cookieToken = request.headers.get('cookie')?.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
   const token = request.headers.get('cf-access-jwt-assertion') || cookieToken;
   if (!token) throw new Error('missing_access_assertion');
-  if (!env.CF_ACCESS_AUD || !env.CF_TEAM_DOMAIN) throw new Error('missing_access_configuration');
+  if (!env.CF_ACCESS_AUD) throw new Error('missing_access_aud');
+  if (!env.CF_TEAM_DOMAIN) throw new Error('missing_team_domain');
   const jwks = createRemoteJWKSet(new URL(`${env.CF_TEAM_DOMAIN.replace(/\/$/, '')}/cdn-cgi/access/certs`));
   const { payload: claims } = await jwtVerify(token, jwks, {
     audience: env.CF_ACCESS_AUD,
