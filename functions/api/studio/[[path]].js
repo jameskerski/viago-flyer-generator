@@ -12,14 +12,16 @@ const encode64 = (bytes) => {
 const safeId = (id) => typeof id === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
 
 async function actor(request, env) {
-  const token = request.headers.get('cf-access-jwt-assertion');
+  const cookieToken = request.headers.get('cookie')?.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
+  const token = request.headers.get('cf-access-jwt-assertion') || cookieToken;
   if (!token || !env.CF_ACCESS_AUD || !env.CF_TEAM_DOMAIN) return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
   const header = decodeJson(parts[0]);
   const claims = decodeJson(parts[1]);
   const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-  if (!audience.includes(env.CF_ACCESS_AUD) || claims.iss !== env.CF_TEAM_DOMAIN || claims.exp * 1000 <= Date.now()) return null;
+  const issuer = (value) => value?.replace(/\/$/, '');
+  if (!audience.includes(env.CF_ACCESS_AUD) || issuer(claims.iss) !== issuer(env.CF_TEAM_DOMAIN) || claims.exp * 1000 <= Date.now()) return null;
   const keys = await fetch(`${env.CF_TEAM_DOMAIN}/cdn-cgi/access/certs`).then((response) => response.json());
   const jwk = keys.keys.find((key) => key.kid === header.kid);
   if (!jwk) return null;
