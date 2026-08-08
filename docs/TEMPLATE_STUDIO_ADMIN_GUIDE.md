@@ -147,9 +147,17 @@ Editing and previewing do not affect the public generator until Publish is confi
 
 ## 11. Retire an old template
 
-> **Template retirement is not yet available from the Studio interface.**
+Use retirement only when an existing template should disappear from the public generator.
 
-Do not invent a replacement workflow and do not overwrite an old template to hide it. Contact the platform owner to retire an obsolete template safely.
+1. Set **Draft source** to **Existing template**.
+2. Choose the exact template.
+3. Select **Retire Template**.
+4. Review the label, template ID, category, and artwork path.
+5. Select **Confirm retirement**.
+6. Wait for the commit identifier and deployment-in-progress message.
+7. Verify the template disappears from the public generator.
+
+Retirement removes the live catalog entry and unreferenced production artwork. Git history remains the recovery mechanism.
 
 ## 12. If something looks wrong
 
@@ -178,4 +186,3 @@ Do not invent a replacement workflow and do not overwrite an old template to hid
 - [ ] Photo works
 - [ ] Name works
 - [ ] Download checked
-

@@ -6,7 +6,8 @@ const els = Object.fromEntries([
   'authorCanvas','canvasEmpty','previewTitle','editMode','previewMode','drawPhoto','movePhoto','moveName','runtimeFrame',
   'draftSource','existingWrap','existingTemplate','artworkFile','artworkMeta','templateId','label','category','categoryList','accent','categoryPosition','orderPreview',
   'photoShape','photoX','photoY','photoW','photoH','samplePhoto','sampleName','nameX','nameY','nameMaxWidth','nameSize','nameFont','nameWeight','nameColor','nameAlign','nameCase','nameTracking','nameMaxLines','nameLineHeight','nameVAlign','nameWrap',
-  'provDesigner','provCanva','provApproval','provOwner','provReference','provNotes','validate','reviewArtifact','preparePromotion','validationResult','jsonPreview','planPreview','planDetails','promotionConfirmation','promote'
+  'provDesigner','provCanva','provApproval','provOwner','provReference','provNotes','validate','reviewArtifact','preparePromotion','validationResult','jsonPreview','planPreview','planDetails','promotionConfirmation','promote',
+  'retireActions','retireTemplate','retireDialog','retireLabel','retireId','retireCategory','retireArtwork','cancelRetire','confirmRetire'
 ].map((id) => [id, $(`#${id}`)]));
 
 const ctx = els.authorCanvas.getContext('2d');
@@ -51,6 +52,10 @@ function invalidate() {
   state.validation = null; state.plan = null; els.promote.disabled = true;
   els.validationResult.className = 'result neutral'; els.validationResult.textContent = 'Draft changed; validate again.';
   els.planPreview.textContent = 'Prepare promotion to see the before/after order and target files.';
+}
+
+function updateRetireAvailability() {
+  els.retireActions.hidden = !(state.hosted && state.mode === 'existing' && state.originalId);
 }
 
 function readDraft() {
@@ -262,12 +267,42 @@ async function promote() {
   return result;
 }
 
+function openRetirement() {
+  if (!(state.hosted && state.mode === 'existing' && state.originalId)) return;
+  const target = state.registry.templates.find(({ id }) => id === state.originalId);
+  if (!target) throw new Error('The selected template is no longer available. Reload the Studio.');
+  els.retireLabel.textContent = target.label;
+  els.retireId.textContent = target.id;
+  els.retireCategory.textContent = target.category;
+  els.retireArtwork.textContent = target.art;
+  els.retireDialog.showModal();
+}
+
+async function retire() {
+  if (!(state.hosted && state.mode === 'existing' && state.originalId)) throw new Error('Choose an existing template before retiring.');
+  const templateId = state.originalId;
+  els.confirmRetire.disabled = true;
+  try {
+    const result = await api('/api/studio/retire', { templateId, baseRevision: state.baseRevision, confirmed: true });
+    els.retireDialog.close();
+    els.validationResult.className = 'result ok';
+    els.validationResult.textContent = `Retired from GitHub. Commit ${result.commitSha}. Deployment is in progress.`;
+    const loaded = await api('/api/studio/catalog');
+    state.registry = loaded.registry; state.registryHash = loaded.registryHash; state.baseRevision = loaded.revision;
+    els.existingTemplate.innerHTML = state.registry.templates.map((template) => `<option value="${template.id}">${template.category} — ${template.label}</option>`).join('');
+    state.mode = 'new'; state.originalId = null; els.draftSource.value = 'new'; els.existingWrap.hidden = true;
+    writeDraft(defaultDraft()); updateRetireAvailability();
+    return result;
+  } finally { els.confirmRetire.disabled = false; }
+}
+
 function guarded(action) { return async () => { try { await action(); } catch (error) { els.validationResult.className = 'result bad'; els.validationResult.textContent = error.message; } }; }
 
 els.draftSource.addEventListener('change', async () => {
   state.mode = els.draftSource.value; els.existingWrap.hidden = state.mode !== 'existing';
   if (state.mode === 'existing') await loadExisting(els.existingTemplate.value);
   else { state.originalId = null; state.artworkFile = null; state.artworkDataUrl = null; if (state.artworkUrl) URL.revokeObjectURL(state.artworkUrl); state.artworkUrl = null; writeDraft(defaultDraft()); els.artworkMeta.textContent = 'No artwork selected.'; els.canvasEmpty.hidden = false; ctx.clearRect(0,0,els.authorCanvas.width,els.authorCanvas.height); invalidate(); }
+  updateRetireAvailability();
 });
 els.existingTemplate.addEventListener('change', () => loadExisting(els.existingTemplate.value));
 els.artworkFile.addEventListener('change', guarded(async () => {
@@ -286,6 +321,8 @@ els.editMode.addEventListener('click', () => { state.overlays = true; els.editMo
 els.previewMode.addEventListener('click', () => { state.overlays = false; els.previewMode.classList.add('active'); els.editMode.classList.remove('active'); render(); });
 els.validate.addEventListener('click', guarded(validate)); els.reviewArtifact.addEventListener('click', guarded(artifact)); els.preparePromotion.addEventListener('click', guarded(preparePlan)); els.promote.addEventListener('click', guarded(promote));
 els.promotionConfirmation.addEventListener('input', () => { els.promote.disabled = !(state.plan && els.promotionConfirmation.value === 'PROMOTE'); });
+els.retireTemplate.addEventListener('click', guarded(openRetirement));
+els.confirmRetire.addEventListener('click', guarded(retire));
 
 async function boot() {
   const loaded = await api('/api/studio/catalog'); state.registry = loaded.registry; state.registryHash = loaded.registryHash;
@@ -295,6 +332,7 @@ async function boot() {
     document.querySelector('.authority').innerHTML = '<a class="admin-guide-link" href="admin-guide.html" target="_blank" rel="noopener">Admin Instructions</a><br>Draft → validate → review → publish<br><strong>Published state is committed atomically to GitHub</strong>';
     els.promote.textContent = 'Publish template';
   }
+  updateRetireAvailability();
   const categories = [...new Set(state.registry.templates.map((template) => template.category))];
   els.categoryList.innerHTML = categories.map((category) => `<option value="${category}"></option>`).join('');
   els.existingTemplate.innerHTML = state.registry.templates.map((template) => `<option value="${template.id}">${template.category} — ${template.label}</option>`).join('');
@@ -302,7 +340,7 @@ async function boot() {
   await new Promise((resolve) => { if (els.runtimeFrame.contentWindow?.__studio) resolve(); else els.runtimeFrame.addEventListener('load', resolve, { once: true }); });
   await new Promise((resolve) => { const check = () => els.runtimeFrame.contentWindow.__studio ? resolve() : setTimeout(check, 20); check(); });
   state.runtimeReady = true;
-  window.__templateStudio = { state, readDraft, writeDraft, render, validate, preparePlan, artifact, promote, loadExisting, setArtwork, proposedOrder };
+  window.__templateStudio = { state, readDraft, writeDraft, render, validate, preparePlan, artifact, promote, retire, loadExisting, setArtwork, proposedOrder };
 }
 
 boot().catch((error) => { els.validationResult.className = 'result bad'; els.validationResult.textContent = `Studio failed to start: ${error.message}`; });

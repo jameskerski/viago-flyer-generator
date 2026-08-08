@@ -37,6 +37,8 @@ The public header links unobtrusively to the private Studio. Inside the Studio, 
 
 Hosted publication uses the narrowly installed **VIAGO Template Studio Publisher** GitHub App. It is installed only on this repository with Contents read/write and mandatory Metadata read-only; short-lived installation credentials remain server-side in Cloudflare.
 
+Normal domain-authenticated administrators can create, edit, publish, and retire templates entirely in the hosted Studio. **Retire Template** appears only for an existing template and requires review of the exact template identity before confirmation.
+
 ---
 
 ## How it works

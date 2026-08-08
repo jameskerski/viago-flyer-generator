@@ -52,18 +52,16 @@ All publication writes are server-side. The browser never receives the GitHub cr
 
 ## Retire a template
 
-Retirement is currently a maintainer operation. The live Studio does not yet expose a retirement control, even though retirement rules and service-level tests exist in the repository.
+Retirement is a normal authenticated Studio operation.
 
-1. Confirm the exact template ID and obtain approval to retire it.
-2. Remove that template's single entry from `public/templates.json` without reordering unrelated templates.
-3. Remove `public/art/<id>.jpg` only when no remaining catalog entry references it.
-4. Do not move retired production artwork into a database, object store, or production archive. The editable Canva/Drive source may remain archived externally.
-5. Run `npm run test:all` and confirm the validator's new expected template count.
-6. Review the diff, commit the catalog and artwork deletion together, and push to `main`.
-7. Wait for both Cloudflare deployments to succeed and smoke-test production.
-8. Record the commit SHA for rollback.
+1. Open **Existing template** and choose the exact template.
+2. Select **Retire Template**.
+3. Review its label, ID, category, artwork path, live-catalog warning, and Git recovery notice.
+4. Select **Confirm retirement**.
+5. Record the returned commit SHA and wait for deployment.
+6. Verify the template disappears from the public generator.
 
-Adding an authenticated retirement control to the hosted Studio remains a future idea, not a current operator capability.
+The server rechecks identity and revision, derives the artwork path from the validated ID, validates the remaining catalog, and commits the catalog removal plus any unreferenced artwork deletion atomically. Git history remains recovery.
 
 ## Source and storage responsibilities
 
@@ -208,7 +206,6 @@ The accepted complete suite validates the 14-template contract, negative validat
 
 ## Outstanding future ideas — not implemented
 
-- Add the authenticated template-retirement control to the live Studio UI and Worker API.
 - Preserve absent optional template fields during Studio updates instead of serializing default values when the contract permits omission.
 - Add a custom production domain while retaining the current `pages.dev` and `workers.dev` rollback paths.
 - Add uptime/error monitoring, documented incident ownership, and deployment notifications.
@@ -227,4 +224,4 @@ Do not implement a database, object storage, persistent drafts, CMS, Google Driv
 - Canva/Google Drive holds editable master designs.
 - GitHub holds published catalog/artwork history.
 - Cloudflare provides live delivery and Access enforcement.
-- Routine administrators use the private Studio; technical maintainers own Git rollback, GitHub App key recovery, deployment recovery, and current manual retirement.
+- Routine administrators use the private Studio to create, edit, publish, and retire templates; technical maintainers own Git rollback, GitHub App key recovery, and deployment recovery.

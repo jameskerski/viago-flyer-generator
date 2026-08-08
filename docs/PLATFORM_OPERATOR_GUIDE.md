@@ -23,7 +23,7 @@ Normal workflow:
 5. Validate, select **Publish**, review the affected catalog/art paths, and confirm.
 6. Wait for the GitHub commit identifier. “Deployment in progress” does not mean Cloudflare is live yet.
 
-Retirement is currently a technical-maintainer operation; the live Studio has no retirement control. Follow the approved Admin Instructions and permanent handoff to remove the exact catalog entry and only its unreferenced artwork, validate, commit, deploy, and retain the commit SHA for rollback. Nothing expires automatically.
+To retire a template, choose **Existing template**, select the exact template, select **Retire Template**, review its identity and artwork path, and confirm. Wait for the commit identifier and deployment, then verify it disappears from the public generator. The server removes only the exact catalog entry and its artwork only when unreferenced. Nothing expires automatically.
 
 Drafts live only in the browser session. Closing the editor can lose unfinished work. There is no autosave or drafts database.
 

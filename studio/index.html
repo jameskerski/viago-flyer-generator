@@ -8,7 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Josefin+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="studio.css">
-  <style>.admin-guide-link{color:var(--ink);font-weight:600;text-underline-offset:3px}.admin-guide-link:hover{color:var(--lime)}</style>
+  <style>
+    .admin-guide-link{color:var(--ink);font-weight:600;text-underline-offset:3px}.admin-guide-link:hover{color:var(--lime)}
+    .retire-actions{border-top:1px solid #5f3037;margin-top:14px;padding-top:14px}.retire-actions button,#confirmRetire{border:1px solid var(--red);background:transparent;color:#ff9aa5;border-radius:7px;padding:10px 14px;font-weight:700}.retire-actions p{font-size:11px;color:#d59aa1;margin-top:7px}
+    dialog{width:min(540px,calc(100vw - 32px));padding:0;border:1px solid #713943;border-radius:14px;background:#111722;color:var(--ink);box-shadow:0 24px 90px #000}dialog::backdrop{background:#020408d9}.retire-dialog-card{padding:22px}.retire-dialog-card>p{color:var(--muted);margin-top:7px}.retire-dialog-card dl{margin:18px 0;border:1px solid var(--line);border-radius:9px;overflow:hidden}.retire-dialog-card dl div{display:grid;grid-template-columns:130px 1fr;padding:9px 11px;border-bottom:1px solid var(--line)}.retire-dialog-card dl div:last-child{border-bottom:0}.retire-dialog-card dt{color:var(--muted)}.retire-dialog-card dd{margin:0;font:12px Geist Mono,monospace;overflow-wrap:anywhere}.retire-dialog-card .retire-warning{color:#ffc3ca}.dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}.dialog-actions button{border:1px solid #405169;background:#111a26;color:var(--ink);border-radius:7px;padding:10px 14px}.dialog-actions #confirmRetire{border-color:var(--red);background:var(--red);color:#180408}.dialog-actions #confirmRetire:disabled{opacity:.5}
+  </style>
 </head>
 <body>
   <header>
@@ -82,9 +86,27 @@
           <button id="promote" disabled>Promote template to catalog</button>
           <p>No save, preview, validation, or review action writes production files.</p>
         </div>
+        <div id="retireActions" class="retire-actions" hidden>
+          <button id="retireTemplate" type="button">Retire Template</button>
+          <p>Removes the selected existing template through the authenticated hosted publishing service.</p>
+        </div>
       </article>
     </section>
   </main>
+  <dialog id="retireDialog" aria-labelledby="retireTitle">
+    <form method="dialog" class="retire-dialog-card">
+      <h2 id="retireTitle">Retire Template</h2>
+      <p>Review the exact template before continuing.</p>
+      <dl>
+        <div><dt>Label</dt><dd id="retireLabel"></dd></div>
+        <div><dt>Template ID</dt><dd id="retireId"></dd></div>
+        <div><dt>Category</dt><dd id="retireCategory"></dd></div>
+        <div><dt>Artwork path</dt><dd id="retireArtwork"></dd></div>
+      </dl>
+      <p class="retire-warning">This removes the template from the live catalog. Git history remains the recovery mechanism.</p>
+      <div class="dialog-actions"><button id="cancelRetire" value="cancel">Cancel</button><button id="confirmRetire" type="button">Confirm retirement</button></div>
+    </form>
+  </dialog>
   <script type="module" src="studio.js"></script>
 </body>
 </html>

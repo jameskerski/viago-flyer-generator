@@ -32,7 +32,7 @@ The GitHub adapter uses GitHub's Git Data API as the narrowly installed **VIAGO 
 
 ## Retire workflow
 
-The admin chooses the exact template and sees its artwork path. A boolean confirmation is required. The server rechecks authentication and base revision, validates the remaining catalog, and creates one commit removing the catalog entry and its `public/art/<id>.jpg` when no remaining entry references it. There is no automatic expiry. Git history is recovery.
+For an existing-template draft, the Studio exposes **Retire Template**. The confirmation identifies the label, ID, category, and artwork path and states the live-catalog and Git-recovery effects. A boolean confirmation is required. The server rechecks authentication and base revision, derives the path from the validated ID, validates the remaining catalog, and creates one commit removing the catalog entry and its `public/art/<id>.jpg` when no remaining entry references it. There is no automatic expiry. Git history is recovery.
 
 ## Concurrency, rollback, and path safety
 

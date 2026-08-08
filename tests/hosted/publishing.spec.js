@@ -86,8 +86,20 @@ test('validation, stale revision, and unsafe paths block publication before comm
 test('retirement requires confirmation and atomically removes catalog entry and unreferenced art', async () => {
   const { service, commits } = await fixture();
   await expect(service.retire({ templateId: 'cyprus-im', baseRevision: 'base-sha', confirmed: false }, actor)).rejects.toThrow('confirmation');
+  await expect(service.retire({ templateId: '../escape', baseRevision: 'base-sha', confirmed: true }, actor)).rejects.toThrow('unsafe template id');
+  await expect(service.retire({ templateId: 'cyprus-im', baseRevision: 'stale', confirmed: true }, actor)).rejects.toThrow('production changed');
   const result = await service.retire({ templateId: 'cyprus-im', baseRevision: 'base-sha', confirmed: true }, actor);
   expect(result.affectedFiles).toEqual(['public/templates.json', 'public/art/cyprus-im.jpg']);
   expect(commits).toHaveLength(1); expect(commits[0].deletes).toEqual(['public/art/cyprus-im.jpg']);
+  expect(commits[0].actor).toEqual(actor); expect(commits[0].baseRevision).toBe('base-sha');
   expect(JSON.parse(commits[0].writes['public/templates.json']).templates.some(({ id }) => id === 'cyprus-im')).toBe(false);
+});
+
+test('retirement API denies anonymous and non-domain users', async () => {
+  const { service } = await fixture();
+  const body = { templateId: 'cyprus-im', baseRevision: 'base-sha', confirmed: true };
+  const apiFor = (email) => createHostedApi({ service, authenticate: async () => authorizeGoogleIdentity(email ? { email } : null) });
+  expect((await apiFor(null)({ method: 'POST', path: '/api/studio/retire', body })).status).toBe(401);
+  expect((await apiFor('person@gmail.com')({ method: 'POST', path: '/api/studio/retire', body })).status).toBe(401);
+  expect((await apiFor('person@other.com')({ method: 'POST', path: '/api/studio/retire', body })).status).toBe(401);
 });

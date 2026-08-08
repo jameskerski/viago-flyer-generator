@@ -54,6 +54,43 @@ test('hosted-mode authority text retains Admin Instructions navigation', async (
   await expect(page.locator('.authority')).toContainText('Published state is committed atomically to GitHub');
 });
 
+test('hosted retirement is available only for an existing template and requires explicit confirmation', async ({ page }) => {
+  let registry = JSON.parse(await readFile(REGISTRY, 'utf8'));
+  let retirement = null;
+  let revision = 'production-sha';
+  await page.route('**/api/studio/catalog', (route) => route.fulfill({ json: { registry, revision } }));
+  await page.route('**/api/studio/retire', async (route) => {
+    retirement = route.request().postDataJSON();
+    registry = { ...registry, templates: registry.templates.filter(({ id }) => id !== retirement.templateId) };
+    revision = 'retirement-sha';
+    await route.fulfill({ json: { ok: true, commitSha: revision, deployment: 'Published to GitHub; deployment in progress' } });
+  });
+  await openStudio(page);
+  await expect(page.getByRole('button', { name: 'Retire Template' })).toBeHidden();
+
+  await page.locator('#draftSource').selectOption('existing');
+  await page.locator('#existingTemplate').selectOption('cyprus-im');
+  await expect(page.getByRole('button', { name: 'Retire Template' })).toBeVisible();
+  await page.getByRole('button', { name: 'Retire Template' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Retire Template' });
+  await expect(dialog).toContainText('Cyprus (Individual)');
+  await expect(dialog).toContainText('cyprus-im');
+  await expect(dialog).toContainText('Events');
+  await expect(dialog).toContainText('art/cyprus-im.jpg');
+  await expect(dialog).toContainText('live catalog');
+  await expect(dialog).toContainText('Git history');
+
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(retirement).toBeNull();
+
+  await page.getByRole('button', { name: 'Retire Template' }).click();
+  await page.getByRole('button', { name: 'Confirm retirement' }).click();
+  await expect(page.locator('#validationResult')).toContainText('retirement-sha');
+  expect(retirement).toEqual({ templateId: 'cyprus-im', baseRevision: 'production-sha', confirmed: true });
+  await expect(page.getByRole('button', { name: 'Retire Template' })).toBeHidden();
+});
+
 test('candidate artwork dimensions, photo drawing/moving/resizing, and normalized values are visual', async ({ page }) => {
   await openStudio(page);
   await candidate(page);

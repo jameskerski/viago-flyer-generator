@@ -110,7 +110,11 @@
       <figure><div class="shot"><img src="admin-guide-assets/start-and-identity.png" alt="Existing template selector and identity fields"><span class="pin p1">1</span><span class="pin p3">2</span></div></figure>
     </section>
 
-    <section id="retire"><h2><b>11</b>Retire an old template</h2><p class="gap"><strong>Template retirement is not yet available from the Studio interface.</strong> Contact the platform owner. Do not overwrite an old template to hide it.</p></section>
+    <section id="retire"><h2><b>11</b>Retire an old template</h2>
+      <p><strong>Use retirement only when an existing template should disappear from the public generator.</strong></p>
+      <ol class="steps"><li>Set Draft source to <strong>Existing template</strong>.</li><li>Choose the exact template.</li><li>Select <strong>Retire Template</strong>.</li><li>Review the label, template ID, category, and artwork path.</li><li>Select <strong>Confirm retirement</strong>.</li><li>Wait for the commit identifier and deployment-in-progress message.</li><li>Verify the template disappears from the public generator.</li></ol>
+      <p class="note">Retirement removes the live catalog entry and unreferenced production artwork. Git history remains the recovery mechanism.</p>
+    </section>
 
     <section><h2><b>12</b>If something looks wrong</h2><ul><li>Do not repeatedly publish trying to fix it.</li><li>Stop and reopen the current template.</li><li>Confirm artwork and Production Preview.</li><li>Validate again.</li><li>If unsure, contact the platform owner.</li></ul></section>
 
