@@ -1,0 +1,74 @@
+{
+  "manifestVersion": 1,
+  "purpose": "Provenance-only record; not consumed by the runtime",
+  "receiptDate": "2026-08-07",
+  "receivedArchive": {
+    "filename": "viago-flyers.zip",
+    "recordedOriginalPath": "/Users/jameskerski/Desktop/viago-flyers.zip",
+    "sha256": "2d3125244744c4a7d539b4d714be22301af398b599253c8a4081e722b595bf1d"
+  },
+  "receivedGit": {
+    "branch": "main",
+    "head": "325eb98db23bdebd33bb92bf6b77c67ad72530de"
+  },
+  "runtimeEntryPoints": [
+    "public/index.html",
+    "public/styles.css",
+    "public/app.js",
+    "public/templates.json",
+    "functions/api/cutout.js"
+  ],
+  "deploymentFiles": ["public/_routes.json"],
+  "templateCount": 14,
+  "templateIds": [
+    "club-4",
+    "mission-30",
+    "amplified",
+    "welcome",
+    "silver",
+    "gold",
+    "sapphire",
+    "emerald",
+    "elite-emerald",
+    "jacksonville-im",
+    "jacksonville-we",
+    "cyprus-im",
+    "cyprus-we",
+    "kenya"
+  ],
+  "artworkFiles": [
+    "public/art/amplified.jpg",
+    "public/art/club-4.jpg",
+    "public/art/cyprus-im.jpg",
+    "public/art/cyprus-we.jpg",
+    "public/art/elite-emerald.jpg",
+    "public/art/emerald.jpg",
+    "public/art/gold.jpg",
+    "public/art/jacksonville-im.jpg",
+    "public/art/jacksonville-we.jpg",
+    "public/art/kenya.jpg",
+    "public/art/mission-30.jpg",
+    "public/art/sapphire.jpg",
+    "public/art/silver.jpg",
+    "public/art/welcome.jpg"
+  ],
+  "externalRuntimeDependencies": [
+    "Browser Canvas 2D, File/Blob/Object URL, Font Loading, Pointer Events and requestAnimationFrame APIs",
+    "Google Fonts: Geist, Geist Mono and Josefin Sans",
+    "jsDelivr module @imgly/background-removal@1.6.0 and model assets (fallback only)",
+    "Cloudflare Pages and Pages Functions",
+    "fal.ai BiRefNet v2 when FAL_KEY is configured",
+    "Replicate remove-bg model when REPLICATE_API_TOKEN is configured"
+  ],
+  "authoringDependencies": ["Python 3", "Pillow", "NumPy", "Canva or equivalent layered design source"],
+  "knownMissingAuthoringSources": ["tools/canva/", "tools/clean/", "layered Canva/source design transfer for all templates"],
+  "intentionallyExcludedTransientFiles": [".wrangler/", ".DS_Store", "Thumbs.db", "Desktop.ini", "AppleDouble ._* files"],
+  "unresolvedOwnershipAndLicenseItems": [
+    "code copyright assignment or license",
+    "artwork and VIAGO mark rights",
+    "Canva/layered source ownership and transfer",
+    "font and Canva stock-element license verification",
+    "Cloudflare account, project, domain and deployment ownership",
+    "fal.ai, Replicate and IMG.LY provider/privacy ownership and approvals"
+  ]
+}

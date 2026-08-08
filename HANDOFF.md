@@ -1,5 +1,12 @@
 # Handover: VIAGO Recognition Flyer Tool
 
+> **Historical handoff record.** This file is retained because it records the
+> received repository's original operational context. References to Matt's
+> Cloudflare account, key, or availability are historical facts, not current
+> authority. Current takeover status and owners are maintained in
+> [`docs/PHASE_B_RECORD.md`](docs/PHASE_B_RECORD.md) and
+> [`docs/OWNERSHIP_AND_PROVENANCE.md`](docs/OWNERSHIP_AND_PROVENANCE.md).
+
 **Read this first. It is written for the developer taking this over, not for Matt.**
 
 This is a working tool, currently live at https://viago-flyers.pages.dev. It was

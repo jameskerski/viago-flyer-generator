@@ -1,9 +1,18 @@
 # VIAGO Recognition Flyer Tool
 
+> **Canonical Version 1 repository.** This plain HTML/CSS/JavaScript and Canvas
+> application is the adopted product architecture. The earlier Next.js
+> implementation is superseded and must not be merged into this product.
+> Start with [`docs/INDEX.md`](docs/INDEX.md) for architecture, ownership,
+> authoring, maintenance, and release guidance.
+
 Leaders pick a flyer, drop in a photo, type a name, download. Replaces Snapp
 (app.getsnapp.ai/viago).
 
-**Live:** https://viago-flyers.pages.dev
+**Historical deployment:** `https://viago-flyers.pages.dev` was documented in
+the received baseline as running under the former owner's account. It is not
+evidence of Viago operational ownership. The Viago production URL remains an
+open takeover item; see [`docs/PHASE_B_RECORD.md`](docs/PHASE_B_RECORD.md).
 
 ---
 

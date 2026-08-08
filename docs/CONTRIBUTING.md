@@ -1,0 +1,29 @@
+# Contributing
+
+## Scope
+
+Keep this a small static application. Do not introduce Next.js, React, a database, authentication, accounts, a CMS, a redesign, or workflow change without a separately approved architecture/product decision.
+
+## Change process
+
+1. State the objective defect or authorized maintenance need.
+2. Identify whether the change affects runtime, rendering, artwork, template data, deployment, privacy, or documentation.
+3. Preserve a before-state PNG and relevant mobile/desktop evidence.
+4. Make the smallest scoped change. Do not opportunistically clean `app.js`, HTML, CSS, registry, artwork, or Function code.
+5. Validate according to the maintenance and authoring guides.
+6. Explain every runtime-byte difference and attach output comparisons.
+7. Update affected documentation and provenance in the same review.
+
+Template tools may suggest geometry. A person must review and explicitly promote values into `public/templates.json`.
+
+## Pull-request evidence
+
+- purpose and authorization;
+- files and protected decisions affected;
+- before/after PNGs when pixels can change;
+- tested templates, names, photos, devices, browsers, cutout paths, and routing as applicable;
+- privacy/security/license review when applicable;
+- rollback plan; and
+- documentation/provenance updates.
+
+No application behavior change was authorized during Phase B.
