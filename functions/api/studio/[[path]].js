@@ -36,8 +36,14 @@ function github(env) {
   if (!env.GITHUB_TOKEN) throw new Error('server-side GitHub credential is not configured');
   const base = `https://api.github.com/repos/${env.GITHUB_OWNER || 'jameskerski'}/${env.GITHUB_REPOSITORY || 'viago-flyer-generator'}`;
   const request = async (path, options = {}) => {
-    const response = await fetch(`${base}${path}`, { ...options, headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${env.GITHUB_TOKEN}`, 'X-GitHub-Api-Version': '2022-11-28', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } });
-    const result = await response.json();
+    const response = await fetch(`${base}${path}`, { ...options, headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'VIAGO-Template-Studio', 'X-GitHub-Api-Version': '2022-11-28', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } });
+    const text = await response.text();
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch {
+      result = { message: text.trim() || 'request failed' };
+    }
     if (!response.ok) throw new Error(`GitHub ${response.status}: ${result.message || 'request failed'}`);
     return result;
   };
