@@ -9,7 +9,21 @@ function required(value, label) {
 }
 
 function privateKey(value) {
-  return required(value, 'GitHub App private key').replace(/\\n/g, '\n');
+  let pem = required(value, 'GitHub App private key').replace(/\\n/g, '\n');
+  if (!pem.includes('-----BEGIN')) {
+    try {
+      pem = Uint8Array.from(atob(pem), (character) => character.charCodeAt(0));
+      pem = new TextDecoder().decode(pem);
+    } catch {
+      throw new Error('GitHub App private key must be PKCS#8 PEM or base64-encoded PKCS#8 PEM');
+    }
+  }
+  if (!pem.includes('-----BEGIN PRIVATE KEY-----')) throw new Error('GitHub App private key must use PKCS#8 format');
+  const body = pem
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s/g, '');
+  return `-----BEGIN PRIVATE KEY-----\n${body.match(/.{1,64}/g)?.join('\n') || ''}\n-----END PRIVATE KEY-----`;
 }
 
 export async function createGitHubAppJwt({ appId, privateKeyPem, now = () => Date.now() }) {

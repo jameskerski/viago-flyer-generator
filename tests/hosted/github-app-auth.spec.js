@@ -15,6 +15,12 @@ test('GitHub App JWT is short lived and identifies the configured App', async ()
   expect(claims.iat).toBe(Math.floor(now / 1000) - 60);
 });
 
+test('GitHub App JWT accepts one-line base64 PKCS#8 for secret-manager compatibility', async () => {
+  const encoded = Buffer.from(privateKeyPem).toString('base64');
+  const jwt = await createGitHubAppJwt({ appId: '123456', privateKeyPem: encoded });
+  expect(decodeJwt(jwt).iss).toBe('123456');
+});
+
 test('installation token exchange is scoped to the installation and refreshes near expiry', async () => {
   let now = Date.parse('2026-08-08T18:00:00Z');
   const requests = [];
