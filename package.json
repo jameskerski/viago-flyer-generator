@@ -16,6 +16,7 @@
     "app": "node tools/template-studio-server.mjs --app",
     "studio": "node tools/template-studio-server.mjs",
     "build:studio:hosted": "node tools/build-hosted-studio.mjs",
+    "deploy:studio:hosted": "npm run build:studio:hosted && npx wrangler deploy",
     "test:all": "npm run validate && npm run test:validator && playwright test"
   },
   "devDependencies": {
