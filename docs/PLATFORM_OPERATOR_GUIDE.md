@@ -2,13 +2,17 @@
 
 ## Public Flyer Generator
 
-The production URL is pending creation of the Viago-controlled Cloudflare Pages project. It will be a stable HTTPS `*.pages.dev` URL and must deploy only `public/`.
+Production: `https://viago-flyer-generator.pages.dev/`
+
+The Cloudflare Pages project deploys only `public/` from the canonical repository's `main` branch.
 
 Embed it with a normal iframe whose `src` is that public URL. Give the frame enough height for the responsive workflow and retain browser download permission. The application is deliberately unauthenticated. Its routing does not send `X-Frame-Options` or a restrictive `frame-ancestors` policy, so generic HTTPS embedding remains available.
 
 ## Private Template Studio
 
-The private URL is pending creation of the separately protected Cloudflare deployment. Sign in through Google using an individual email ending exactly in `@goodlifetrainings.com`. Other domains, anonymous visitors, look-alike suffixes, and empty identities are denied.
+Production: `https://viago-template-studio-worker.noisy-bread-8a99.workers.dev/`
+
+Sign in through Google using an individual email ending exactly in `@goodlifetrainings.com`. Other domains, anonymous visitors, look-alike suffixes, and empty identities are denied.
 
 Normal workflow:
 
@@ -29,6 +33,8 @@ Canva/Google Drive holds editable master designs. GitHub holds published runtime
 ## Recovery
 
 Git history is emergency rollback. A technical maintainer reverts the single publication commit and allows Cloudflare to redeploy it. Routine operators do not use Git, JSON, a terminal, or local files.
+
+The publishing credential is a fine-grained GitHub token restricted to `jameskerski/viago-flyer-generator` with Contents read/write only. It expires September 7, 2026 and must be rotated before expiry in the Worker's encrypted `GITHUB_TOKEN` secret.
 
 ## Background removal
 

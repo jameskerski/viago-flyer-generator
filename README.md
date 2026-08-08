@@ -1,6 +1,6 @@
 # VIAGO Recognition Flyer Tool
 
-> **Hosted publishing direction:** GitHub is the authoritative published catalog/artwork state; Canva/Drive remains editable-source storage; Cloudflare will host the static public generator; and a separately protected Google-authenticated Template Studio will publish atomic Git commits. Access is limited to verified `@goodlifetrainings.com` Google identities, with no admin roster or database. The canonical `main` history is connected to the Viago-designated GitHub repository. See [`docs/HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md`](docs/HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md) and [`docs/PLATFORM_OPERATOR_GUIDE.md`](docs/PLATFORM_OPERATOR_GUIDE.md). Cloudflare account connection, live URLs, and server-side publishing credentials remain pending.
+> **Hosted publishing:** GitHub is the authoritative published catalog/artwork state; Canva/Drive remains editable-source storage; Cloudflare hosts the static public generator; and a separately protected Google-authenticated Template Studio publishes atomic Git commits. Access is limited to verified `@goodlifetrainings.com` Google identities, with no admin roster or database. See [`docs/HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md`](docs/HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md) and [`docs/PLATFORM_OPERATOR_GUIDE.md`](docs/PLATFORM_OPERATOR_GUIDE.md).
 
 > **Canonical Version 1 repository.** This plain HTML/CSS/JavaScript and Canvas
 > application is the adopted product architecture. The earlier Next.js
@@ -25,10 +25,12 @@ http://127.0.0.1:4173/studio/
 
 Never review through `file://`. ES-module and `fetch('templates.json')` behavior differs for local files, so an empty static shell is not a valid product review. See [`docs/LOCAL_REVIEW.md`](docs/LOCAL_REVIEW.md).
 
-**Historical deployment:** `https://viago-flyers.pages.dev` was documented in
-the received baseline as running under the former owner's account. It is not
-evidence of Viago operational ownership. The Viago production URL remains an
-open takeover item; see [`docs/PHASE_B_RECORD.md`](docs/PHASE_B_RECORD.md).
+## Live deployments
+
+- Public Generator: `https://viago-flyer-generator.pages.dev/`
+- Private Template Studio: `https://viago-template-studio-worker.noisy-bread-8a99.workers.dev/`
+
+The public generator is unauthenticated and embeddable. The Studio is protected by Cloudflare Access and accepts only verified Google identities ending exactly in `@goodlifetrainings.com`.
 
 ---
 

@@ -1,14 +1,14 @@
 # Release Guidance
 
-The target topology is public Cloudflare Pages from approved Git state plus a separate protected Hosted Template Studio. See [Hosted Template Studio architecture](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md). Never include `studio/`, `hosted/`, admin APIs, or publishing credentials in the public static deployment.
+The production topology is public Cloudflare Pages from approved Git state plus a separate Cloudflare Access-protected Worker for Hosted Template Studio. See [Hosted Template Studio architecture](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md). Never include `studio/`, admin APIs, or publishing credentials in the public static deployment.
 
 ## Current state
 
-The product and deployment architecture are accepted, including Google authentication through Cloudflare Access with an exact `goodlifetrainings.com` email-domain rule. The canonical `main` history is pushed to the Viago-designated GitHub repository. Live deployment still awaits the repository-scoped publishing identity, Cloudflare account/projects, Access application values, and generated URLs.
+The product and deployment architecture are live. Public production is `https://viago-flyer-generator.pages.dev/`. Private Studio production is `https://viago-template-studio-worker.noisy-bread-8a99.workers.dev/`, protected by Google authentication through Cloudflare Access with an exact `goodlifetrainings.com` email-domain rule. Both deploy from the canonical `main` branch at `https://github.com/jameskerski/viago-flyer-generator`.
 
 ## Release discipline
 
-Until Phase H establishes automated deployment, record the exact Git commit, Wrangler version, operator, account/project, timestamp, archive checksum, secrets/provider state, and rollback deployment for every authorized release.
+Cloudflare automatically deploys approved `main` changes. Record the exact Git commit, operator, account/project, timestamp, secrets/provider state, and rollback deployment for every authorized release.
 
 Before release:
 

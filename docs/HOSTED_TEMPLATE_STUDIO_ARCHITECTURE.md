@@ -5,7 +5,8 @@
 - **Canva / Google Drive** holds VIAGO's long-term editable masters. It is not read at runtime.
 - **Hosted Template Studio** is the private, browser-based authoring and publishing tool.
 - **GitHub** is the only authoritative published store for `public/templates.json` and `public/art/*`.
-- **Cloudflare Pages** deploys approved public Git state as the live generator.
+- **Cloudflare Pages** deploys approved public Git state as the live generator at `https://viago-flyer-generator.pages.dev/`.
+- **Cloudflare Workers + Access** deploys the private Studio at `https://viago-template-studio-worker.noisy-bread-8a99.workers.dev/`.
 - **Public Generator** remains static, open, embeddable, and unauthenticated.
 
 No database, CMS, object storage, Drive runtime connection, shared mutable store, persistent drafts, or autosave is introduced. Unpublished work exists only in the administrator's browser session and is lost when it closes.
@@ -16,7 +17,7 @@ The public deployment contains `public/` only. It must not contain `studio/`, `h
 
 Authentication uses Google identities through Cloudflare Access. Access must use Google as the identity provider and an Allow policy whose email domain is exactly `goodlifetrainings.com`. The server independently verifies the Access JWT and repeats the exact, case-normalized domain check through `hosted/cloudflare-access-auth.mjs`. A match maps to the single internal capability `TEMPLATE_ADMIN`; this is not a roster or role table. Anonymous users and all other domains are denied.
 
-The GitHub adapter uses a server-side credential and GitHub's Git Data API. Give a GitHub App installation (preferred) repository Contents write access only to the canonical repository. Never put its key, installation token, or another token in browser code. Repository owner, name, branch, and credential are deployment configuration, not source defaults.
+The GitHub adapter uses a server-side fine-grained credential and GitHub's Git Data API. The credential is restricted to the canonical repository with Contents read/write only and is stored only as the Worker's encrypted `GITHUB_TOKEN` secret. Never put the token in browser code. Repository owner, name, branch, Access audience, and team domain are non-secret Worker configuration.
 
 ## Publish workflow
 
@@ -43,13 +44,6 @@ The server writes only generated `public/templates.json` and exact `public/art/<
 
 `npm run studio` remains the development-only workflow at `http://127.0.0.1:4173/studio/`, including its accepted typed `PROMOTE` filesystem behavior. Hosted use has managed authentication and GitHub commits; it never writes an operator's filesystem.
 
-## Required setup boundary
+## Deployed boundary
 
-The canonical repository is now connected to the Viago-designated GitHub remote. Remaining account setup requires:
-
-1. a narrowly scoped GitHub App installed only on the canonical repository and publishing branch;
-2. Cloudflare account, public Pages project, private admin deployment, and Git connection;
-3. a Cloudflare Access Google identity-provider connection and application audience/team-domain values; and
-4. private-deployment secret injection for the repository-scoped GitHub identity.
-
-Only then should a deployment-specific auth adapter and hosting entrypoint be connected. Do not guess these values.
+The canonical GitHub repository, public Pages project, private Worker, Google identity provider, exact-domain Access policy, audience/team configuration, and encrypted repository-scoped publishing credential are configured. No database, object storage, Drive runtime connection, or persistent draft service exists.
