@@ -292,7 +292,7 @@ async function boot() {
   state.hosted = Boolean(loaded.revision); state.baseRevision = loaded.revision || null;
   if (state.hosted) {
     document.querySelector('.eyebrow').textContent = 'PRIVATE HOSTED AUTHORING TOOL';
-    document.querySelector('.authority').innerHTML = 'Draft → validate → review → publish<br><strong>Published state is committed atomically to GitHub</strong>';
+    document.querySelector('.authority').innerHTML = '<a class="admin-guide-link" href="admin-guide.html" target="_blank" rel="noopener">Admin Instructions</a><br>Draft → validate → review → publish<br><strong>Published state is committed atomically to GitHub</strong>';
     els.promote.textContent = 'Publish template';
   }
   const categories = [...new Set(state.registry.templates.map((template) => template.category))];

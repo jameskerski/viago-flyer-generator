@@ -46,6 +46,14 @@ test('Admin Instructions opens the approved guide in a new tab without discardin
   await expect(page.locator('#templateId')).toHaveValue('draft-stays-open');
 });
 
+test('hosted-mode authority text retains Admin Instructions navigation', async ({ page }) => {
+  const registry = JSON.parse(await readFile(REGISTRY, 'utf8'));
+  await page.route('**/api/studio/catalog', (route) => route.fulfill({ json: { registry, revision: 'production-sha' } }));
+  await openStudio(page);
+  await expect(page.getByRole('link', { name: 'Admin Instructions' })).toHaveAttribute('target', '_blank');
+  await expect(page.locator('.authority')).toContainText('Published state is committed atomically to GitHub');
+});
+
 test('candidate artwork dimensions, photo drawing/moving/resizing, and normalized values are visual', async ({ page }) => {
   await openStudio(page);
   await candidate(page);
