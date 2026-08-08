@@ -33,6 +33,9 @@ Never review through `file://`. ES-module and `fetch('templates.json')` behavior
 - Private Template Studio: `https://viago-template-studio-worker.noisy-bread-8a99.workers.dev/`
 
 The public generator is unauthenticated and embeddable. The Studio is protected by Cloudflare Access and accepts only verified Google identities ending exactly in `@goodlifetrainings.com`.
+The public header links unobtrusively to the private Studio. Inside the Studio, **Admin Instructions** opens the approved protected guide in a new tab without clearing the current draft.
+
+Hosted publication uses the narrowly installed **VIAGO Template Studio Publisher** GitHub App. It is installed only on this repository with Contents read/write and mandatory Metadata read-only; short-lived installation credentials remain server-side in Cloudflare.
 
 ---
 
@@ -130,7 +133,7 @@ frame. `POST /api/cutout` takes FormData `file` and returns a transparent PNG.
 | `FAL_KEY` | fal.ai BiRefNet v2 | ~$0.001 per photo |
 | `REPLICATE_API_TOKEN` | Replicate | ~$0.002 per photo |
 
-`FAL_KEY` is set. With no key the endpoint returns 501 and the browser falls
+No Viago-owned paid provider key is configured. With no key the endpoint returns 501 and the browser falls
 back to removing the background on the device, which works but downloads a
 ~40MB model first.
 

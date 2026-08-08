@@ -35,17 +35,18 @@ There is no admin allowlist, shared password, per-user role table, or permission
 ### Create or update a template
 
 1. Open the private Studio and sign in.
-2. Choose **New template** or **Existing template**.
-3. Upload the approved clean production JPEG.
-4. Set the template ID, label, category, and category position.
-5. Draw or adjust the photo region and name region visually.
-6. Enter source/provenance information. Use `Unknown` when evidence is unavailable; do not invent it.
-7. Check the production preview with representative short, two-word, and long names.
-8. Select **Validate template**.
-9. Generate and review the review artifact and exact promotion plan.
-10. Complete the final **Publish template** confirmation.
-11. Record the returned Git commit SHA. “Deployment in progress” means Cloudflare still needs to deploy the commit.
-12. Wait for the Cloudflare builds to succeed, then smoke-test the live public generator.
+2. Open **Admin Instructions** in the Studio header for the approved, protected guide. It opens in a new tab and preserves the current draft.
+3. Choose **New template** or **Existing template**.
+4. Upload the approved clean production JPEG.
+5. Set the template ID, label, category, and category position.
+6. Draw or adjust the photo region and name region visually.
+7. Enter source/provenance information. Use `Unknown` when evidence is unavailable; do not invent it.
+8. Check the production preview with representative short, two-word, and long names.
+9. Select **Validate template**.
+10. Generate and review the review artifact and exact promotion plan.
+11. Complete the final **Publish template** confirmation.
+12. Record the returned Git commit SHA. “Deployment in progress” means Cloudflare still needs to deploy the commit.
+13. Wait for the Cloudflare builds to succeed, then smoke-test the live public generator.
 
 All publication writes are server-side. The browser never receives the GitHub credential. Catalog and artwork changes are committed together against the draft's recorded base revision; stale revisions are rejected instead of overwriting newer work.
 
@@ -81,7 +82,9 @@ GitHub is the authoritative **published** application state:
 - application, renderer, Studio, validation, tests, and deployment configuration are versioned with the catalog.
 - Git history is the technical rollback record.
 
-The hosted Studio uses a fine-grained token limited only to `jameskerski/viago-flyer-generator`, with repository Contents read/write and required Metadata read-only. It is stored only as the Cloudflare Worker's encrypted `GITHUB_TOKEN` secret. It expires September 7, 2026 and must be rotated before that date.
+The hosted Studio publishes as the GitHub App **VIAGO Template Studio Publisher** (App ID `4530195`, installation ID `152276767`). The App is installed only on `jameskerski/viago-flyer-generator`; its only repository permission is Contents read/write, plus GitHub's mandatory Metadata read-only permission. The Worker creates a short-lived App JWT, exchanges it for a short-lived installation token, and refreshes it server-side before expiry. The browser never receives either credential.
+
+The App private key exists only as the Worker's encrypted `GITHUB_APP_PRIVATE_KEY` secret. `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` are also encrypted Worker secrets. The legacy `GITHUB_TOKEN` secret has been removed after successful App-only read and publish verification.
 
 ### Cloudflare
 
@@ -136,7 +139,7 @@ Deploy command: npx wrangler deploy
 Configuration: wrangler.jsonc
 ```
 
-The Worker's non-secret Access and repository settings are declared in `wrangler.jsonc`. The GitHub token remains an encrypted Cloudflare secret and must never be committed.
+The Worker's non-secret Access and repository settings are declared in `wrangler.jsonc`. The GitHub App ID, installation ID, and one-line base64 PKCS#8 private key remain encrypted Cloudflare secrets and must never be committed or exposed to browser code.
 
 ### Local review
 
@@ -186,8 +189,11 @@ After a manual deployment, confirm the account, project, commit, timestamp, secr
 
 - Confirm the user signed in with an exact `@goodlifetrainings.com` Google identity.
 - Confirm the Cloudflare Access application, Google identity provider, and domain policy remain enabled.
-- Confirm the Worker's `CF_ACCESS_AUD`, `CF_TEAM_DOMAIN`, repository variables, and encrypted `GITHUB_TOKEN` binding exist.
-- Rotate the GitHub token before September 7, 2026, preserving the same one-repository Contents scope.
+- Confirm the Worker's `CF_ACCESS_AUD`, `CF_TEAM_DOMAIN`, and repository variables exist.
+- Confirm encrypted secrets `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and `GITHUB_APP_PRIVATE_KEY` exist; `GITHUB_TOKEN` should remain absent.
+- Confirm the GitHub App remains installed only on the canonical repository with Contents read/write and Metadata read-only.
+- If the App key is lost or compromised, generate a replacement in GitHub, convert it to PKCS#8, store its one-line base64 value in `GITHUB_APP_PRIVATE_KEY`, verify Studio read and publish/revert, and only then delete the superseded GitHub App key.
+- Do not restore a personal access token except as a tightly controlled emergency measure; remove it immediately after App publishing is restored and proven.
 - Never copy credentials into browser code, logs, documentation, or Git.
 
 ## Required verification
@@ -203,7 +209,7 @@ The accepted complete suite validates the 14-template contract, negative validat
 ## Outstanding future ideas — not implemented
 
 - Add the authenticated template-retirement control to the live Studio UI and Worker API.
-- Replace the 30-day fine-grained token with a narrowly installed GitHub App if ongoing rotation becomes burdensome.
+- Preserve absent optional template fields during Studio updates instead of serializing default values when the contract permits omission.
 - Add a custom production domain while retaining the current `pages.dev` and `workers.dev` rollback paths.
 - Add uptime/error monitoring, documented incident ownership, and deployment notifications.
 - Add protected-branch review rules and CODEOWNERS after responsible GitHub identities are formally chosen.
@@ -221,4 +227,4 @@ Do not implement a database, object storage, persistent drafts, CMS, Google Driv
 - Canva/Google Drive holds editable master designs.
 - GitHub holds published catalog/artwork history.
 - Cloudflare provides live delivery and Access enforcement.
-- Routine administrators use the private Studio; technical maintainers own Git rollback, credential rotation, deployment recovery, and current manual retirement.
+- Routine administrators use the private Studio; technical maintainers own Git rollback, GitHub App key recovery, deployment recovery, and current manual retirement.

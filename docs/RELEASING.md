@@ -19,7 +19,8 @@ Before release:
 - test boot, categories, upload, drag/pinch/zoom, name wrapping, clear, and PNG download;
 - test 320, 390, and 430 px widths plus desktop;
 - test approved cutout success and fallback paths, or confirm it remains unconfigured;
-- verify privacy/security/license gates relevant to the change; and
+- verify privacy/security/license gates relevant to the change;
+- verify the GitHub App remains repository-only with Contents read/write and Metadata read-only, all three `GITHUB_APP_*` Worker secrets exist, and legacy `GITHUB_TOKEN` remains absent; and
 - prepare rollback.
 
 After release, request key static assets repeatedly until Cloudflare edges consistently return the new version, then repeat the production smoke test and monitor Function errors/provider spend. Do not retire a previous deployment until the rollback window closes.

@@ -17,7 +17,7 @@ The public deployment contains `public/` only. It must not contain `studio/`, `h
 
 Authentication uses Google identities through Cloudflare Access. Access must use Google as the identity provider and an Allow policy whose email domain is exactly `goodlifetrainings.com`. The server independently verifies the Access JWT and repeats the exact, case-normalized domain check through `hosted/cloudflare-access-auth.mjs`. A match maps to the single internal capability `TEMPLATE_ADMIN`; this is not a roster or role table. Anonymous users and all other domains are denied.
 
-The GitHub adapter uses a server-side fine-grained credential and GitHub's Git Data API. The credential is restricted to the canonical repository with Contents read/write only and is stored only as the Worker's encrypted `GITHUB_TOKEN` secret. Never put the token in browser code. Repository owner, name, branch, Access audience, and team domain are non-secret Worker configuration.
+The GitHub adapter uses GitHub's Git Data API as the narrowly installed **VIAGO Template Studio Publisher** GitHub App (App ID `4530195`, installation ID `152276767`). It is installed only on the canonical repository with Contents read/write and mandatory Metadata read-only; every other permission is absent. The Worker signs a short-lived App JWT, exchanges it for a short-lived installation token, caches it only server-side, and refreshes it before expiry. `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and the base64 PKCS#8 `GITHUB_APP_PRIVATE_KEY` are encrypted Worker secrets. The legacy `GITHUB_TOKEN` binding is absent. Never put any credential in browser code.
 
 ## Publish workflow
 
@@ -46,4 +46,4 @@ The server writes only generated `public/templates.json` and exact `public/art/<
 
 ## Deployed boundary
 
-The canonical GitHub repository, public Pages project, private Worker, Google identity provider, exact-domain Access policy, audience/team configuration, and encrypted repository-scoped publishing credential are configured. No database, object storage, Drive runtime connection, or persistent draft service exists.
+The canonical GitHub repository, public Pages project, private Worker, Google identity provider, exact-domain Access policy, audience/team configuration, and encrypted repository-scoped GitHub App identity are configured. The App-only read and publish path was proven after removal of the legacy PAT. No database, object storage, Drive runtime connection, or persistent draft service exists.

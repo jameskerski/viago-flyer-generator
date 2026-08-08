@@ -4,6 +4,7 @@
 
 - [`HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md`](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md) — private authentication, GitHub-backed publishing/retirement, concurrency, and deployment boundary.
 - [`PLATFORM_OPERATOR_GUIDE.md`](PLATFORM_OPERATOR_GUIDE.md) — public embed, Google-domain Studio access, publishing, retirement, source storage, and recovery.
+- [`TEMPLATE_STUDIO_ADMIN_GUIDE.md`](TEMPLATE_STUDIO_ADMIN_GUIDE.md) — approved protected administrator workflow for creating, updating, validating, publishing, and recovering templates.
 
 ## Canonical status
 
@@ -50,5 +51,6 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 - Authoring Improvement 001 historically added the localhost visual Template Studio with validated typed promotion. It remains the development/recovery workflow; the hosted architecture supersedes it for routine operations without rewriting that historical record.
 - Product Improvement 001 added per-upload photo rotation from −180° to +180° without changing template data, catalog order, artwork, or the accepted editor workflow.
 - Product Improvement 002 added the official VIAGO logo to the public Pick a flyer panel without reducing category or template-row width.
+- Hosted publication uses a GitHub App installed only on the canonical repository with Contents read/write and mandatory Metadata read-only. App credentials remain encrypted and server-side; the legacy PAT is absent.
 
 No repository license is present. Code, artwork, source-design, font, and third-party rights remain an explicit takeover gate; see the ownership record.
