@@ -1,3 +1,5 @@
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+
 const ALLOWED_DOMAIN = 'goodlifetrainings.com';
 const CATALOG = 'public/templates.json';
 
@@ -15,20 +17,11 @@ async function actor(request, env) {
   const cookieToken = request.headers.get('cookie')?.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
   const token = request.headers.get('cf-access-jwt-assertion') || cookieToken;
   if (!token || !env.CF_ACCESS_AUD || !env.CF_TEAM_DOMAIN) return null;
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  const header = decodeJson(parts[0]);
-  const claims = decodeJson(parts[1]);
-  const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-  const issuer = (value) => value?.replace(/\/$/, '');
-  if (!audience.includes(env.CF_ACCESS_AUD) || issuer(claims.iss) !== issuer(env.CF_TEAM_DOMAIN) || claims.exp * 1000 <= Date.now()) return null;
-  const keys = await fetch(`${env.CF_TEAM_DOMAIN}/cdn-cgi/access/certs`).then((response) => response.json());
-  const jwk = keys.keys.find((key) => key.kid === header.kid);
-  if (!jwk) return null;
-  const algorithm = jwk.kty === 'RSA' ? { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' } : { name: 'ECDSA', namedCurve: 'P-256', hash: 'SHA-256' };
-  const key = await crypto.subtle.importKey('jwk', jwk, algorithm, false, ['verify']);
-  const valid = await crypto.subtle.verify(algorithm, key, decode64(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
-  if (!valid) return null;
+  const jwks = createRemoteJWKSet(new URL(`${env.CF_TEAM_DOMAIN.replace(/\/$/, '')}/cdn-cgi/access/certs`));
+  const { payload: claims } = await jwtVerify(token, jwks, {
+    audience: env.CF_ACCESS_AUD,
+    issuer: env.CF_TEAM_DOMAIN.replace(/\/$/, '')
+  });
   const email = typeof claims.email === 'string' ? claims.email.trim().toLowerCase() : '';
   const pieces = email.split('@');
   return pieces.length === 2 && pieces[0] && pieces[1] === ALLOWED_DOMAIN ? { id: email, displayName: claims.name || email } : null;
@@ -111,20 +104,6 @@ function artwork(dataUrl) {
 }
 
 export async function onRequest(context) {
-  if (new URL(context.request.url).pathname.endsWith('/debug-auth')) {
-    const cookie = context.request.headers.get('cookie') || '';
-    const headerToken = context.request.headers.get('cf-access-jwt-assertion');
-    const cookieToken = cookie.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
-    const token = headerToken || cookieToken;
-    let claims = null;
-    try { claims = token ? decodeJson(token.split('.')[1]) : null; } catch {}
-    return json({
-      accessHeaderNames: [...context.request.headers.keys()].filter((name) => name.includes('access')),
-      cookieNames: cookie.split(';').map((part) => part.split('=')[0].trim()).filter(Boolean),
-      tokenSource: headerToken ? 'header' : cookieToken ? 'cookie' : 'none',
-      claims: claims && { aud: claims.aud, iss: claims.iss, email: claims.email, exp: claims.exp }
-    });
-  }
   const who = await actor(context.request, context.env).catch(() => null);
   if (!who) return json({ error: 'sign in with an authorized Good Life Trainings account' }, 401);
   const path = new URL(context.request.url).pathname;
