@@ -14,7 +14,7 @@ const state = {
   registry: null, registryHash: null, mode: 'new', originalId: null, draft: null,
   artworkFile: null, artworkDataUrl: null, artworkUrl: null, artworkChecksum: null,
   sampleFile: null, runtimeReady: false, overlays: true, tool: 'drawPhoto', drag: null,
-  validation: null, plan: null
+  validation: null, plan: null, hosted: false, baseRevision: null
 };
 
 function defaultDraft() {
@@ -242,7 +242,8 @@ async function artifact() {
 
 async function preparePlan() {
   if (!state.artworkDataUrl) throw new Error('Load a JPEG artwork before planning promotion.');
-  const result = await api('/api/studio/plan', requestPayload()); showValidation(result);
+  const result = await api(state.hosted ? '/api/studio/validate' : '/api/studio/plan', requestPayload()); showValidation(result);
+  if (state.hosted && result.ok) result.planToken = 'hosted-publication';
   state.plan = result.ok ? result : null; els.planPreview.textContent = JSON.stringify(result, null, 2); els.planDetails.open = true;
   els.promote.disabled = !(state.plan && els.promotionConfirmation.value === 'PROMOTE');
   return result;
@@ -250,9 +251,14 @@ async function preparePlan() {
 
 async function promote() {
   if (!state.plan) throw new Error('Prepare and review a valid promotion plan first.');
-  const result = await api('/api/studio/promote', { planToken: state.plan.planToken, confirmation: els.promotionConfirmation.value });
-  els.validationResult.className = 'result ok'; els.validationResult.textContent = `Promoted explicitly. ${result.validation.stdout}`;
+  const result = state.hosted
+    ? await api('/api/studio/publish', { ...requestPayload(), baseRevision: state.baseRevision })
+    : await api('/api/studio/promote', { planToken: state.plan.planToken, confirmation: els.promotionConfirmation.value });
+  els.validationResult.className = 'result ok'; els.validationResult.textContent = state.hosted
+    ? `Published to GitHub. Commit ${result.commitSha}. Deployment is in progress.`
+    : `Promoted explicitly. ${result.validation.stdout}`;
   const loaded = await api('/api/studio/catalog'); state.registry = loaded.registry; state.registryHash = loaded.registryHash; state.plan = null; els.promote.disabled = true;
+  state.baseRevision = loaded.revision || state.baseRevision;
   return result;
 }
 
@@ -283,6 +289,12 @@ els.promotionConfirmation.addEventListener('input', () => { els.promote.disabled
 
 async function boot() {
   const loaded = await api('/api/studio/catalog'); state.registry = loaded.registry; state.registryHash = loaded.registryHash;
+  state.hosted = Boolean(loaded.revision); state.baseRevision = loaded.revision || null;
+  if (state.hosted) {
+    document.querySelector('.eyebrow').textContent = 'PRIVATE HOSTED AUTHORING TOOL';
+    document.querySelector('.authority').innerHTML = 'Draft → validate → review → publish<br><strong>Published state is committed atomically to GitHub</strong>';
+    els.promote.textContent = 'Publish template';
+  }
   const categories = [...new Set(state.registry.templates.map((template) => template.category))];
   els.categoryList.innerHTML = categories.map((category) => `<option value="${category}"></option>`).join('');
   els.existingTemplate.innerHTML = state.registry.templates.map((template) => `<option value="${template.id}">${template.category} — ${template.label}</option>`).join('');
