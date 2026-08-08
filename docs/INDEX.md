@@ -1,6 +1,7 @@
 # VIAGO Flyer Generator Documentation
 
 - [`HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md`](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md) — private authentication, GitHub-backed publishing/retirement, concurrency, and deployment boundary.
+- [`PLATFORM_OPERATOR_GUIDE.md`](PLATFORM_OPERATOR_GUIDE.md) — public embed, Google-domain Studio access, publishing, retirement, source storage, and recovery.
 
 ## Canonical status
 
@@ -44,7 +45,7 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 - Phase B made no changes to runtime files or user-visible behavior.
 - Phase C/D added a read-only contract and validator; `public/templates.json` remains the sole runtime catalog.
 - Phase E added development-only browser, Function, responsive, accessibility-smoke, download, cutout-mock, and visual regression gates; production runtime bytes remain unchanged.
-- Authoring Improvement 001 added a separate localhost-only visual Template Studio; it cannot mutate the catalog until a validated plan and explicit typed promotion.
+- Authoring Improvement 001 historically added the localhost visual Template Studio with validated typed promotion. It remains the development/recovery workflow; the hosted architecture supersedes it for routine operations without rewriting that historical record.
 - Product Improvement 001 added per-upload photo rotation from −180° to +180° without changing template data, catalog order, artwork, or the accepted editor workflow.
 - Product Improvement 002 added the official VIAGO logo to the public Pick a flyer panel without reducing category or template-row width.
 

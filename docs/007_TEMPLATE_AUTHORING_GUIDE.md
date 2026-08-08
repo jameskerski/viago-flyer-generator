@@ -6,7 +6,7 @@ For the permanent operational workflow, authors use the private [Hosted Template
 
 Following this guide produces one flattened artwork file plus one reviewed entry in `public/templates.json`. No source-code change is needed when the new flyer fits the existing rectangle/circle photo and name model.
 
-The preferred operator workflow is the local [VIAGO Template Studio](TEMPLATE_STUDIO.md), started with `npm run studio`. It removes the need to calculate normalized geometry by hand while preserving the source, review, validation, and explicit-promotion requirements below. Manual editing remains a supported recovery/advanced path.
+The preferred routine operator workflow is the private Hosted Template Studio described in the [operator guide](PLATFORM_OPERATOR_GUIDE.md). The local [VIAGO Template Studio](TEMPLATE_STUDIO.md), started with `npm run studio`, remains for development and recovery. Both remove the need to calculate normalized geometry by hand while preserving source, review, and validation requirements. Manual editing is an advanced recovery path.
 
 ## Before starting
 

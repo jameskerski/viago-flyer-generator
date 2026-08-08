@@ -14,7 +14,7 @@ No database, CMS, object storage, Drive runtime connection, shared mutable store
 
 The public deployment contains `public/` only. It must not contain `studio/`, `hosted/`, admin APIs, or credentials. The private deployment serves the existing Studio UI plus a minimal authenticated server built around `hosted/api.mjs`, `hosted/publishing-service.mjs`, and `hosted/github-repository.mjs`.
 
-Authentication is an injected server-side adapter. It must verify an individual managed identity and return `{ id, displayName, role: "TEMPLATE_ADMIN" }`. Anonymous requests receive 401 and authenticated non-admins receive 403. A shared password is not supported. The provider cannot be selected until VIAGO identifies its managed identity system and admin accounts.
+Authentication uses Google identities through Cloudflare Access. Access must use Google as the identity provider and an Allow policy whose email domain is exactly `goodlifetrainings.com`. The server independently verifies the Access JWT and repeats the exact, case-normalized domain check through `hosted/cloudflare-access-auth.mjs`. A match maps to the single internal capability `TEMPLATE_ADMIN`; this is not a roster or role table. Anonymous users and all other domains are denied.
 
 The GitHub adapter uses a server-side credential and GitHub's Git Data API. Give a GitHub App installation (preferred) repository Contents write access only to the canonical repository. Never put its key, installation token, or another token in browser code. Repository owner, name, branch, and credential are deployment configuration, not source defaults.
 
@@ -50,7 +50,7 @@ No Git remote or account configuration is present. A VIAGO owner must provide:
 1. canonical GitHub repository owner/name and publishing branch;
 2. a narrowly scoped GitHub App installed only on that repository;
 3. Cloudflare account, public Pages project, private admin deployment, and Git connection;
-4. the managed identity provider, verification values, and individual admins; and
-5. private-deployment secret injection for GitHub and identity verification.
+4. a Cloudflare Access Google identity-provider connection and application audience/team-domain values; and
+5. private-deployment secret injection for the repository-scoped GitHub identity.
 
 Only then should a deployment-specific auth adapter and hosting entrypoint be connected. Do not guess these values.

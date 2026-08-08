@@ -4,7 +4,7 @@ The target topology is public Cloudflare Pages from approved Git state plus a se
 
 ## Current state
 
-Phase B establishes repository ownership structure only. It does not configure Cloudflare or authorize production deployment. Viago Cloudflare, domain, secrets, provider approvals, CI identity, and production URL remain unresolved.
+The product and deployment architecture are accepted, including Google authentication through Cloudflare Access with an exact `goodlifetrainings.com` email-domain rule. Live deployment still awaits a Viago-controlled GitHub repository, valid publishing identity, Cloudflare account/projects, Access application values, and generated URLs.
 
 ## Release discipline
 

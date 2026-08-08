@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHostedApi } from '../../hosted/api.mjs';
+import { authorizeGoogleIdentity } from '../../hosted/cloudflare-access-auth.mjs';
 import { createPublishingService } from '../../hosted/publishing-service.mjs';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -30,6 +31,23 @@ test('hosted API denies anonymous and non-admin access while allowing an admin',
   expect((await viewer({ method: 'POST', path: '/api/studio/publish', body: {} })).status).toBe(403);
   const admin = createHostedApi({ service, authenticate: async () => actor });
   expect((await admin({ method: 'GET', path: '/api/studio/session' })).body.actor.id).toBe(actor.id);
+});
+
+test('Google authorization allows only the exact case-normalized goodlifetrainings.com domain', async () => {
+  expect(authorizeGoogleIdentity({ email: 'Admin@GoodLifeTrainings.com', name: 'Admin' })).toMatchObject({ id: 'admin@goodlifetrainings.com', role: 'TEMPLATE_ADMIN' });
+  for (const email of ['person@gmail.com', 'person@other.com', 'person@goodlifetrainings.com.attacker.com', 'person@fakegoodlifetrainings.com', '@goodlifetrainings.com', 'goodlifetrainings.com']) {
+    expect(authorizeGoogleIdentity({ email })).toBeNull();
+  }
+  expect(authorizeGoogleIdentity(null)).toBeNull();
+});
+
+test('authorized Google domain can publish while gmail and other domains cannot', async () => {
+  const { service, candidate } = await fixture();
+  const apiFor = (email) => createHostedApi({ service, authenticate: async () => authorizeGoogleIdentity({ email }) });
+  expect((await apiFor('person@gmail.com')({ method: 'POST', path: '/api/studio/publish', body: candidate })).status).toBe(401);
+  expect((await apiFor('person@other.com')({ method: 'POST', path: '/api/studio/publish', body: candidate })).status).toBe(401);
+  const allowed = await apiFor('person@GOODLIFETRAININGS.COM')({ method: 'POST', path: '/api/studio/publish', body: candidate });
+  expect(allowed.status).toBe(200); expect(allowed.body.commitSha).toBe('commit-sha');
 });
 
 test('GitHub publishing credentials and server modules are absent from browser assets', async () => {

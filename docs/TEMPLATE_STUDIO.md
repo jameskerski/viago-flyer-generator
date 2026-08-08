@@ -4,7 +4,7 @@
 
 ## Purpose and authority
 
-The Template Studio is a localhost-only authoring tool for VIAGO template administrators. It is not part of the public flyer generator, a CMS, a persistent template database, or a publishing service.
+The Template Studio UI is used locally for development and is also the accepted visual-authoring surface for the separately protected hosted product. The local server is not a hosted publishing service; hosted writes use the authenticated GitHub boundary. Neither form is a CMS or persistent template database.
 
 Production authority remains:
 
@@ -57,7 +57,7 @@ The authoring canvas calculates the existing contract values directly:
 - name `maxWidth` is the displayed name width divided by canvas width; and
 - name `size` remains font pixels divided by canvas width.
 
-All values remain visible and numerically editable for precise correction. The Studio does not introduce a photo-rotation template property; no accepted production photo-rotation implementation exists in this baseline.
+All values remain visible and numerically editable for precise correction. The Studio does not introduce a photo-rotation template property. Rotation is implemented as end-user uploaded-photo placement state in the public generator, so it correctly remains outside the reusable template contract.
 
 The live composition is produced through the existing `public/app.js` renderer in an isolated local frame. Studio guides are drawn over a copy of that result, so name wrapping/shrinking and photo placement are not reimplemented as a second renderer. Product Improvement 001 therefore flows naturally into Studio production previews at the default 0° placement; the Studio intentionally has no rotation template field or control because rotation belongs to an end user's uploaded-photo placement state.
 

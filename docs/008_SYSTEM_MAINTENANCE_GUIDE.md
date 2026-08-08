@@ -12,7 +12,7 @@ Run `python3 tools/validate_baseline.py` before and after every template, artwor
 
 From Phase E onward, run `npm ci` once and then `npm run test:all` for complete local regression evidence. Browser and visual tests use a deterministic localhost server; never substitute `file://`. Visual checks require the pinned Playwright Chromium and successful delivery of the existing Google-hosted Josefin Sans font. Review snapshot changes rather than updating them automatically as a way to make a failure pass.
 
-For visual template maintenance, use the localhost-only [VIAGO Template Studio](TEMPLATE_STUDIO.md). Loading and editing produce drafts only. Validation and review are non-mutating; promotion requires a valid checksum-bound plan and typed `PROMOTE`. After a promotion, commit the catalog and artwork together. To roll back, revert both together and rerun the validator and full suite.
+Routine administrators use the private Hosted Template Studio and its confirmation-based, atomic GitHub publication flow. Maintainers may use the local [VIAGO Template Studio](TEMPLATE_STUDIO.md) for development/recovery; its accepted filesystem promotion requires a checksum-bound plan and typed `PROMOTE`. Loading, editing, validation, and review remain non-mutating. Roll back catalog and artwork together, then rerun the validator and full suite.
 
 ## Changing UI colors
 
