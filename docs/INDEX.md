@@ -1,5 +1,7 @@
 # VIAGO Flyer Generator Documentation
 
+- [`HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md`](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md) — private authentication, GitHub-backed publishing/retirement, concurrency, and deployment boundary.
+
 ## Canonical status
 
 This repository is the canonical Version 1 implementation received in `viago-flyers.zip`. Its production architecture is static HTML, CSS, browser JavaScript, Canvas, an ordered JSON template catalog, flattened artwork, and one optional Cloudflare Pages Function.

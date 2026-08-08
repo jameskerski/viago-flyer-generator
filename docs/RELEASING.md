@@ -1,5 +1,7 @@
 # Release Guidance
 
+The target topology is public Cloudflare Pages from approved Git state plus a separate protected Hosted Template Studio. See [Hosted Template Studio architecture](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md). Never include `studio/`, `hosted/`, admin APIs, or publishing credentials in the public static deployment.
+
 ## Current state
 
 Phase B establishes repository ownership structure only. It does not configure Cloudflare or authorize production deployment. Viago Cloudflare, domain, secrets, provider approvals, CI identity, and production URL remain unresolved.

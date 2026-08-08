@@ -1,5 +1,7 @@
 # Received Baseline: System Maintenance Guide
 
+Hosted publication and retirement are defined in [Hosted Template Studio architecture](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md). GitHub is the published source of truth and Git revert is rollback; do not create a parallel datastore.
+
 ## Maintenance principle
 
 Version 1 intentionally centralizes variation in artwork and `templates.json`, while `app.js` provides one shared renderer. Prefer data/art changes for template-specific needs and code changes only for behavior shared by the product. Preserve the existing workflow and Canvas pipeline.

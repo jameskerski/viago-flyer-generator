@@ -1,5 +1,7 @@
 # Template Authoring Guide: Adding Flyer 15
 
+For the permanent operational workflow, authors use the private [Hosted Template Studio](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md): a browser-session draft, visual validation, explicit publish confirmation, and one attributed GitHub commit. Canva/Drive remains the editable master source, not a runtime datastore.
+
 ## Outcome
 
 Following this guide produces one flattened artwork file plus one reviewed entry in `public/templates.json`. No source-code change is needed when the new flyer fits the existing rectangle/circle photo and name model.

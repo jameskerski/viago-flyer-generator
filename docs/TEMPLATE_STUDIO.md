@@ -1,5 +1,7 @@
 # VIAGO Template Studio
 
+> This document describes the accepted local development Studio. The permanent operational design is the separately authenticated, GitHub-backed [Hosted Template Studio](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md). Hosted publishing uses button confirmation and a Git commit; local promotion continues to require typed `PROMOTE` and writes only the local checkout.
+
 ## Purpose and authority
 
 The Template Studio is a localhost-only authoring tool for VIAGO template administrators. It is not part of the public flyer generator, a CMS, a persistent template database, or a publishing service.

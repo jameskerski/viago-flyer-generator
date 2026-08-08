@@ -1,5 +1,7 @@
 # VIAGO Recognition Flyer Tool
 
+> **Hosted publishing direction:** GitHub is the authoritative published catalog/artwork state; Canva/Drive remains editable-source storage; Cloudflare will host the static public generator; and a separately protected Hosted Template Studio will publish atomic Git commits. No database or persistent draft store is used. See [`docs/HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md`](docs/HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md). Account-specific deployment remains pending because this checkout has no Git remote, Cloudflare account, authentication provider, admin identities, or secrets configured.
+
 > **Canonical Version 1 repository.** This plain HTML/CSS/JavaScript and Canvas
 > application is the adopted product architecture. The earlier Next.js
 > implementation is superseded and must not be merged into this product.
