@@ -26,7 +26,11 @@
         "weight": 700,
         "color": "#ffffff",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
       }
     },
     {
