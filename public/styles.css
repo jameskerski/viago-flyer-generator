@@ -155,6 +155,11 @@ button,input,label{font-family:inherit}
 .panel-head h2{
   margin:0; font-size:15px; font-weight:600; letter-spacing:-.01em; color:var(--txt);
 }
+.pick-head{align-items:center; min-height:35px}
+.panel-brand{
+  display:block; flex:none; width:clamp(84px, 11vw, 128px); height:auto;
+  margin-left:auto;
+}
 
 /* ── categories + template chips ─────────────────────────── */
 .cats{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap}

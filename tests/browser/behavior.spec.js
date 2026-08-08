@@ -151,5 +151,6 @@ test('PNG downloads preserve filenames, format, and portrait/square dimensions',
 test('static files remain static and local API boundary remains isolated', async ({ request }) => {
   await expect((await request.get('/templates.json')).status()).toBe(200);
   await expect((await request.get('/styles.css')).status()).toBe(200);
+  await expect((await request.get('/brand/viago-plain-white.png')).status()).toBe(200);
   await expect((await request.post('/api/cutout')).status()).toBe(501);
 });

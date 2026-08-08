@@ -15,6 +15,7 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 - [VIAGO Template Studio operator guide](TEMPLATE_STUDIO.md)
 - [Authoring Improvement 001 completion record](AUTHORING_IMPROVEMENT_001_TEMPLATE_STUDIO.md)
 - [Product Improvement 001: photo rotation](PRODUCT_IMPROVEMENT_001_PHOTO_ROTATION.md)
+- [Product Improvement 002: header branding](PRODUCT_IMPROVEMENT_002_HEADER_BRANDING.md)
 - [Machine-readable baseline manifest](baseline-manifest.json)
 - [Ownership and provenance](OWNERSHIP_AND_PROVENANCE.md)
 - [Contribution guidance](CONTRIBUTING.md)
@@ -42,5 +43,6 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 - Phase E added development-only browser, Function, responsive, accessibility-smoke, download, cutout-mock, and visual regression gates; production runtime bytes remain unchanged.
 - Authoring Improvement 001 added a separate localhost-only visual Template Studio; it cannot mutate the catalog until a validated plan and explicit typed promotion.
 - Product Improvement 001 added per-upload photo rotation from −180° to +180° without changing template data, catalog order, artwork, or the accepted editor workflow.
+- Product Improvement 002 added the official VIAGO logo to the public Pick a flyer panel without reducing category or template-row width.
 
 No repository license is present. Code, artwork, source-design, font, and third-party rights remain an explicit takeover gate; see the ownership record.
