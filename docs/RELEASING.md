@@ -10,6 +10,7 @@ Until Phase H establishes automated deployment, record the exact Git commit, Wra
 
 Before release:
 
+- install the locked development dependencies with `npm ci` and run `npm run test:all`;
 - validate static/runtime file scope and `_routes.json`;
 - verify all registry artwork paths and dimensions;
 - compare affected PNGs with approved baselines;
@@ -20,3 +21,5 @@ Before release:
 - prepare rollback.
 
 After release, request key static assets repeatedly until Cloudflare edges consistently return the new version, then repeat the production smoke test and monitor Function errors/provider spend. Do not retire a previous deployment until the rollback window closes.
+
+Visual baseline updates require explicit review of every changed PNG under `tests/expected/`. Use `npm run test:visual:update` only for an authorized, understood appearance change, then run `npm run test:visual` again. Phase E comparison permits at most a 0.5% differing-pixel ratio with a per-pixel threshold of 0.15 in the controlled Playwright configuration; dimensions must match exactly.

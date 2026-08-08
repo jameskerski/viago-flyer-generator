@@ -38,10 +38,10 @@ Optional compatibility behavior comes directly from `public/app.js`:
 
 | Property | Allowed | Omitted/effective behavior |
 |---|---|---|
-| `tracking` | finite number | `0.02` through `??` |
+| `tracking` | finite number | `0.02`, selected by the renderer's nullish-coalescing expression `s.tracking ?? 0.02` |
 | `wrap` | boolean | falsy/disabled |
-| `maxLines` | integer ≥ 0 | when wrapping, omitted or `0` resolves to `3` through `||`; ignored when wrap is false |
-| `lineHeight` | finite number > 0 | `1.15` through `??` |
+| `maxLines` | integer ≥ 0 | when wrapping, omitted or `0` resolves to `3` through the renderer's logical-OR expression `s.maxLines || 3`; ignored when wrap is false |
+| `lineHeight` | finite number > 0 | `1.15`, selected by the renderer's nullish-coalescing expression `s.lineHeight ?? 1.15` |
 | `vAlign` | `top`, `middle`, or omitted | omission treats `y` as the final line baseline and stacks earlier lines upward |
 
 Required properties have no omission default in the contract even where defensive renderer fallbacks exist, because every accepted production entry supplies them and authoring ambiguity is unsafe.

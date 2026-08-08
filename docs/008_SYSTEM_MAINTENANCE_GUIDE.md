@@ -8,6 +8,8 @@ Before any change, capture representative PNG outputs and the deployed mobile/de
 
 Run `python3 tools/validate_baseline.py` before and after every template, artwork, font-declaration, routing, or baseline-manifest change. The validator is read-only and dependency-free. A pass proves structural/repository consistency; it does not prove visual correctness, design approval, browser behavior, accessibility, privacy, licensing, or deployment readiness. Those remain separate review gates.
 
+From Phase E onward, run `npm ci` once and then `npm run test:all` for complete local regression evidence. Browser and visual tests use a deterministic localhost server; never substitute `file://`. Visual checks require the pinned Playwright Chromium and successful delivery of the existing Google-hosted Josefin Sans font. Review snapshot changes rather than updating them automatically as a way to make a failure pass.
+
 ## Changing UI colors
 
 UI colors live as CSS custom properties at the top of `public/styles.css`, with some component-specific values later in the file. Change tokens first so related states remain coherent. Verify normal, hover/focus, selected, busy, warning, and disabled/hidden states and contrast.

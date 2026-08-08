@@ -60,6 +60,8 @@ Every phase preserves Version 1 UI, workflow, Canvas rendering model, and output
 
 ## Phase E — Automated testing
 
+**Status:** Completed on 2026-08-07 with validator, Function-contract, black-box Chromium, responsive/accessibility-smoke, PNG-download, mocked-cutout, and 16-image visual baseline evidence. See [`PHASE_E_RECORD.md`](PHASE_E_RECORD.md).
+
 **Objective:** Protect behavior and visual output.
 
 **Scope:** Add pure-function tests where logic can be extracted without redesign; browser tests for boot, categories, selection, upload, clear, zoom, drag/pinch, cutout success/fallback/failure, long-name wrapping, download names and dimensions; golden or perceptual PNG checks for representative/all templates; 320/390/430 px and desktop accessibility smoke tests; static/API routing checks.

@@ -115,7 +115,7 @@ Field meanings:
 - `lineHeight`: multiplier, default 1.15.
 - `vAlign`: `top`, `middle`, or omitted final-baseline behavior.
 
-There is no schema validation in Version 1. A typo can fail silently, break boot, or produce wrong pixels.
+The Version 1 browser does not perform runtime schema validation, so a bad deployed catalog can still fail boot or render incorrectly. The canonical repository now provides the Phase C/D pre-release command `python3 tools/validate_baseline.py`; it must pass before promotion, but it does not change or validate data inside the deployed browser.
 
 ## Registration, category, ordering, and thumbnails
 
