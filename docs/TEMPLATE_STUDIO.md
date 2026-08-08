@@ -55,7 +55,7 @@ The authoring canvas calculates the existing contract values directly:
 
 All values remain visible and numerically editable for precise correction. The Studio does not introduce a photo-rotation template property; no accepted production photo-rotation implementation exists in this baseline.
 
-The live composition is produced through the existing `public/app.js` renderer in an isolated local frame. Studio guides are drawn over a copy of that result, so name wrapping/shrinking and photo placement are not reimplemented as a second renderer.
+The live composition is produced through the existing `public/app.js` renderer in an isolated local frame. Studio guides are drawn over a copy of that result, so name wrapping/shrinking and photo placement are not reimplemented as a second renderer. Product Improvement 001 therefore flows naturally into Studio production previews at the default 0° placement; the Studio intentionally has no rotation template field or control because rotation belongs to an end user's uploaded-photo placement state.
 
 ## Validation and review
 

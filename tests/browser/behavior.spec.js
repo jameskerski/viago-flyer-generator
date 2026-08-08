@@ -45,7 +45,7 @@ test('typed name and uploaded photo survive selection while placement resets', a
   expect(await page.evaluate(() => ({ name: window.__studio.state.name, hasPhoto: Boolean(window.__studio.state.photo), place: window.__studio.state.place }))).toEqual({
     name: 'Casey Rivera',
     hasPhoto: true,
-    place: { dx: 0, dy: 0, zoom: 1 }
+    place: { dx: 0, dy: 0, zoom: 1, rotation: 0 }
   });
   await expect(page.locator('#zoom')).toHaveValue('100');
 });

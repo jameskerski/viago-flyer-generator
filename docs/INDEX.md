@@ -14,6 +14,7 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 - [Phase E regression-evidence record](PHASE_E_RECORD.md)
 - [VIAGO Template Studio operator guide](TEMPLATE_STUDIO.md)
 - [Authoring Improvement 001 completion record](AUTHORING_IMPROVEMENT_001_TEMPLATE_STUDIO.md)
+- [Product Improvement 001: photo rotation](PRODUCT_IMPROVEMENT_001_PHOTO_ROTATION.md)
 - [Machine-readable baseline manifest](baseline-manifest.json)
 - [Ownership and provenance](OWNERSHIP_AND_PROVENANCE.md)
 - [Contribution guidance](CONTRIBUTING.md)
@@ -40,5 +41,6 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 - Phase C/D added a read-only contract and validator; `public/templates.json` remains the sole runtime catalog.
 - Phase E added development-only browser, Function, responsive, accessibility-smoke, download, cutout-mock, and visual regression gates; production runtime bytes remain unchanged.
 - Authoring Improvement 001 added a separate localhost-only visual Template Studio; it cannot mutate the catalog until a validated plan and explicit typed promotion.
+- Product Improvement 001 added per-upload photo rotation from −180° to +180° without changing template data, catalog order, artwork, or the accepted editor workflow.
 
 No repository license is present. Code, artwork, source-design, font, and third-party rights remain an explicit takeover gate; see the ownership record.

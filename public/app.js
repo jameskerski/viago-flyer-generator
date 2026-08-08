@@ -17,6 +17,8 @@ const els = {
   clearPhoto: $('#clearPhoto'),
   photoTools: $('#photoTools'),
   zoom: $('#zoom'),
+  rotation: $('#rotation'),
+  rotationValue: $('#rotationValue'),
   cutout: $('#cutout'),
   nameInput: $('#nameInput'),
   download: $('#download'),
@@ -37,7 +39,7 @@ const state = {
   templateId: null,
   name: '',
   photo: null,               // { img, url }
-  place: { dx: 0, dy: 0, zoom: 1 },
+  place: { dx: 0, dy: 0, zoom: 1, rotation: 0 },
   original: null,            // the compressed upload, kept so cutout can be toggled
   cutoutOn: false,
 };
@@ -45,6 +47,21 @@ const state = {
 const imgCache = new Map();
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const tpl = () => state.templates.find((t) => t.id === state.templateId);
+
+function resetPlacement() {
+  state.place = { dx: 0, dy: 0, zoom: 1, rotation: 0 };
+  els.zoom.value = 100;
+  els.rotation.value = 0;
+  els.rotationValue.textContent = '0°';
+}
+
+function rotatedCoverScale(windowWidth, windowHeight, imageWidth, imageHeight, radians) {
+  const cos = Math.abs(Math.cos(radians)), sin = Math.abs(Math.sin(radians));
+  return Math.max(
+    (windowWidth * cos + windowHeight * sin) / imageWidth,
+    (windowWidth * sin + windowHeight * cos) / imageHeight
+  );
+}
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -207,13 +224,16 @@ async function render() {
     else ctx.rect(wx, wy, ww, wh);
     ctx.clip();
 
-    // fill the window, then apply the leader's nudge and zoom
-    const cover = Math.max(ww / img.naturalWidth, wh / img.naturalHeight);
+    // Inverse-rotate the window extents to find the exact scale at which the
+    // rotated source still covers every centered corner. At 0° this reduces
+    // exactly to the accepted Version 1 cover calculation.
+    const radians = state.place.rotation * Math.PI / 180;
+    const cover = rotatedCoverScale(ww, wh, img.naturalWidth, img.naturalHeight, radians);
     const scale = cover * state.place.zoom;
     const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
-    const cx = wx + ww / 2 + state.place.dx * ww;
-    const cy = wy + wh / 2 + state.place.dy * wh;
-    ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+    ctx.translate(wx + ww / 2, wy + wh / 2);
+    ctx.rotate(radians);
+    ctx.drawImage(img, state.place.dx * ww - dw / 2, state.place.dy * wh - dh / 2, dw, dh);
     ctx.restore();
   }
 
@@ -270,8 +290,7 @@ function buildChips() {
 
 function select(id) {
   state.templateId = id;
-  state.place = { dx: 0, dy: 0, zoom: 1 };
-  els.zoom.value = 100;
+  resetPlacement();
   scheduleRender();
 }
 
@@ -365,12 +384,11 @@ async function handleFile(file) {
     busy(true, 'Getting the photo ready');
     status('Working', 'busy');
     state.original = await compress(file);
-    state.place = { dx: 0, dy: 0, zoom: 1 };
-    els.zoom.value = 100;
+    resetPlacement();
     if (state.cutoutOn) { await applyCutout(); return; }
     await useBlob(state.original);
     busy(false); status('Ready', 'ok');
-    note('Drag the photo to move it, or use the Zoom slider.');
+    note('Drag the photo to move it, or use the Zoom and Rotation sliders.');
   } catch (e) {
     console.error(e);
     busy(false); status('Problem', 'bad');
@@ -443,6 +461,12 @@ els.zoom.addEventListener('input', () => {
   scheduleRender();
 });
 
+els.rotation.addEventListener('input', () => {
+  state.place.rotation = Number(els.rotation.value);
+  els.rotationValue.textContent = `${state.place.rotation}°`;
+  scheduleRender();
+});
+
 els.nameInput.addEventListener('input', () => {
   state.name = els.nameInput.value;
   scheduleRender();
@@ -458,6 +482,7 @@ els.cutout.addEventListener('change', async () => {
 els.clearPhoto.addEventListener('click', () => {
   if (state.photo?.url) URL.revokeObjectURL(state.photo.url);
   state.photo = null; state.original = null;
+  resetPlacement();
   els.file.value = '';
   els.photoTools.hidden = true;
   els.clearPhoto.hidden = true;
@@ -482,7 +507,7 @@ els.download.addEventListener('click', async () => {
   }, 'image/png');
 });
 
-window.__studio = { state, render, scheduleRender, useBlob };
+window.__studio = { state, render, scheduleRender, useBlob, rotatedCoverScale };
 
 /* ── boot ────────────────────────────────────────────────── */
 

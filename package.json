@@ -9,8 +9,8 @@
     "test:validator": "python3 -m unittest discover -s tests -p 'test_*.py' -v",
     "test:function": "playwright test tests/function",
     "test:browser": "playwright test tests/browser --grep-invert @visual",
-    "test:visual": "playwright test tests/browser/visual.spec.js --grep @visual",
-    "test:visual:update": "playwright test tests/browser/visual.spec.js --grep @visual --update-snapshots",
+    "test:visual": "playwright test tests/browser/visual.spec.js tests/browser/rotation-visual.spec.js --grep @visual",
+    "test:visual:update": "playwright test tests/browser/visual.spec.js tests/browser/rotation-visual.spec.js --grep @visual --update-snapshots",
     "test:studio": "playwright test tests/studio",
     "studio": "node tools/template-studio-server.mjs",
     "test:all": "npm run validate && npm run test:validator && playwright test"

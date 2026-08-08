@@ -7,10 +7,12 @@ test('mocked server cutout success uses returned PNG without external calls', as
   await page.route('**/api/cutout', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: transparentPng }));
   await boot(page);
   await upload(page);
+  await page.locator('#rotation').fill('30');
+  await page.locator('#rotation').dispatchEvent('input');
   await page.locator('label.toggle').click();
   await expect(page.locator('#note')).toHaveText('Background removed.');
   await expect(page.locator('#cutout')).toBeChecked();
-  expect(await page.evaluate(() => window.__studio.state.cutoutOn)).toBe(true);
+  expect(await page.evaluate(() => ({ cutoutOn: window.__studio.state.cutoutOn, rotation: window.__studio.state.place.rotation }))).toEqual({ cutoutOn: true, rotation: 30 });
 });
 
 test('mocked server failure initiates deterministic browser fallback', async ({ page }) => {
@@ -23,9 +25,12 @@ test('mocked server failure initiates deterministic browser fallback', async ({ 
   }));
   await boot(page);
   await upload(page);
+  await page.locator('#rotation').fill('-30');
+  await page.locator('#rotation').dispatchEvent('input');
   await page.locator('label.toggle').click();
   await expect(page.locator('#note')).toHaveText('Background removed on this device.');
   await expect(page.locator('#cutout')).toBeChecked();
+  expect(await page.evaluate(() => window.__studio.state.place.rotation)).toBe(-30);
 });
 
 test('mocked total cutout failure restores original and disables toggle', async ({ page }) => {
@@ -38,12 +43,15 @@ test('mocked total cutout failure restores original and disables toggle', async 
   }));
   await boot(page);
   await upload(page);
+  await page.locator('#rotation').fill('45');
+  await page.locator('#rotation').dispatchEvent('input');
   await page.locator('label.toggle').click();
   await expect(page.locator('#note')).toHaveText('Could not remove the background, so the photo went in as it was.');
   await expect(page.locator('#cutout')).not.toBeChecked();
-  expect(await page.evaluate(() => ({ cutoutOn: window.__studio.state.cutoutOn, hasPhoto: Boolean(window.__studio.state.photo), hasOriginal: Boolean(window.__studio.state.original) }))).toEqual({
+  expect(await page.evaluate(() => ({ cutoutOn: window.__studio.state.cutoutOn, hasPhoto: Boolean(window.__studio.state.photo), hasOriginal: Boolean(window.__studio.state.original), rotation: window.__studio.state.place.rotation }))).toEqual({
     cutoutOn: false,
     hasPhoto: true,
-    hasOriginal: true
+    hasOriginal: true,
+    rotation: 45
   });
 });

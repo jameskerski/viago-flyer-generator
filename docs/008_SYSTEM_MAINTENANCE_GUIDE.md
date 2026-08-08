@@ -90,11 +90,16 @@ Defaults are distributed intentionally close to their state:
 - first category/template: registry order and `boot()`;
 - no name/photo: empty state;
 - zoom and offsets: `state.place`, `select()`, and upload handling;
+- photo rotation: `state.place.rotation` plus the Rotation range control; it resets with zoom and offsets and is never template data;
 - cutout off: HTML checkbox plus `state.cutoutOn`;
 - name field fallbacks: `drawName()`; and
 - provider/model precedence: `cutout.js`.
 
 Change all mirrored values together. For example, a different zoom default must update state and the range control. Document the user-facing reason and test fresh boot, template switch, upload replacement, clear, and cutout toggle.
+
+Product Improvement 001 extends placement with rotation from −180° to +180°. The renderer rotates around the active photo-window center and derives the minimum rotated cover scale from exact inverse-rotated window extents before applying user zoom. At 0° it must reduce to the accepted cover calculation and pass every original Phase E visual baseline. See [`PRODUCT_IMPROVEMENT_001_PHOTO_ROTATION.md`](PRODUCT_IMPROVEMENT_001_PHOTO_ROTATION.md).
+
+Do not move rotation into `templates.json`, add gesture rotation, or alter the accepted ±1 over-drag clamps as part of rotation maintenance. Pinch remains zoom-only.
 
 ## Adding future template properties
 
