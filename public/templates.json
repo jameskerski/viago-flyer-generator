@@ -54,10 +54,11 @@
         "color": "#ffffff",
         "align": "center",
         "case": "upper",
-        "vAlign": "middle",
+        "tracking": 0.02,
         "wrap": true,
         "maxLines": 2,
-        "lineHeight": 1.1
+        "lineHeight": 1.1,
+        "vAlign": "middle"
       }
     },
     {
