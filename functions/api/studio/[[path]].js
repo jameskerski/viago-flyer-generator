@@ -111,6 +111,20 @@ function artwork(dataUrl) {
 }
 
 export async function onRequest(context) {
+  if (new URL(context.request.url).pathname.endsWith('/debug-auth')) {
+    const cookie = context.request.headers.get('cookie') || '';
+    const headerToken = context.request.headers.get('cf-access-jwt-assertion');
+    const cookieToken = cookie.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
+    const token = headerToken || cookieToken;
+    let claims = null;
+    try { claims = token ? decodeJson(token.split('.')[1]) : null; } catch {}
+    return json({
+      accessHeaderNames: [...context.request.headers.keys()].filter((name) => name.includes('access')),
+      cookieNames: cookie.split(';').map((part) => part.split('=')[0].trim()).filter(Boolean),
+      tokenSource: headerToken ? 'header' : cookieToken ? 'cookie' : 'none',
+      claims: claims && { aud: claims.aud, iss: claims.iss, email: claims.email, exp: claims.exp }
+    });
+  }
   const who = await actor(context.request, context.env).catch(() => null);
   if (!who) return json({ error: 'sign in with an authorized Good Life Trainings account' }, 401);
   const path = new URL(context.request.url).pathname;
