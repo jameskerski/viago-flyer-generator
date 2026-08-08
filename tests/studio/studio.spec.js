@@ -35,6 +35,17 @@ test('Studio opens and loads an existing template as a non-mutating draft', asyn
   expect(await sha(REGISTRY)).toBe(before);
 });
 
+test('Admin Instructions opens the approved guide in a new tab without discarding the draft', async ({ page }) => {
+  await openStudio(page);
+  await page.locator('#templateId').fill('draft-stays-open');
+  const guidePromise = page.waitForEvent('popup');
+  await page.getByRole('link', { name: 'Admin Instructions' }).click();
+  const guide = await guidePromise;
+  await expect(guide).toHaveURL(/\/studio\/admin-guide\.html$/);
+  await expect(guide.getByRole('heading', { name: /VIAGO Template Studio/ })).toBeVisible();
+  await expect(page.locator('#templateId')).toHaveValue('draft-stays-open');
+});
+
 test('candidate artwork dimensions, photo drawing/moving/resizing, and normalized values are visual', async ({ page }) => {
   await openStudio(page);
   await candidate(page);

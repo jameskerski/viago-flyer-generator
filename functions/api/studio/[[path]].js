@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createGitHubAppTokenProvider } from '../../../hosted/github-app-auth.mjs';
 
 const ALLOWED_DOMAIN = 'goodlifetrainings.com';
 const CATALOG = 'public/templates.json';
@@ -29,11 +30,30 @@ async function actor(request, env) {
   return pieces.length === 2 && pieces[0] && pieces[1] === ALLOWED_DOMAIN ? { id: email, displayName: claims.name || email } : null;
 }
 
+let appProvider;
+let appProviderKey;
+
+function credentialProvider(env) {
+  const values = [env.GITHUB_APP_ID, env.GITHUB_APP_INSTALLATION_ID, env.GITHUB_APP_PRIVATE_KEY];
+  const configured = values.filter(Boolean).length;
+  if (configured && configured !== values.length) throw new Error('GitHub App credentials are only partially configured');
+  if (configured === values.length) {
+    const key = values.join('\0');
+    if (!appProvider || appProviderKey !== key) {
+      appProvider = createGitHubAppTokenProvider({ appId: values[0], installationId: values[1], privateKeyPem: values[2] });
+      appProviderKey = key;
+    }
+    return appProvider;
+  }
+  if (env.GITHUB_TOKEN) return async () => env.GITHUB_TOKEN;
+  throw new Error('server-side GitHub credential is not configured');
+}
+
 function github(env) {
-  if (!env.GITHUB_TOKEN) throw new Error('server-side GitHub credential is not configured');
+  const token = credentialProvider(env);
   const base = `https://api.github.com/repos/${env.GITHUB_OWNER || 'jameskerski'}/${env.GITHUB_REPOSITORY || 'viago-flyer-generator'}`;
   const request = async (path, options = {}) => {
-    const response = await fetch(`${base}${path}`, { ...options, headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'VIAGO-Template-Studio', 'X-GitHub-Api-Version': '2022-11-28', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } });
+    const response = await fetch(`${base}${path}`, { ...options, headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${await token()}`, 'User-Agent': 'VIAGO-Template-Studio', 'X-GitHub-Api-Version': '2022-11-28', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } });
     const text = await response.text();
     let result;
     try {

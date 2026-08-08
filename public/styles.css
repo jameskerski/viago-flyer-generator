@@ -335,10 +335,12 @@ input[type=range]::-moz-range-thumb{
 
 .foot{
   padding:0 var(--pad) calc(24px + env(safe-area-inset-bottom));
-  text-align:center;
+  display:flex; justify-content:center; align-items:center; gap:12px; text-align:center;
   font-family:var(--mono); font-size:9.5px; letter-spacing:.11em;
   text-transform:uppercase; color:var(--txt-3); opacity:.65;
 }
+.foot a{color:inherit; text-underline-offset:3px}
+.foot a:hover{color:var(--txt-2)}
 
 /* ── desktop ─────────────────────────────────────────────── */
 @media (min-width:900px){

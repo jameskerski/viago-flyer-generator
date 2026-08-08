@@ -53,7 +53,7 @@ test('authorized Google domain can publish while gmail and other domains cannot'
 test('GitHub publishing credentials and server modules are absent from browser assets', async () => {
   const browserFiles = ['public/index.html', 'public/app.js', 'public/styles.css', 'studio/index.html', 'studio/studio.js', 'studio/studio.css'];
   const contents = await Promise.all(browserFiles.map((path) => readFile(resolve(ROOT, path), 'utf8')));
-  expect(contents.join('\n')).not.toMatch(/GITHUB_TOKEN|github_pat_|BEGIN (?:RSA |EC )?PRIVATE KEY|hosted\/github-repository/);
+  expect(contents.join('\n')).not.toMatch(/GITHUB_(?:TOKEN|APP_PRIVATE_KEY)|github_pat_|BEGIN (?:RSA |EC )?PRIVATE KEY|hosted\/(?:github-repository|github-app-auth)/);
 });
 
 test('new publication validates and makes one atomic attributed catalog plus artwork commit', async () => {
