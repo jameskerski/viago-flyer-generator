@@ -1,0 +1,14 @@
+[
+  {"name": "duplicate_template_id", "expected": "duplicate template id"},
+  {"name": "invalid_photo_shape", "expected": "must be one of: rect, circle"},
+  {"name": "invalid_enum", "expected": "must be one of: left, center, right"},
+  {"name": "non_finite_geometry", "expected": "non-finite number NaN"},
+  {"name": "missing_artwork", "expected": "referenced artwork does not exist"},
+  {"name": "artwork_dimension_mismatch", "expected": "registry declares"},
+  {"name": "path_traversal", "expected": "safe relative path"},
+  {"name": "missing_required_property", "expected": "required property is missing"},
+  {"name": "malformed_json", "expected": "invalid JSON"},
+  {"name": "unsupported_font_declaration", "expected": "is not loaded by public/index.html"},
+  {"name": "broken_routes_behavior", "expected": "must exactly route only /api/*"},
+  {"name": "unsupported_template_property", "expected": "unsupported property"}
+]

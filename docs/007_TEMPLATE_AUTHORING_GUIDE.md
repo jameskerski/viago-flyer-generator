@@ -130,7 +130,16 @@ Registration is the act of adding the entry to the `templates` array and adding 
 
 Serve the received app through an HTTP server or Cloudflare preview; do not rely only on opening `index.html` as a file because fetch/module behavior differs.
 
+Before asking for promotion, run from the repository root:
+
+```bash
+python3 tools/validate_baseline.py
+```
+
+This read-only command validates the Version 1 contract, artwork dimensions and paths, loaded flyer fonts, Functions-only routing, and baseline inventory. It never promotes suggested geometry or rewrites production data. `tools/build_templates.py` remains a geometry-analysis assistant despite its broad name; its output must be reviewed and transferred explicitly.
+
 - [ ] `templates.json` parses as JSON.
+- [ ] `python3 tools/validate_baseline.py` exits zero.
 - [ ] ID is unique and artwork path exists with exact dimensions.
 - [ ] Category and chip appear in the intended order.
 - [ ] Thumbnail is recognizable and label fits.
@@ -163,4 +172,3 @@ Keep approved fixture inputs and expected PNGs once Phase E testing exists.
 - Losing the paired exports or leaving the only layered source in a personal Canva account.
 - Testing only a short name or centered portrait.
 - Forgetting that array order controls tabs, chips, and the default flyer.
-

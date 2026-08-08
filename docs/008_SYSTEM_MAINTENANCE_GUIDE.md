@@ -6,6 +6,8 @@ Version 1 intentionally centralizes variation in artwork and `templates.json`, w
 
 Before any change, capture representative PNG outputs and the deployed mobile/desktop views. Afterward, compare those same cases. The preview alone is insufficient when the change touches intrinsic rendering.
 
+Run `python3 tools/validate_baseline.py` before and after every template, artwork, font-declaration, routing, or baseline-manifest change. The validator is read-only and dependency-free. A pass proves structural/repository consistency; it does not prove visual correctness, design approval, browser behavior, accessibility, privacy, licensing, or deployment readiness. Those remain separate review gates.
+
 ## Changing UI colors
 
 UI colors live as CSS custom properties at the top of `public/styles.css`, with some component-specific values later in the file. Change tokens first so related states remain coherent. Verify normal, hover/focus, selected, busy, warning, and disabled/hidden states and contrast.
@@ -100,6 +102,8 @@ Use this sequence:
 6. add pixel/behavior tests; and
 7. document it in the authoring contract.
 
+Contract v1 lives at `contracts/templates.schema.v1.json` and is explained in `docs/TEMPLATE_CONTRACT.md`. Future contracts must accept existing Version 1 data and preserve effective defaults unless an explicit breaking behavior change is separately approved. Contract/schema files are tooling documentation and must never become a duplicate runtime catalog.
+
 Keep properties declarative and rendering-specific. Do not put executable expressions or template-specific branches in JSON. Likely safe future examples are explicit photo rotation or name shadow parameters; each still needs a product-approved requirement.
 
 ## Background-removal maintenance
@@ -127,4 +131,3 @@ After deployment, verify repeated asset requests return the new version, then ru
 | Download fails | Canvas console error, remote/CORS-tainted artwork, Blob support, render/load race |
 | Cutout slow | server not configured/reachable, browser model first download |
 | Static files intermittently fail | `_routes.json`, Cloudflare deployment propagation |
-

@@ -32,6 +32,8 @@ Every phase preserves Version 1 UI, workflow, Canvas rendering model, and output
 
 ## Phase C — Typed template contracts
 
+**Status:** Completed with contract v1 on 2026-08-07. See [`TEMPLATE_CONTRACT.md`](TEMPLATE_CONTRACT.md) and [`PHASE_C_D_RECORD.md`](PHASE_C_D_RECORD.md).
+
 **Objective:** Make the implicit JSON contract explicit and versioned.
 
 **Scope:** Define a minimal JSON Schema and/or checked type contract for Version 1 fields, enums, ranges, unique IDs, path conventions, category/order behavior, and compatibility defaults. Do not introduce a framework or change registry values.
@@ -43,6 +45,8 @@ Every phase preserves Version 1 UI, workflow, Canvas rendering model, and output
 **Exit evidence:** Schema tests prove every existing effective default and all baseline registry entries validate.
 
 ## Phase D — Validation
+
+**Status:** Completed with the dependency-free, read-only baseline validator and negative fixtures on 2026-08-07. See [`PHASE_C_D_RECORD.md`](PHASE_C_D_RECORD.md).
 
 **Objective:** Detect broken releases before the browser does.
 
