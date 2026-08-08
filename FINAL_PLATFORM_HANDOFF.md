@@ -94,7 +94,7 @@ Cloudflare is the hosting, deployment, and private-access layer:
 - Access policy `Good Life Trainings Google users` allows only verified emails ending exactly in `goodlifetrainings.com`.
 - Google identity provider `Google — Good Life Trainings` performs individual sign-in.
 
-A redundant earlier Pages project named `viago-template-studio` is not the protected production Studio. It should be permanently deleted after explicit deletion approval; do not advertise or use it.
+The redundant earlier Pages project `viago-template-studio` was permanently deleted on August 8, 2026. The protected Worker is the only Template Studio deployment.
 
 ## Accepted architecture
 
@@ -213,7 +213,6 @@ The accepted complete suite validates the 14-template contract, negative validat
 - Add content-hashed release versioning if mixed Cloudflare edge caches become an observed problem.
 - Enable a paid server-side background-removal provider only after privacy, abuse, quota, and budget controls are approved.
 - Improve reproducible generation from layered Canva/source exports; visual inference must not become authoritative geometry.
-- Delete the redundant public `viago-template-studio` Pages project after explicit permanent-deletion approval.
 
 Do not implement a database, object storage, persistent drafts, CMS, Google Drive runtime API, separate admin roster, or broader GitHub credential to pursue these ideas.
 
