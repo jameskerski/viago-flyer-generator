@@ -74,6 +74,8 @@ Every phase preserves Version 1 UI, workflow, Canvas rendering model, and output
 
 ## Phase F — Dependency hardening
 
+**Authoring improvement completed:** A separate localhost-only visual Template Studio was accepted on 2026-08-07. See [`TEMPLATE_STUDIO.md`](TEMPLATE_STUDIO.md) and [`AUTHORING_IMPROVEMENT_001_TEMPLATE_STUDIO.md`](AUTHORING_IMPROVEMENT_001_TEMPLATE_STUDIO.md). It reuses the existing renderer and validator, preserves explicit promotion, and does not begin Phase F or change public runtime behavior.
+
 **Objective:** Make runtime, tooling, security, and deployment dependencies controlled and reproducible.
 
 **Scope:** Pin Wrangler, Python, Pillow, and NumPy; record supported runtime versions; self-host/checksum fonts and approved IMG.LY code/model if licensing permits; add CSP/security headers; validate cutout types/magic bytes, timeouts, result host/type/size, rate/cost controls; dependency and provider review; privacy-approved logging; edge-cache/versioning strategy.
@@ -89,6 +91,8 @@ Every phase preserves Version 1 UI, workflow, Canvas rendering model, and output
 **Objective:** Make a new/updated template reproducible from owned sources.
 
 **Scope:** Acquire layered and paired exports; reconcile `build_templates.py` with production paths, JPEG convention, plural categories, and clean output schema; pin image encoders/dependencies; separate diagnostic output from promotable registry; add fixture/checksum tests and an explicit review/promote step. Preserve manual override support for approved exceptions such as Amplified.
+
+The accepted Template Studio supplies visual draft/review/promotion mechanics for approved JPEGs. Phase G still owns reproducible generation from layered and paired source exports; the Studio does not make image-diff inference authoritative.
 
 **Risk:** Automated detection can infer wrong geometry from anti-aliasing or unrelated design changes; JPEG encoders differ.
 

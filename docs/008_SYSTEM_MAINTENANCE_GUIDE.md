@@ -10,6 +10,8 @@ Run `python3 tools/validate_baseline.py` before and after every template, artwor
 
 From Phase E onward, run `npm ci` once and then `npm run test:all` for complete local regression evidence. Browser and visual tests use a deterministic localhost server; never substitute `file://`. Visual checks require the pinned Playwright Chromium and successful delivery of the existing Google-hosted Josefin Sans font. Review snapshot changes rather than updating them automatically as a way to make a failure pass.
 
+For visual template maintenance, use the localhost-only [VIAGO Template Studio](TEMPLATE_STUDIO.md). Loading and editing produce drafts only. Validation and review are non-mutating; promotion requires a valid checksum-bound plan and typed `PROMOTE`. After a promotion, commit the catalog and artwork together. To roll back, revert both together and rerun the validator and full suite.
+
 ## Changing UI colors
 
 UI colors live as CSS custom properties at the top of `public/styles.css`, with some component-specific values later in the file. Change tokens first so related states remain coherent. Verify normal, hover/focus, selected, busy, warning, and disabled/hidden states and contrast.
@@ -58,6 +60,8 @@ To change the default without changing visible order would require a behavior ch
 ## Adding or replacing backgrounds/artwork
 
 Follow the authoring guide. Preserve exact dimensions when replacing an existing file. If dimensions change, update `w`, `h`, all photo/name geometry, and typography sizing and reapprove the result.
+
+The Studio copies candidate artwork into `public/art/<id>.jpg` only during explicit promotion. Local sample photos are preview-only and must never enter the catalog or artwork directory.
 
 JPEGs are flattened compositions. Logos, colors, and background elements cannot be safely edited as independent components in code. Use the layered design source, export a new clean asset, and retain provenance.
 

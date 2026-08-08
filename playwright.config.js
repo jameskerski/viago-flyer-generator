@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: ['browser/**/*.spec.js', 'function/**/*.spec.js'],
+  testMatch: ['browser/**/*.spec.js', 'function/**/*.spec.js', 'studio/**/*.spec.js'],
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -30,7 +30,7 @@ export default defineConfig({
     video: 'off'
   },
   webServer: {
-    command: 'node tests/server.mjs',
+    command: 'node tools/template-studio-server.mjs',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 15_000

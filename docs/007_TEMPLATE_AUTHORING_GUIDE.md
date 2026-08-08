@@ -4,6 +4,8 @@
 
 Following this guide produces one flattened artwork file plus one reviewed entry in `public/templates.json`. No source-code change is needed when the new flyer fits the existing rectangle/circle photo and name model.
 
+The preferred operator workflow is the local [VIAGO Template Studio](TEMPLATE_STUDIO.md), started with `npm run studio`. It removes the need to calculate normalized geometry by hand while preserving the source, review, validation, and explicit-promotion requirements below. Manual editing remains a supported recovery/advanced path.
+
 ## Before starting
 
 Obtain the layered VIAGO Canva design and permission to export/use it. Do not use the flattened production JPEG as the editable master. Record the designer, Canva URL/design ID, approval date, fonts, and source-owner contact in the template change record.
@@ -54,6 +56,8 @@ Template coordinates are fractions:
 For the name, `x` is normally the horizontal center. `y` is a baseline, not a box top. `size` is font pixels divided by canvas width. `maxWidth` is allowed line width divided by canvas width.
 
 The supplied `tools/build_templates.py` can diff paired files expected under `tools/canva/` and `tools/clean/`, but it is not currently a one-command production generator: those source folders are absent, it writes `tools/templates.json` rather than `public/templates.json`, emits `.png` artwork paths while production uses `.jpg`, uses singular category metadata inconsistent with production's plural categories, and contains diagnostic underscore fields. Treat it as a geometry assistant. Review and manually transfer the intended values; never overwrite the runtime registry blindly.
+
+The Template Studio provides the normal visual workflow: draw/move/resize the photo region, drag the name anchor and width, inspect the resulting fractions, preview through the production renderer, validate, and prepare a checksum-bound promotion plan. It does not make automated image-diff output authoritative.
 
 `tools/diff_windows.py` is useful for inspecting detected pixel/fraction boxes. A circle is inferred when the changed fill ratio is close to π/4. Detection can be confused by shadows, anti-aliasing, gradients, or any unrelated differences between the two exports.
 
@@ -135,6 +139,8 @@ Before asking for promotion, run from the repository root:
 ```bash
 python3 tools/validate_baseline.py
 ```
+
+When using the Studio, select **Validate template**, download and review its artifact, select **Prepare promotion**, inspect the proposed order and target paths, then type `PROMOTE`. Only the final promotion action may write `public/templates.json` and `public/art/<id>.jpg`.
 
 This read-only command validates the Version 1 contract, artwork dimensions and paths, loaded flyer fonts, Functions-only routing, and baseline inventory. It never promotes suggested geometry or rewrites production data. `tools/build_templates.py` remains a geometry-analysis assistant despite its broad name; its output must be reviewed and transferred explicitly.
 

@@ -348,12 +348,13 @@ def validate_authoring_inputs(v: Validation, root: Path) -> None:
         v.error("authoring inputs", f"paired filenames differ; missing clean={sorted(originals-cleans)}, missing original={sorted(cleans-originals)}")
 
 
-def run(root: Path) -> Validation:
+def run(root: Path, *, reconcile_manifest: bool = True) -> Validation:
     v = Validation()
     templates, ids = validate_registry(v, root)
     validate_fonts(v, root, templates)
     validate_routes(v, root)
-    validate_manifest(v, root, ids)
+    if reconcile_manifest:
+        validate_manifest(v, root, ids)
     validate_authoring_inputs(v, root)
     return v
 
@@ -361,9 +362,10 @@ def run(root: Path) -> Validation:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate the read-only VIAGO Version 1 template baseline")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1], help="repository root (defaults to this script's repository)")
+    parser.add_argument("--skip-baseline-inventory", action="store_true", help="validate a Studio candidate catalog without requiring the received baseline manifest to match")
     args = parser.parse_args()
     root = args.root.resolve()
-    result = run(root)
+    result = run(root, reconcile_manifest=not args.skip_baseline_inventory)
     for warning in sorted(result.warnings):
         print(f"WARNING: {warning}")
     if result.errors:

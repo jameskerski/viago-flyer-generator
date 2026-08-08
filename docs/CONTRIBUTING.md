@@ -16,6 +16,8 @@ Keep this a small static application. Do not introduce Next.js, React, a databas
 
 Template tools may suggest geometry. A person must review and explicitly promote values into `public/templates.json`.
 
+Use `npm run studio` for the visual authoring workflow and follow [`TEMPLATE_STUDIO.md`](TEMPLATE_STUDIO.md). Validation, review-artifact generation, and plan preparation are intentionally non-mutating. Inspect the exact paths and before/after order, then type `PROMOTE` only for an approved change. Commit `public/templates.json` and its `public/art/<id>.jpg` together; never deploy `studio/` as a public administration surface.
+
 ## Pull-request evidence
 
 - purpose and authorization;
@@ -27,3 +29,5 @@ Template tools may suggest geometry. A person must review and explicitly promote
 - documentation/provenance updates.
 
 No application behavior change was authorized during Phase B.
+
+For Studio changes, run `npm run test:studio` and the complete public-generator suite. Promotion tests must use a temporary repository and must never write the canonical registry.

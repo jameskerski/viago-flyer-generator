@@ -12,6 +12,8 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 - [Template contract v1](TEMPLATE_CONTRACT.md)
 - [Phase C/D completion record](PHASE_C_D_RECORD.md)
 - [Phase E regression-evidence record](PHASE_E_RECORD.md)
+- [VIAGO Template Studio operator guide](TEMPLATE_STUDIO.md)
+- [Authoring Improvement 001 completion record](AUTHORING_IMPROVEMENT_001_TEMPLATE_STUDIO.md)
 - [Machine-readable baseline manifest](baseline-manifest.json)
 - [Ownership and provenance](OWNERSHIP_AND_PROVENANCE.md)
 - [Contribution guidance](CONTRIBUTING.md)
@@ -37,5 +39,6 @@ The earlier Next.js implementation is superseded. Do not merge it into this repo
 - Phase B made no changes to runtime files or user-visible behavior.
 - Phase C/D added a read-only contract and validator; `public/templates.json` remains the sole runtime catalog.
 - Phase E added development-only browser, Function, responsive, accessibility-smoke, download, cutout-mock, and visual regression gates; production runtime bytes remain unchanged.
+- Authoring Improvement 001 added a separate localhost-only visual Template Studio; it cannot mutate the catalog until a validated plan and explicit typed promotion.
 
 No repository license is present. Code, artwork, source-design, font, and third-party rights remain an explicit takeover gate; see the ownership record.

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VIAGO Template Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Josefin+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body>
+  <header>
+    <div><span class="eyebrow">LOCAL AUTHORING TOOL</span><h1>VIAGO Template Studio</h1></div>
+    <div class="authority">Draft → validate → review → explicit promotion<br><strong>Never production authority by itself</strong></div>
+  </header>
+  <main>
+    <section class="workspace">
+      <div class="preview-head">
+        <div><span class="step">LIVE PREVIEW</span><h2 id="previewTitle">Choose artwork</h2></div>
+        <div class="segmented"><button id="editMode" class="active">Edit overlays</button><button id="previewMode">Production preview</button></div>
+      </div>
+      <div class="canvas-shell" style="height:calc(100vh - 260px);min-height:280px;flex:0 1 auto"><canvas id="authorCanvas" width="800" height="1080" style="max-height:calc(100vh - 280px)"></canvas><div id="canvasEmpty">Load a JPEG artwork to begin</div></div>
+      <div class="tool-row">
+        <button id="drawPhoto" class="tool active">Draw photo region</button>
+        <button id="movePhoto" class="tool">Move/resize photo</button>
+        <button id="moveName" class="tool">Move name/width</button>
+      </div>
+      <p class="hint">Drag on the flyer to draw. In move mode, drag the region or its lower-right handle. Name mode moves the anchor or max-width handle.</p>
+      <iframe id="runtimeFrame" src="/runtime/" title="Production renderer used for draft preview" hidden></iframe>
+    </section>
+
+    <section class="controls" aria-label="Template authoring steps">
+      <article>
+        <div class="section-title"><b>01</b><h2>Start a draft</h2></div>
+        <div class="row"><label>Draft source<select id="draftSource"><option value="new">New template</option><option value="existing">Existing template</option></select></label><label id="existingWrap" hidden>Existing template<select id="existingTemplate"></select></label></div>
+        <label class="file"><span>Clean production JPEG</span><input id="artworkFile" type="file" accept="image/jpeg,.jpg,.jpeg"></label>
+        <div id="artworkMeta" class="meta">No artwork selected.</div>
+      </article>
+
+      <article>
+        <div class="section-title"><b>02</b><h2>Identity and order</h2></div>
+        <div class="grid two"><label>Template ID<input id="templateId" placeholder="new-flyer"></label><label>User-facing label<input id="label" placeholder="New Flyer"></label><label>Category<input id="category" list="categoryList"><datalist id="categoryList"></datalist></label><label>Accent color<input id="accent" type="color" value="#8dfa00"></label></div>
+        <label>Position within category<select id="categoryPosition"></select></label>
+        <p class="note">Array order is behavior. The first category/template controls defaults; nothing is alphabetically sorted.</p>
+        <ol id="orderPreview" class="order"></ol>
+      </article>
+
+      <article>
+        <div class="section-title"><b>03</b><h2>Photo region</h2></div>
+        <div class="row"><label>Shape<select id="photoShape"><option value="rect">Rectangle</option><option value="circle">Circle / ellipse</option></select></label><span class="note">Circle uses an ellipse when width and height differ.</span></div>
+        <div class="grid four numeric"><label>x<input id="photoX" type="number" min="0" max="1" step="0.00001"></label><label>y<input id="photoY" type="number" min="0" max="1" step="0.00001"></label><label>w<input id="photoW" type="number" min="0.00001" max="1" step="0.00001"></label><label>h<input id="photoH" type="number" min="0.00001" max="1" step="0.00001"></label></div>
+        <label class="file"><span>Optional local sample photo</span><input id="samplePhoto" type="file" accept="image/*"></label>
+      </article>
+
+      <article>
+        <div class="section-title"><b>04</b><h2>Name region</h2></div>
+        <div class="presets"><button data-name="Ava">Short</button><button data-name="Avery Stone">Two-word</button><button data-name="Alexandria Montgomery Rivera">Long</button></div>
+        <label>Preview name<input id="sampleName" value="Avery Stone"></label>
+        <div class="grid four numeric"><label>x<input id="nameX" type="number" step="0.00001"></label><label>y<input id="nameY" type="number" step="0.00001"></label><label>Max width<input id="nameMaxWidth" type="number" step="0.00001"></label><label>Size<input id="nameSize" type="number" step="0.00001"></label></div>
+        <label>Font<input id="nameFont" value="Josefin Sans"></label>
+        <div class="grid four"><label>Weight<input id="nameWeight" type="number" min="1" max="1000" value="700"></label><label>Color<input id="nameColor" type="color" value="#ffffff"></label><label>Align<select id="nameAlign"><option>left</option><option selected>center</option><option>right</option></select></label><label>Case<select id="nameCase"><option value="upper">Uppercase</option><option value="none">Preserve</option></select></label></div>
+        <div class="grid four"><label>Tracking<input id="nameTracking" type="number" step="0.001" value="0.02"></label><label>Max lines<input id="nameMaxLines" type="number" min="0" value="3"></label><label>Line height<input id="nameLineHeight" type="number" step="0.01" value="1.15"></label><label>Vertical alignment<select id="nameVAlign"><option value="baseline">Final baseline</option><option value="top">Top</option><option value="middle">Middle</option></select></label></div>
+        <label class="check"><input id="nameWrap" type="checkbox"> Allow word wrapping</label>
+      </article>
+
+      <article>
+        <div class="section-title"><b>05</b><h2>Source and provenance</h2></div>
+        <div class="grid two"><label>Designer / source<input id="provDesigner" placeholder="Unknown"></label><label>Canva URL or design ID<input id="provCanva" placeholder="Unknown"></label><label>Approval reference<input id="provApproval" placeholder="Unknown"></label><label>Source owner / contact<input id="provOwner" placeholder="Unknown"></label><label>Reference-export checksum<input id="provReference" placeholder="Unknown"></label><label>Notes<textarea id="provNotes" rows="2" placeholder="Unknown"></textarea></label></div>
+        <p class="note">Unknown provenance stays explicitly “Unknown”; the Studio never invents ownership evidence.</p>
+      </article>
+
+      <article class="review">
+        <div class="section-title"><b>06</b><h2>Validate, review, promote</h2></div>
+        <div class="actions"><button id="validate" class="primary">Validate template</button><button id="reviewArtifact">Generate review artifact</button><button id="preparePromotion">Prepare promotion</button></div>
+        <div id="validationResult" class="result neutral">Not validated.</div>
+        <details><summary>Proposed template JSON</summary><pre id="jsonPreview"></pre></details>
+        <details id="planDetails"><summary>Exact promotion plan</summary><pre id="planPreview">Prepare promotion to see the before/after order and target files.</pre></details>
+        <div class="danger">
+          <label>Type PROMOTE after reviewing the plan<input id="promotionConfirmation" autocomplete="off"></label>
+          <button id="promote" disabled>Promote template to catalog</button>
+          <p>No save, preview, validation, or review action writes production files.</p>
+        </div>
+      </article>
+    </section>
+  </main>
+  <script type="module" src="studio.js"></script>
+</body>
+</html>
