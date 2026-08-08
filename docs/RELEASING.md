@@ -4,7 +4,7 @@ The target topology is public Cloudflare Pages from approved Git state plus a se
 
 ## Current state
 
-The product and deployment architecture are accepted, including Google authentication through Cloudflare Access with an exact `goodlifetrainings.com` email-domain rule. Live deployment still awaits a Viago-controlled GitHub repository, valid publishing identity, Cloudflare account/projects, Access application values, and generated URLs.
+The product and deployment architecture are accepted, including Google authentication through Cloudflare Access with an exact `goodlifetrainings.com` email-domain rule. The canonical `main` history is pushed to the Viago-designated GitHub repository. Live deployment still awaits the repository-scoped publishing identity, Cloudflare account/projects, Access application values, and generated URLs.
 
 ## Release discipline
 

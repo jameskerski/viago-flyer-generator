@@ -45,12 +45,11 @@ The server writes only generated `public/templates.json` and exact `public/art/<
 
 ## Required setup boundary
 
-No Git remote or account configuration is present. A VIAGO owner must provide:
+The canonical repository is now connected to the Viago-designated GitHub remote. Remaining account setup requires:
 
-1. canonical GitHub repository owner/name and publishing branch;
-2. a narrowly scoped GitHub App installed only on that repository;
-3. Cloudflare account, public Pages project, private admin deployment, and Git connection;
-4. a Cloudflare Access Google identity-provider connection and application audience/team-domain values; and
-5. private-deployment secret injection for the repository-scoped GitHub identity.
+1. a narrowly scoped GitHub App installed only on the canonical repository and publishing branch;
+2. Cloudflare account, public Pages project, private admin deployment, and Git connection;
+3. a Cloudflare Access Google identity-provider connection and application audience/team-domain values; and
+4. private-deployment secret injection for the repository-scoped GitHub identity.
 
 Only then should a deployment-specific auth adapter and hosting entrypoint be connected. Do not guess these values.
