@@ -16,7 +16,8 @@ const safeId = (id) => typeof id === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.te
 async function actor(request, env) {
   const cookieToken = request.headers.get('cookie')?.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
   const token = request.headers.get('cf-access-jwt-assertion') || cookieToken;
-  if (!token || !env.CF_ACCESS_AUD || !env.CF_TEAM_DOMAIN) return null;
+  if (!token) throw new Error('missing_access_assertion');
+  if (!env.CF_ACCESS_AUD || !env.CF_TEAM_DOMAIN) throw new Error('missing_access_configuration');
   const jwks = createRemoteJWKSet(new URL(`${env.CF_TEAM_DOMAIN.replace(/\/$/, '')}/cdn-cgi/access/certs`));
   const { payload: claims } = await jwtVerify(token, jwks, {
     audience: env.CF_ACCESS_AUD,
@@ -104,7 +105,12 @@ function artwork(dataUrl) {
 }
 
 export async function onRequest(context) {
-  const who = await actor(context.request, context.env).catch(() => null);
+  let who;
+  try {
+    who = await actor(context.request, context.env);
+  } catch (error) {
+    return json({ error: `authentication validation failed: ${error.code || error.message}` }, 401);
+  }
   if (!who) return json({ error: 'sign in with an authorized Good Life Trainings account' }, 401);
   const path = new URL(context.request.url).pathname;
   try {
