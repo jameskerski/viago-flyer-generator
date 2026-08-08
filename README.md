@@ -1,5 +1,7 @@
 # VIAGO Recognition Flyer Tool
 
+Permanent operations manual: [`FINAL_PLATFORM_HANDOFF.md`](FINAL_PLATFORM_HANDOFF.md)
+
 > **Hosted publishing:** GitHub is the authoritative published catalog/artwork state; Canva/Drive remains editable-source storage; Cloudflare hosts the static public generator; and a separately protected Google-authenticated Template Studio publishes atomic Git commits. Access is limited to verified `@goodlifetrainings.com` Google identities, with no admin roster or database. See [`docs/HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md`](docs/HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md) and [`docs/PLATFORM_OPERATOR_GUIDE.md`](docs/PLATFORM_OPERATOR_GUIDE.md).
 
 > **Canonical Version 1 repository.** This plain HTML/CSS/JavaScript and Canvas

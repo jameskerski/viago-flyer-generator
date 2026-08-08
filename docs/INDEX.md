@@ -1,5 +1,7 @@
 # VIAGO Flyer Generator Documentation
 
+- [`../FINAL_PLATFORM_HANDOFF.md`](../FINAL_PLATFORM_HANDOFF.md) — permanent production operating manual and platform handoff.
+
 - [`HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md`](HOSTED_TEMPLATE_STUDIO_ARCHITECTURE.md) — private authentication, GitHub-backed publishing/retirement, concurrency, and deployment boundary.
 - [`PLATFORM_OPERATOR_GUIDE.md`](PLATFORM_OPERATOR_GUIDE.md) — public embed, Google-domain Studio access, publishing, retirement, source storage, and recovery.
 
