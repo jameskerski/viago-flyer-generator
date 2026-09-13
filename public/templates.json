@@ -313,22 +313,26 @@
       "w": 800,
       "h": 1080,
       "photo": {
-        "shape": "circle",
-        "x": 0.28375,
-        "y": 0.41574,
-        "w": 0.4275,
-        "h": 0.31667
+        "shape": "rect",
+        "x": 0.53901,
+        "y": 0.23592,
+        "w": 0.41996,
+        "h": 0.51563
       },
       "name": {
         "x": 0.50062,
-        "y": 0.79722,
-        "maxWidth": 0.28263,
-        "size": 0.0425,
+        "y": 0.8946,
+        "maxWidth": 0.38298,
+        "size": 0.72603,
         "font": "Josefin Sans",
         "weight": 700,
-        "color": "#ffffff",
+        "color": "#00f900",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": true,
+        "maxLines": 3,
+        "lineHeight": 1.15
       }
     },
     {
