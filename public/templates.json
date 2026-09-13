@@ -274,30 +274,34 @@
       }
     },
     {
-      "id": "jacksonville-im",
-      "label": "Jacksonville (Individual)",
+      "id": "playa-im",
+      "label": "Playa (Individual)",
       "category": "Events",
       "accent": "#8dfa00",
-      "art": "art/jacksonville-im.jpg",
+      "art": "art/playa-im.jpg",
       "w": 800,
       "h": 1080,
       "photo": {
-        "shape": "circle",
-        "x": 0.28375,
-        "y": 0.41574,
-        "w": 0.4275,
-        "h": 0.31667
+        "shape": "rect",
+        "x": 0.5362,
+        "y": 0.23693,
+        "w": 0.42252,
+        "h": 0.50931
       },
       "name": {
         "x": 0.50062,
-        "y": 0.79722,
+        "y": 0.8696,
         "maxWidth": 0.28263,
-        "size": 0.0425,
+        "size": 0.0796,
         "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
+        "weight": 716,
+        "color": "#00f900",
         "align": "center",
-        "case": "upper"
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
       }
     },
     {
