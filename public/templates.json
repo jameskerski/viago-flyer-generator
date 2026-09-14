@@ -305,25 +305,25 @@
       }
     },
     {
-      "id": "jacksonville-we",
-      "label": "Jacksonville (Couple)",
+      "id": "playa-we",
+      "label": "passport playa (Couple)",
       "category": "Events",
       "accent": "#8dfa00",
-      "art": "art/jacksonville-we.jpg",
+      "art": "art/playa-we.jpg",
       "w": 800,
       "h": 1080,
       "photo": {
         "shape": "rect",
-        "x": 0.53901,
-        "y": 0.23592,
-        "w": 0.41996,
-        "h": 0.51563
+        "x": 0.53697,
+        "y": 0.23398,
+        "w": 0.42216,
+        "h": 0.51745
       },
       "name": {
         "x": 0.50062,
-        "y": 0.8946,
-        "maxWidth": 0.38298,
-        "size": 0.72603,
+        "y": 0.97,
+        "maxWidth": 0.6,
+        "size": 0.07,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#00f900",
