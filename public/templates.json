@@ -34,6 +34,38 @@
       }
     },
     {
+      "id": "join-viagolife-deluxe",
+      "label": "Welcome Viago Delux",
+      "category": "General",
+      "accent": "#8dfa00",
+      "art": "art/join-viagolife-deluxe.jpg",
+      "w": 1237,
+      "h": 1600,
+      "photo": {
+        "shape": "circle",
+        "x": 0.33415,
+        "y": 0.35828,
+        "w": 0.32966,
+        "h": 0.25755
+      },
+      "name": {
+        "x": 0.5,
+        "y": 0.66,
+        "maxWidth": 0.57,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#6401fe",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15,
+        "vAlign": "middle"
+      }
+    },
+    {
       "id": "deluxepack",
       "label": "Welcome  Deluxe Pack",
       "category": "General",
@@ -95,37 +127,6 @@
         "maxLines": 3,
         "lineHeight": 1.15,
         "vAlign": "middle"
-      }
-    },
-    {
-      "id": "join-viagolife-deluxe",
-      "label": "Welcome Viago Life",
-      "category": "General",
-      "accent": "#8dfa00",
-      "art": "art/join-viagolife-deluxe.jpg",
-      "w": 1237,
-      "h": 1600,
-      "photo": {
-        "shape": "circle",
-        "x": 0.32256,
-        "y": 0.33224,
-        "w": 0.34941,
-        "h": 0.26586
-      },
-      "name": {
-        "x": 0.5,
-        "y": 0.65,
-        "maxWidth": 0.57,
-        "size": 0.05,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#6401fe",
-        "align": "center",
-        "case": "upper",
-        "tracking": 0.02,
-        "wrap": false,
-        "maxLines": 3,
-        "lineHeight": 1.15
       }
     },
     {
