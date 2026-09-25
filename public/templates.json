@@ -395,13 +395,13 @@
         "h": 0.51483
       },
       "name": {
-        "x": 0.50062,
-        "y": 0.8696,
+        "x": 0.47951,
+        "y": 0.81693,
         "maxWidth": 0.71957,
         "size": 0.04994,
         "font": "Josefin Sans",
         "weight": 737,
-        "color": "#00f900",
+        "color": "#00fa11",
         "align": "center",
         "case": "upper",
         "tracking": 0.02,
