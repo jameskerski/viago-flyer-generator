@@ -128,15 +128,15 @@
       "h": 2000,
       "photo": {
         "shape": "circle",
-        "x": 0.32953,
-        "y": 0.35812,
-        "w": 0.34362,
-        "h": 0.26056
+        "x": 0.32338,
+        "y": 0.35762,
+        "w": 0.35326,
+        "h": 0.26179
       },
       "name": {
         "x": 0.49945,
-        "y": 0.67581,
-        "maxWidth": 0.7,
+        "y": 0.66,
+        "maxWidth": 0.57,
         "size": 0.05,
         "font": "Josefin Sans",
         "weight": 700,
@@ -146,7 +146,8 @@
         "tracking": 0.02,
         "wrap": false,
         "maxLines": 3,
-        "lineHeight": 1.15
+        "lineHeight": 1.15,
+        "vAlign": "middle"
       }
     },
     {
