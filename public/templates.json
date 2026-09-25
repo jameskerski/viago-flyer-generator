@@ -3,6 +3,37 @@
   "source": "VIAGO Canva \"Viago Rank & Event Recognition\"",
   "templates": [
     {
+      "id": "welcome-new-member",
+      "label": "Welcome Template",
+      "category": "General",
+      "accent": "#8dfa00",
+      "art": "art/welcome-new-member.jpg",
+      "w": 1545,
+      "h": 1999,
+      "photo": {
+        "shape": "circle",
+        "x": 0.23787,
+        "y": 0.29098,
+        "w": 0.52414,
+        "h": 0.40445
+      },
+      "name": {
+        "x": 0.50672,
+        "y": 0.72724,
+        "maxWidth": 0.7,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      }
+    },
+    {
       "id": "deluxepack",
       "label": "Welcome  Deluxe Pack",
       "category": "General",
@@ -89,37 +120,6 @@
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#6401fe",
-        "align": "center",
-        "case": "upper",
-        "tracking": 0.02,
-        "wrap": false,
-        "maxLines": 3,
-        "lineHeight": 1.15
-      }
-    },
-    {
-      "id": "welcome-new-member",
-      "label": "Welcome Template",
-      "category": "General",
-      "accent": "#8dfa00",
-      "art": "art/welcome-new-member.jpg",
-      "w": 1545,
-      "h": 1999,
-      "photo": {
-        "shape": "circle",
-        "x": 0.23458,
-        "y": 0.29601,
-        "w": 0.52048,
-        "h": 0.38961
-      },
-      "name": {
-        "x": 0.50672,
-        "y": 0.72724,
-        "maxWidth": 0.7,
-        "size": 0.05,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
         "align": "center",
         "case": "upper",
         "tracking": 0.02,
