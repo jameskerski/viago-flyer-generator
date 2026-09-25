@@ -119,6 +119,37 @@
       }
     },
     {
+      "id": "join-viagolife-deluxe",
+      "label": "Welcome Template",
+      "category": "General",
+      "accent": "#8dfa00",
+      "art": "art/join-viagolife-deluxe.jpg",
+      "w": 1545,
+      "h": 2000,
+      "photo": {
+        "shape": "circle",
+        "x": 0.32953,
+        "y": 0.35812,
+        "w": 0.34362,
+        "h": 0.26056
+      },
+      "name": {
+        "x": 0.49945,
+        "y": 0.67581,
+        "maxWidth": 0.7,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#6401fe",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      }
+    },
+    {
       "id": "welcome-new-member",
       "label": "Welcome Template",
       "category": "General",
