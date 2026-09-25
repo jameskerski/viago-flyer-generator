@@ -166,9 +166,9 @@
         "h": 0.26056
       },
       "name": {
-        "x": 0.49387,
-        "y": 0.66875,
-        "maxWidth": 0.7,
+        "x": 0.5,
+        "y": 0.65,
+        "maxWidth": 0.57,
         "size": 0.05,
         "font": "Josefin Sans",
         "weight": 700,
@@ -178,7 +178,8 @@
         "tracking": 0.02,
         "wrap": false,
         "maxLines": 3,
-        "lineHeight": 1.15
+        "lineHeight": 1.15,
+        "vAlign": "middle"
       }
     },
     {
