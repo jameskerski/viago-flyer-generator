@@ -118,6 +118,22 @@ function validateTemplate(template) {
   return errors;
 }
 
+function validateEvolvingCatalog(registry) {
+  const errors = [];
+  if (!registry || registry.version !== 2 || !Array.isArray(registry.templates) || registry.templates.length === 0) {
+    return ['The resulting catalog must contain at least one version 2 template.'];
+  }
+  const seen = new Set();
+  for (const template of registry.templates) {
+    errors.push(...validateTemplate(template).map((message) => `${template?.id || 'unknown'}: ${message}`));
+    if (!safeId(template?.id)) continue;
+    if (seen.has(template.id)) errors.push(`Duplicate template ID: ${template.id}.`);
+    seen.add(template.id);
+    if (template.art !== `art/${template.id}.jpg`) errors.push(`${template.id}: Artwork path must match the template ID.`);
+  }
+  return errors;
+}
+
 function artwork(dataUrl) {
   if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/jpeg;base64,')) throw new Error('approved JPEG artwork is required');
   const bytes = decode64(dataUrl.split(',')[1]);
@@ -155,6 +171,22 @@ export async function onRequest(context) {
       const art = `public/art/${input.draft.id}.jpg`;
       const sha = await repo.commit({ revision: snap.revision, treeSha: snap.treeSha, message: `${input.mode === 'new' ? 'Add' : 'Update'} ${input.draft.label} template`, actor: who, writes: { [CATALOG]: `${JSON.stringify(registry, null, 2)}\n`, [art]: image } });
       return json({ ok: true, commitSha: sha, deployment: 'Published to GitHub; deployment in progress', affectedFiles: [CATALOG, art] });
+    }
+    if (path.endsWith('/retire')) {
+      if (input.confirmed !== true) throw new Error('retirement confirmation is required');
+      if (!safeId(input.templateId)) throw new Error('invalid template target');
+      if (input.baseRevision !== snap.revision) return json({ error: 'production changed; reload the Studio and review before retiring', code: 'STALE_REVISION' }, 409);
+      const before = JSON.parse(snap.catalog);
+      const target = before.templates.find(({ id }) => id === input.templateId);
+      if (!target) throw new Error('template was not found; reload the Studio');
+      const after = { ...before, templates: before.templates.filter(({ id }) => id !== target.id) };
+      const errors = validateEvolvingCatalog(after);
+      if (errors.length) throw new Error(`resulting catalog validation failed: ${errors.join(' ')}`);
+      const art = `public/art/${target.id}.jpg`;
+      const referenced = after.templates.some(({ art: path }) => path === target.art);
+      const deletes = referenced ? [] : [art];
+      const sha = await repo.commit({ revision: snap.revision, treeSha: snap.treeSha, message: `Retire ${target.label} template`, actor: who, writes: { [CATALOG]: `${JSON.stringify(after, null, 2)}\n` }, deletes });
+      return json({ ok: true, commitSha: sha, deployment: 'Published to GitHub; deployment in progress', affectedFiles: [CATALOG, ...deletes] });
     }
     return json({ error: 'not found' }, 404);
   } catch (error) {

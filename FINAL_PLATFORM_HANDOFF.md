@@ -63,6 +63,12 @@ Retirement is a normal authenticated Studio operation.
 
 The server rechecks identity and revision, derives the artwork path from the validated ID, validates the remaining catalog, and commits the catalog removal plus any unreferenced artwork deletion atomically. Git history remains recovery.
 
+### Retirement production correction
+
+The September 2026 retirement defect was caused by a missing `/api/studio/retire` branch in the actual Cloudflare Worker Function. The UI sent the correct authenticated request, but the production route returned `404 not found` before validation or GitHub access; no retirement commit was created. Service-level tests had exercised a separate API module rather than the deployed route.
+
+The production Function now handles retirement directly, validates the evolving active catalog without reconciling it to the immutable received-baseline manifest, and uses the existing GitHub App transaction. The Studio immediately shows **Retiring template…**, then always resolves to either the GitHub commit/deployment-in-progress result or a plain-language failure. It does not claim the template is live or removed until the operator verifies the public generator after deployment.
+
 ## Source and storage responsibilities
 
 ### Canva / Google Drive

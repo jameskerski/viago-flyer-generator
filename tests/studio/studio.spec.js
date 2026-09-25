@@ -86,9 +86,25 @@ test('hosted retirement is available only for an existing template and requires 
 
   await page.getByRole('button', { name: 'Retire Template' }).click();
   await page.getByRole('button', { name: 'Confirm retirement' }).click();
-  await expect(page.locator('#validationResult')).toContainText('retirement-sha');
+  await expect(page.locator('#validationResult')).toContainText('Template retired.');
+  await expect(page.locator('#validationResult')).toContainText('Published to GitHub. Commit retirement-sha.');
+  await expect(page.locator('#validationResult')).toContainText('Deployment in progress.');
   expect(retirement).toEqual({ templateId: 'cyprus-im', baseRevision: 'production-sha', confirmed: true });
   await expect(page.getByRole('button', { name: 'Retire Template' })).toBeHidden();
+});
+
+test('hosted retirement failure reaches a clear terminal state', async ({ page }) => {
+  const registry = JSON.parse(await readFile(REGISTRY, 'utf8'));
+  await page.route('**/api/studio/catalog', (route) => route.fulfill({ json: { registry, revision: 'production-sha' } }));
+  await page.route('**/api/studio/retire', (route) => route.fulfill({ status: 409, json: { error: 'production changed; reload the Studio and review before retiring', code: 'STALE_REVISION' } }));
+  await openStudio(page);
+  await page.locator('#draftSource').selectOption('existing');
+  await page.getByRole('button', { name: 'Retire Template' }).click();
+  await page.getByRole('button', { name: 'Confirm retirement' }).click();
+  await expect(page.locator('#validationResult')).toContainText('Template was not retired.');
+  await expect(page.locator('#validationResult')).toContainText('reload the Studio');
+  await expect(page.locator('#validationResult')).not.toContainText('Retiring template…');
+  await expect(page.locator('#confirmRetire')).toBeEnabled();
 });
 
 test('candidate artwork dimensions, photo drawing/moving/resizing, and normalized values are visual', async ({ page }) => {

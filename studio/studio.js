@@ -219,8 +219,14 @@ function requestPayload() {
 }
 
 async function api(path, payload) {
-  const response = await fetch(path, { method: payload ? 'POST' : 'GET', headers: payload ? { 'Content-Type': 'application/json' } : {}, body: payload ? JSON.stringify(payload) : undefined });
-  const result = await response.json(); if (!response.ok) throw new Error(result.error || `Request failed ${response.status}`); return result;
+  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const response = await fetch(path, { method: payload ? 'POST' : 'GET', headers: payload ? { 'Content-Type': 'application/json' } : {}, body: payload ? JSON.stringify(payload) : undefined, signal: controller.signal });
+    const result = await response.json(); if (!response.ok) throw new Error(result.error || `Request failed ${response.status}`); return result;
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('The server did not respond. Nothing was confirmed; reload and try again.');
+    throw error;
+  } finally { clearTimeout(timeout); }
 }
 
 function showValidation(result) {
@@ -282,17 +288,24 @@ async function retire() {
   if (!(state.hosted && state.mode === 'existing' && state.originalId)) throw new Error('Choose an existing template before retiring.');
   const templateId = state.originalId;
   els.confirmRetire.disabled = true;
+  els.validationResult.className = 'result neutral';
+  els.validationResult.textContent = 'Retiring template…';
   try {
     const result = await api('/api/studio/retire', { templateId, baseRevision: state.baseRevision, confirmed: true });
     els.retireDialog.close();
     els.validationResult.className = 'result ok';
-    els.validationResult.textContent = `Retired from GitHub. Commit ${result.commitSha}. Deployment is in progress.`;
+    els.validationResult.textContent = `Template retired.\nPublished to GitHub. Commit ${result.commitSha}.\nDeployment in progress. Refresh the public generator shortly to verify removal.`;
     const loaded = await api('/api/studio/catalog');
     state.registry = loaded.registry; state.registryHash = loaded.registryHash; state.baseRevision = loaded.revision;
     els.existingTemplate.innerHTML = state.registry.templates.map((template) => `<option value="${template.id}">${template.category} — ${template.label}</option>`).join('');
     state.mode = 'new'; state.originalId = null; els.draftSource.value = 'new'; els.existingWrap.hidden = true;
     writeDraft(defaultDraft()); updateRetireAvailability();
     return result;
+  } catch (error) {
+    els.retireDialog.close();
+    els.validationResult.className = 'result bad';
+    els.validationResult.textContent = `Template was not retired.\n${error.message}`;
+    return null;
   } finally { els.confirmRetire.disabled = false; }
 }
 

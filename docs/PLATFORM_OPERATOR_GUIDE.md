@@ -25,6 +25,8 @@ Normal workflow:
 
 To retire a template, choose **Existing template**, select the exact template, select **Retire Template**, review its identity and artwork path, and confirm. Wait for the commit identifier and deployment, then verify it disappears from the public generator. The server removes only the exact catalog entry and its artwork only when unreferenced. Nothing expires automatically.
 
+After confirmation, the Studio shows **Retiring template…** and then one terminal result. Success includes the GitHub commit SHA and says deployment is in progress; refresh the public generator after deployment to verify removal. Failure explicitly says the template was not retired and provides the action to take. The active catalog may contain fewer templates than the historical received-baseline manifest; hosted retirement validates the active contract without rewriting that historical evidence.
+
 Drafts live only in the browser session. Closing the editor can lose unfinished work. There is no autosave or drafts database.
 
 ## Source storage

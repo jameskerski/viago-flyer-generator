@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import {
   boot,
   canvasDigest,
@@ -31,6 +32,16 @@ test('boot and category/template order are the accepted Version 1 order', async 
   await selectCategory(page, 'Events');
   await expect(page.locator('#templates .chip.is-on')).toContainText('Jacksonville (Individual)');
   expect(await page.evaluate(() => window.__studio.state.templateId)).toBe('jacksonville-im');
+});
+
+test('public generator boots from a legitimately reduced active catalog', async ({ page }) => {
+  const catalog = JSON.parse(await readFile(new URL('../../public/templates.json', import.meta.url), 'utf8'));
+  catalog.templates = catalog.templates.filter(({ id }) => id !== 'cyprus-im');
+  await page.route('**/templates.json', (route) => route.fulfill({ json: catalog }));
+  await page.goto('/');
+  await page.waitForFunction(() => window.__studio?.state?.templates?.length === 13);
+  expect(await page.evaluate(() => window.__studio.state.templates.some(({ id }) => id === 'cyprus-im'))).toBe(false);
+  await expect(page.locator('#cats .cat')).toHaveText(['General', 'Ranks', 'Events']);
 });
 
 test('typed name and uploaded photo survive selection while placement resets', async ({ page }) => {
