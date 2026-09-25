@@ -3,33 +3,6 @@
   "source": "VIAGO Canva \"Viago Rank & Event Recognition\"",
   "templates": [
     {
-      "id": "club-4",
-      "label": "Club 4",
-      "category": "General",
-      "accent": "#a855f7",
-      "art": "art/club-4.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "circle",
-        "x": 0.2875,
-        "y": 0.4287,
-        "w": 0.425,
-        "h": 0.3213
-      },
-      "name": {
-        "x": 0.50125,
-        "y": 0.85,
-        "maxWidth": 0.32775,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
       "id": "deluxepack",
       "label": "Welcome  Deluxe Pack",
       "category": "General",
@@ -144,6 +117,37 @@
         "y": 0.72724,
         "maxWidth": 0.7,
         "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      }
+    },
+    {
+      "id": "club-4",
+      "label": "Club 4",
+      "category": "Ranks",
+      "accent": "#a855f7",
+      "art": "art/club-4.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.2875,
+        "y": 0.4287,
+        "w": 0.425,
+        "h": 0.3213
+      },
+      "name": {
+        "x": 0.50125,
+        "y": 0.85,
+        "maxWidth": 0.32775,
+        "size": 0.0425,
         "font": "Josefin Sans",
         "weight": 700,
         "color": "#ffffff",
