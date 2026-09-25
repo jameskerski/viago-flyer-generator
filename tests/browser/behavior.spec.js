@@ -39,7 +39,10 @@ test('public generator boots from a legitimately reduced active catalog', async 
   catalog.templates = catalog.templates.filter(({ id }) => id !== 'cyprus-im');
   await page.route('**/templates.json', (route) => route.fulfill({ json: catalog }));
   await page.goto('/');
-  await page.waitForFunction(() => window.__studio?.state?.templates?.length === 13);
+  await page.waitForFunction(
+    (expectedLength) => window.__studio?.state?.templates?.length === expectedLength,
+    catalog.templates.length
+  );
   expect(await page.evaluate(() => window.__studio.state.templates.some(({ id }) => id === 'cyprus-im'))).toBe(false);
   await expect(page.locator('#cats .cat')).toHaveText(['General', 'Ranks', 'Events']);
 });

@@ -46,7 +46,7 @@ test('production Worker route retires one template through GitHub App with an ev
     expect(tree).toContainEqual({ path: 'public/art/cyprus-im.jpg', mode: '100644', type: 'blob', sha: null });
     const catalogBlob = calls.filter(({ href }) => href.endsWith('/git/blobs'))[0].body;
     const reduced = JSON.parse(Buffer.from(catalogBlob.content, 'base64').toString('utf8'));
-    expect(reduced.templates).toHaveLength(13);
+    expect(reduced.templates).toHaveLength(registry.templates.length - 1);
     expect(reduced.templates.some(({ id }) => id === 'cyprus-im')).toBe(false);
     const commit = calls.find(({ href }) => href.endsWith('/git/commits') && !href.endsWith('/git/commits/base-sha')).body;
     expect(commit.message).toContain('Published-by: admin@goodlifetrainings.com (Admin)');
