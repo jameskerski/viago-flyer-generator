@@ -27,11 +27,11 @@
       </div>
       <div class="canvas-shell" style="height:calc(100vh - 260px);min-height:280px;flex:0 1 auto"><canvas id="authorCanvas" width="800" height="1080" style="max-height:calc(100vh - 280px)"></canvas><div id="canvasEmpty">Load a JPEG artwork to begin</div></div>
       <div class="tool-row">
-        <button id="drawPhoto" class="tool active">Draw photo region</button>
-        <button id="movePhoto" class="tool">Move/resize photo</button>
+        <button id="drawPhoto" class="tool">Redraw Photo Area</button>
+        <button id="movePhoto" class="tool active">Select/move photo</button>
         <button id="moveName" class="tool">Move name/width</button>
       </div>
-      <p class="hint">Drag on the flyer to draw. In move mode, drag the region or its lower-right handle. Name mode moves the anchor or max-width handle.</p>
+      <p class="hint">Photo area: drag inside to move, or drag any handle to resize. Use Redraw Photo Area only when you intend to replace it. Name mode moves the anchor or max-width handle.</p>
       <iframe id="runtimeFrame" src="/runtime/" title="Production renderer used for draft preview" hidden></iframe>
     </section>
 

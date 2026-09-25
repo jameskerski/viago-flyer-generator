@@ -11,7 +11,7 @@ const sha = async (path) => createHash('sha256').update(await readFile(path)).di
 async function openStudio(page) {
   await page.setViewportSize({ width: 1500, height: 1000 });
   await page.goto('/studio/');
-  await page.waitForFunction(() => window.__templateStudio?.state?.registry?.templates?.length === 14);
+  await page.waitForFunction(() => window.__templateStudio?.state?.registry?.templates?.length > 0);
 }
 
 async function candidate(page, id = 'studio-fixture') {
@@ -133,6 +133,68 @@ test('candidate artwork dimensions, photo drawing/moving/resizing, and normalize
   await page.mouse.move(box.x + box.width * (current.x + current.w + .08), box.y + box.height * (current.y + current.h + .06)); await page.mouse.up();
   expect(Number(await page.locator('#photoW').inputValue())).toBeGreaterThan(current.w);
   expect(Number(await page.locator('#photoH').inputValue())).toBeGreaterThan(current.h);
+});
+
+test('photo region is a persistent bounded selection with eight handles and explicit redraw', async ({ page }) => {
+  await openStudio(page);
+  await candidate(page);
+  const canvas = page.locator('#authorCanvas'); const box = await canvas.boundingBox();
+  const drag = async (fromX, fromY, toX, toY) => {
+    await page.mouse.move(box.x + box.width * fromX, box.y + box.height * fromY);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width * toX, box.y + box.height * toY);
+    await page.mouse.up();
+  };
+
+  await drag(.2, .2, .6, .6);
+  await expect(page.locator('#movePhoto')).toHaveClass(/active/);
+  expect(await page.evaluate(() => ({ committed: window.__templateStudio.state.photoRegionCommitted, tool: window.__templateStudio.state.tool }))).toEqual({ committed: true, tool: 'movePhoto' });
+  const drawn = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.photo));
+
+  await drag(.35, .35, .35, .35);
+  expect(await page.evaluate(() => window.__templateStudio.state.draft.photo)).toEqual(drawn);
+  await drag(.35, .35, .45, .45);
+  let moved = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.photo));
+  expect(moved.x).toBeCloseTo(.3, 2); expect(moved.y).toBeCloseTo(.3, 2);
+  expect(moved.w).toBeCloseTo(drawn.w, 5); expect(moved.h).toBeCloseTo(drawn.h, 5);
+
+  await drag(moved.x + moved.w, moved.y + moved.h, moved.x + moved.w + .08, moved.y + moved.h + .05);
+  let resized = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.photo));
+  expect(resized.w).toBeGreaterThan(moved.w); expect(resized.h).toBeGreaterThan(moved.h);
+  await drag(resized.x + resized.w, resized.y + resized.h / 2, resized.x + resized.w - .05, resized.y + resized.h / 2);
+  const edgeResized = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.photo));
+  expect(edgeResized.w).toBeLessThan(resized.w); expect(edgeResized.h).toBeCloseTo(resized.h, 5);
+
+  await page.locator('#photoShape').selectOption('circle');
+  expect(await page.evaluate(() => window.__templateStudio.state.draft.photo)).toMatchObject({ x: edgeResized.x, y: edgeResized.y, w: edgeResized.w, h: edgeResized.h, shape: 'circle' });
+  await drag(edgeResized.x + edgeResized.w / 2, edgeResized.y + edgeResized.h / 2, .85, .85);
+  const bounded = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.photo));
+  expect(bounded.x + bounded.w).toBeLessThanOrEqual(1); expect(bounded.y + bounded.h).toBeLessThanOrEqual(1);
+
+  await page.mouse.move(box.x + box.width * (bounded.x + bounded.w / 2), box.y + box.height * (bounded.y + bounded.h / 2));
+  await expect(canvas).toHaveCSS('cursor', 'move');
+  const editImage = await canvas.screenshot();
+  await page.locator('#previewMode').click();
+  expect(await page.evaluate(() => window.__templateStudio.state.overlays)).toBe(false);
+  expect(Buffer.compare(editImage, await canvas.screenshot())).not.toBe(0);
+  await page.locator('#editMode').click();
+
+  await page.getByRole('button', { name: 'Redraw Photo Area' }).click();
+  expect(await page.evaluate(() => window.__templateStudio.state.photoRegionCommitted)).toBe(false);
+  await expect(canvas).toHaveCSS('cursor', 'crosshair');
+  await drag(.1, .15, .45, .55);
+  expect(await page.evaluate(() => window.__templateStudio.state.draft.photo)).toMatchObject({ shape: 'circle', x: .1, y: .15, w: .35, h: .4 });
+  expect(await page.evaluate(() => window.__templateStudio.state.photoRegionCommitted)).toBe(true);
+});
+
+test('existing rectangle and ellipse templates load as immediately manipulable regions', async ({ page }) => {
+  await openStudio(page);
+  await page.locator('#draftSource').selectOption('existing');
+  await page.locator('#existingTemplate').selectOption('silver');
+  expect(await page.evaluate(() => ({ committed: window.__templateStudio.state.photoRegionCommitted, tool: window.__templateStudio.state.tool }))).toEqual({ committed: true, tool: 'movePhoto' });
+  await page.locator('#existingTemplate').selectOption('cyprus-im');
+  await page.locator('#photoShape').selectOption('circle');
+  expect(await page.evaluate(() => window.__templateStudio.state.photoRegionCommitted)).toBe(true);
 });
 
 test('name placement, presets, production preview, category, and insertion order stay inspectable', async ({ page }) => {

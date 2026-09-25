@@ -14,7 +14,7 @@ const ctx = els.authorCanvas.getContext('2d');
 const state = {
   registry: null, registryHash: null, mode: 'new', originalId: null, draft: null,
   artworkFile: null, artworkDataUrl: null, artworkUrl: null, artworkChecksum: null,
-  sampleFile: null, runtimeReady: false, overlays: true, tool: 'drawPhoto', drag: null,
+  sampleFile: null, runtimeReady: false, overlays: true, tool: 'movePhoto', drag: null, photoRegionCommitted: false,
   validation: null, plan: null, hosted: false, baseRevision: null
 };
 
@@ -46,6 +46,37 @@ async function imageDimensions(file) {
 function setTool(tool) {
   state.tool = tool;
   for (const key of ['drawPhoto', 'movePhoto', 'moveName']) els[key].classList.toggle('active', key === tool);
+}
+
+const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+const PHOTO_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+
+function handlePoints(photo) {
+  const left = photo.x, centerX = photo.x + photo.w / 2, right = photo.x + photo.w;
+  const top = photo.y, centerY = photo.y + photo.h / 2, bottom = photo.y + photo.h;
+  return { nw: [left, top], n: [centerX, top], ne: [right, top], e: [right, centerY], se: [right, bottom], s: [centerX, bottom], sw: [left, bottom], w: [left, centerY] };
+}
+
+function photoHit(at, photo) {
+  if (!state.photoRegionCommitted) return null;
+  const rect = els.authorCanvas.getBoundingClientRect();
+  const thresholdX = 12 / Math.max(rect.width, 1), thresholdY = 12 / Math.max(rect.height, 1);
+  for (const [handle, [x, y]] of Object.entries(handlePoints(photo))) {
+    if (Math.abs(at.x - x) <= thresholdX && Math.abs(at.y - y) <= thresholdY) return { action: 'resizePhoto', handle };
+  }
+  const inBox = at.x >= photo.x && at.x <= photo.x + photo.w && at.y >= photo.y && at.y <= photo.y + photo.h;
+  const inside = photo.shape !== 'circle' ? inBox : inBox && (((at.x - photo.x - photo.w / 2) / (photo.w / 2)) ** 2 + ((at.y - photo.y - photo.h / 2) / (photo.h / 2)) ** 2 <= 1);
+  return inside ? { action: 'movePhoto' } : null;
+}
+
+function photoCursor(hit) {
+  if (!state.photoRegionCommitted) return 'crosshair';
+  if (!hit) return 'default';
+  if (hit.action === 'movePhoto') return 'move';
+  if (['nw', 'se'].includes(hit.handle)) return 'nwse-resize';
+  if (['ne', 'sw'].includes(hit.handle)) return 'nesw-resize';
+  if (['n', 's'].includes(hit.handle)) return 'ns-resize';
+  return 'ew-resize';
 }
 
 function invalidate() {
@@ -148,7 +179,7 @@ async function setArtwork(file, { preserveDimensions = false } = {}) {
 async function loadExisting(id) {
   const template = state.registry.templates.find((item) => item.id === id);
   if (!template) return;
-  state.mode = 'existing'; state.originalId = id; writeDraft(template);
+  state.mode = 'existing'; state.originalId = id; state.photoRegionCommitted = true; setTool('movePhoto'); writeDraft(template);
   const response = await fetch(`/runtime/${template.art}`); const blob = await response.blob();
   await setArtwork(new File([blob], template.art.split('/').at(-1), { type: 'image/jpeg' }), { preserveDimensions: true });
   const categoryItems = state.registry.templates.filter((item) => item.category === template.category);
@@ -178,9 +209,21 @@ async function render() {
 function drawGuides(template) {
   const { w: W, h: H } = template; const p = template.photo; const n = template.name;
   const x = p.x * W, y = p.y * H, w = p.w * W, h = p.h * H;
-  ctx.save(); ctx.lineWidth = Math.max(2, W / 400); ctx.strokeStyle = '#8dfa00'; ctx.setLineDash([W / 80, W / 130]);
-  ctx.beginPath(); if (p.shape === 'circle') ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); else ctx.rect(x, y, w, h); ctx.stroke();
-  ctx.setLineDash([]); ctx.fillStyle = '#8dfa00'; ctx.fillRect(x + w - W / 100, y + h - W / 100, W / 50, W / 50);
+  ctx.save();
+  if (state.photoRegionCommitted || state.drag?.action === 'drawPhoto') {
+    const regionPath = () => { ctx.beginPath(); if (p.shape === 'circle') ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); else ctx.rect(x, y, w, h); };
+    ctx.setLineDash([]); ctx.lineWidth = Math.max(7, W / 120); ctx.strokeStyle = '#05070acc'; regionPath(); ctx.stroke();
+    ctx.lineWidth = Math.max(3, W / 300); ctx.strokeStyle = '#8dfa00'; regionPath(); ctx.stroke();
+    if (state.photoRegionCommitted) {
+      const handleSize = Math.max(14, W / 55);
+      for (const [hx, hy] of Object.values(handlePoints(p))) {
+        const px = hx * W, py = hy * H;
+        ctx.fillStyle = '#05070a'; ctx.fillRect(px - handleSize / 2 - 2, py - handleSize / 2 - 2, handleSize + 4, handleSize + 4);
+        ctx.fillStyle = '#f7fff0'; ctx.fillRect(px - handleSize / 2, py - handleSize / 2, handleSize, handleSize);
+        ctx.lineWidth = Math.max(2, W / 500); ctx.strokeStyle = '#8dfa00'; ctx.strokeRect(px - handleSize / 2, py - handleSize / 2, handleSize, handleSize);
+      }
+    }
+  }
   const nx = n.x * W, ny = n.y * H, half = n.maxWidth * W / 2;
   ctx.strokeStyle = '#34d3ff'; ctx.beginPath(); ctx.moveTo(nx - half, ny); ctx.lineTo(nx + half, ny); ctx.stroke();
   ctx.fillStyle = '#34d3ff'; ctx.beginPath(); ctx.arc(nx, ny, W / 100, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(nx + half - W / 120, ny - W / 120, W / 60, W / 60);
@@ -194,25 +237,42 @@ function point(event) {
 
 els.authorCanvas.addEventListener('pointerdown', (event) => {
   if (!state.draft || !state.artworkFile || !state.overlays) return;
-  els.authorCanvas.setPointerCapture(event.pointerId); const at = point(event); const p = state.draft.photo; const n = state.draft.name;
+  const at = point(event); const p = state.draft.photo; const n = state.draft.name;
   let action = state.tool;
-  if (state.tool === 'movePhoto') action = Math.hypot(at.x - (p.x + p.w), at.y - (p.y + p.h)) < .04 ? 'resizePhoto' : 'movePhoto';
+  let handle = null;
+  if (state.tool !== 'moveName') {
+    if (!state.photoRegionCommitted) action = 'drawPhoto';
+    else { const hit = photoHit(at, p); if (!hit) return; ({ action, handle } = hit); }
+  }
   if (state.tool === 'moveName') action = Math.abs(at.x - (n.x + n.maxWidth / 2)) < .04 ? 'resizeName' : 'moveName';
-  state.drag = { action, start: at, photo: { ...p }, name: { ...n } };
+  els.authorCanvas.setPointerCapture(event.pointerId);
+  state.drag = { action, handle, start: at, photo: { ...p }, name: { ...n } };
 });
 
 window.addEventListener('pointermove', (event) => {
   if (!state.drag) return; const at = point(event); const dx = at.x - state.drag.start.x, dy = at.y - state.drag.start.y;
-  if (state.drag.action === 'drawPhoto') state.draft.photo = { ...state.draft.photo, x: round(Math.min(state.drag.start.x, at.x)), y: round(Math.min(state.drag.start.y, at.y)), w: round(Math.max(.00001, Math.abs(dx))), h: round(Math.max(.00001, Math.abs(dy))) };
-  else if (state.drag.action === 'movePhoto') { state.draft.photo.x = round(Math.max(0, Math.min(1, state.drag.photo.x + dx))); state.draft.photo.y = round(Math.max(0, Math.min(1, state.drag.photo.y + dy))); }
-  else if (state.drag.action === 'resizePhoto') { state.draft.photo.w = round(Math.max(.00001, Math.min(1, state.drag.photo.w + dx))); state.draft.photo.h = round(Math.max(.00001, Math.min(1, state.drag.photo.h + dy))); }
+  if (state.drag.action === 'drawPhoto') {
+    const endX = clamp(at.x), endY = clamp(at.y), startX = clamp(state.drag.start.x), startY = clamp(state.drag.start.y);
+    state.draft.photo = { ...state.draft.photo, x: round(Math.min(startX, endX)), y: round(Math.min(startY, endY)), w: round(Math.max(.00001, Math.abs(endX - startX))), h: round(Math.max(.00001, Math.abs(endY - startY))) };
+  }
+  else if (state.drag.action === 'movePhoto') { state.draft.photo.x = round(clamp(state.drag.photo.x + dx, 0, 1 - state.drag.photo.w)); state.draft.photo.y = round(clamp(state.drag.photo.y + dy, 0, 1 - state.drag.photo.h)); }
+  else if (state.drag.action === 'resizePhoto') {
+    const minimum = .01; let left = state.drag.photo.x, top = state.drag.photo.y, right = left + state.drag.photo.w, bottom = top + state.drag.photo.h;
+    if (state.drag.handle.includes('w')) left = clamp(left + dx, 0, right - minimum);
+    if (state.drag.handle.includes('e')) right = clamp(right + dx, left + minimum, 1);
+    if (state.drag.handle.includes('n')) top = clamp(top + dy, 0, bottom - minimum);
+    if (state.drag.handle.includes('s')) bottom = clamp(bottom + dy, top + minimum, 1);
+    state.draft.photo = { ...state.draft.photo, x: round(left), y: round(top), w: round(right - left), h: round(bottom - top) };
+  }
   else if (state.drag.action === 'moveName') { state.draft.name.x = round(Math.max(0, Math.min(1, state.drag.name.x + dx))); state.draft.name.y = round(Math.max(0, Math.min(1, state.drag.name.y + dy))); }
   else if (state.drag.action === 'resizeName') state.draft.name.maxWidth = round(Math.max(.00001, Math.min(1, state.drag.name.maxWidth + dx * 2)));
   writeDraft(state.draft); invalidate(); render();
 });
 
-window.addEventListener('pointerup', () => { state.drag = null; });
+window.addEventListener('pointerup', () => { if (state.drag?.action === 'drawPhoto') { state.photoRegionCommitted = true; setTool('movePhoto'); } state.drag = null; render(); });
 window.addEventListener('pointercancel', () => { state.drag = null; });
+els.authorCanvas.addEventListener('pointermove', (event) => { if (!state.drag && state.overlays && state.tool !== 'moveName') els.authorCanvas.style.cursor = photoCursor(photoHit(point(event), state.draft.photo)); });
+els.authorCanvas.addEventListener('pointerleave', () => { if (!state.drag) els.authorCanvas.style.cursor = ''; });
 
 function requestPayload() {
   return { mode: state.mode, originalId: state.originalId, draft: readDraft(), categoryPosition: Number(els.categoryPosition.value), artworkDataUrl: state.artworkDataUrl };
@@ -314,7 +374,7 @@ function guarded(action) { return async () => { try { await action(); } catch (e
 els.draftSource.addEventListener('change', async () => {
   state.mode = els.draftSource.value; els.existingWrap.hidden = state.mode !== 'existing';
   if (state.mode === 'existing') await loadExisting(els.existingTemplate.value);
-  else { state.originalId = null; state.artworkFile = null; state.artworkDataUrl = null; if (state.artworkUrl) URL.revokeObjectURL(state.artworkUrl); state.artworkUrl = null; writeDraft(defaultDraft()); els.artworkMeta.textContent = 'No artwork selected.'; els.canvasEmpty.hidden = false; ctx.clearRect(0,0,els.authorCanvas.width,els.authorCanvas.height); invalidate(); }
+  else { state.originalId = null; state.photoRegionCommitted = false; setTool('movePhoto'); state.artworkFile = null; state.artworkDataUrl = null; if (state.artworkUrl) URL.revokeObjectURL(state.artworkUrl); state.artworkUrl = null; writeDraft(defaultDraft()); els.artworkMeta.textContent = 'No artwork selected.'; els.canvasEmpty.hidden = false; ctx.clearRect(0,0,els.authorCanvas.width,els.authorCanvas.height); invalidate(); }
   updateRetireAvailability();
 });
 els.existingTemplate.addEventListener('change', () => loadExisting(els.existingTemplate.value));
@@ -329,9 +389,9 @@ for (const id of ['templateId','label','category','accent','photoShape','photoX'
   els[id].addEventListener('input', () => { readDraft(); if (id === 'category') updatePositionOptions(); else updateOrderPreview(); invalidate(); render(); });
 }
 els.categoryPosition.addEventListener('change', () => { updateOrderPreview(); invalidate(); });
-els.drawPhoto.addEventListener('click', () => setTool('drawPhoto')); els.movePhoto.addEventListener('click', () => setTool('movePhoto')); els.moveName.addEventListener('click', () => setTool('moveName'));
+els.drawPhoto.addEventListener('click', () => { state.photoRegionCommitted = false; setTool('drawPhoto'); els.authorCanvas.style.cursor = 'crosshair'; render(); }); els.movePhoto.addEventListener('click', () => setTool('movePhoto')); els.moveName.addEventListener('click', () => setTool('moveName'));
 els.editMode.addEventListener('click', () => { state.overlays = true; els.editMode.classList.add('active'); els.previewMode.classList.remove('active'); render(); });
-els.previewMode.addEventListener('click', () => { state.overlays = false; els.previewMode.classList.add('active'); els.editMode.classList.remove('active'); render(); });
+els.previewMode.addEventListener('click', () => { state.overlays = false; els.authorCanvas.style.cursor = ''; els.previewMode.classList.add('active'); els.editMode.classList.remove('active'); render(); });
 els.validate.addEventListener('click', guarded(validate)); els.reviewArtifact.addEventListener('click', guarded(artifact)); els.preparePromotion.addEventListener('click', guarded(preparePlan)); els.promote.addEventListener('click', guarded(promote));
 els.promotionConfirmation.addEventListener('input', () => { els.promote.disabled = !(state.plan && els.promotionConfirmation.value === 'PROMOTE'); });
 els.retireTemplate.addEventListener('click', guarded(openRetirement));
@@ -353,7 +413,7 @@ async function boot() {
   await new Promise((resolve) => { if (els.runtimeFrame.contentWindow?.__studio) resolve(); else els.runtimeFrame.addEventListener('load', resolve, { once: true }); });
   await new Promise((resolve) => { const check = () => els.runtimeFrame.contentWindow.__studio ? resolve() : setTimeout(check, 20); check(); });
   state.runtimeReady = true;
-  window.__templateStudio = { state, readDraft, writeDraft, render, validate, preparePlan, artifact, promote, retire, loadExisting, setArtwork, proposedOrder };
+  window.__templateStudio = { state, readDraft, writeDraft, render, validate, preparePlan, artifact, promote, retire, loadExisting, setArtwork, proposedOrder, photoHit };
 }
 
 boot().catch((error) => { els.validationResult.className = 'result bad'; els.validationResult.textContent = `Studio failed to start: ${error.message}`; });
