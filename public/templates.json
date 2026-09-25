@@ -61,37 +61,6 @@
       }
     },
     {
-      "id": "amplified",
-      "label": "Amplified Bonus",
-      "category": "General",
-      "accent": "#22d3ee",
-      "art": "art/amplified.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.0425,
-        "y": 0.65556,
-        "w": 0.4825,
-        "h": 0.3
-      },
-      "name": {
-        "x": 0.73938,
-        "y": 0.7454,
-        "maxWidth": 0.39276,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper",
-        "wrap": true,
-        "maxLines": 3,
-        "lineHeight": 1.12,
-        "vAlign": "middle"
-      }
-    },
-    {
       "id": "deluxepack",
       "label": "Welcome  Deluxe Pack",
       "category": "General",
@@ -215,6 +184,38 @@
         "wrap": false,
         "maxLines": 3,
         "lineHeight": 1.15
+      }
+    },
+    {
+      "id": "amplified",
+      "label": "Amplified Bonus",
+      "category": "Ranks",
+      "accent": "#22d3ee",
+      "art": "art/amplified.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.0425,
+        "y": 0.65556,
+        "w": 0.4825,
+        "h": 0.3
+      },
+      "name": {
+        "x": 0.73938,
+        "y": 0.7454,
+        "maxWidth": 0.39276,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": true,
+        "maxLines": 3,
+        "lineHeight": 1.12,
+        "vAlign": "middle"
       }
     },
     {
