@@ -120,7 +120,7 @@
     },
     {
       "id": "viago-life-deluxe",
-      "label": "VIÀGO Life Deluxe",
+      "label": "VIÃGO Life Deluxe",
       "category": "General",
       "accent": "#8dfa00",
       "art": "art/viago-life-deluxe.jpg",
@@ -150,11 +150,11 @@
       }
     },
     {
-      "id": "viagolife-deluxe",
-      "label": "VIÃÂÃÂGO LIFE DELUXE",
+      "id": "viagolife-ultra",
+      "label": "VIÁGO Life Ultra",
       "category": "General",
       "accent": "#8dfa00",
-      "art": "art/viagolife-deluxe.jpg",
+      "art": "art/viagolife-ultra.jpg",
       "w": 1545,
       "h": 2000,
       "photo": {
@@ -165,8 +165,8 @@
         "h": 0.26056
       },
       "name": {
-        "x": 0.49945,
-        "y": 0.67581,
+        "x": 0.49387,
+        "y": 0.66875,
         "maxWidth": 0.7,
         "size": 0.05,
         "font": "Josefin Sans",
