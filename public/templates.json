@@ -30,37 +30,6 @@
       }
     },
     {
-      "id": "mission-30",
-      "label": "Mission 30",
-      "category": "General",
-      "accent": "#8dfa00",
-      "art": "art/mission-30.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "circle",
-        "x": 0.2475,
-        "y": 0.33148,
-        "w": 0.505,
-        "h": 0.39074
-      },
-      "name": {
-        "x": 0.5,
-        "y": 0.813,
-        "maxWidth": 0.62,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper",
-        "vAlign": "middle",
-        "wrap": true,
-        "maxLines": 2,
-        "lineHeight": 1.1
-      }
-    },
-    {
       "id": "deluxepack",
       "label": "Welcome  Deluxe Pack",
       "category": "General",
@@ -184,6 +153,38 @@
         "wrap": false,
         "maxLines": 3,
         "lineHeight": 1.15
+      }
+    },
+    {
+      "id": "mission-30",
+      "label": "Mission 30",
+      "category": "Ranks",
+      "accent": "#8dfa00",
+      "art": "art/mission-30.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "circle",
+        "x": 0.2475,
+        "y": 0.33148,
+        "w": 0.505,
+        "h": 0.39074
+      },
+      "name": {
+        "x": 0.5,
+        "y": 0.813,
+        "maxWidth": 0.62,
+        "size": 0.0425,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": true,
+        "maxLines": 2,
+        "lineHeight": 1.1,
+        "vAlign": "middle"
       }
     },
     {
