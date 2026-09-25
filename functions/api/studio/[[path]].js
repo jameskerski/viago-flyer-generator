@@ -13,6 +13,7 @@ const encode64 = (bytes) => {
   return btoa(binary);
 };
 const safeId = (id) => typeof id === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
+const equalBytes = (left, right) => left.length === right.length && left.every((byte, index) => byte === right[index]);
 
 async function actor(request, env) {
   const cookieToken = request.headers.get('cookie')?.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
@@ -66,11 +67,15 @@ function github(env) {
   };
   const branch = env.GITHUB_BRANCH || 'main';
   return {
-    async snapshot() {
-      const ref = await request(`/git/ref/heads/${branch}`);
-      const commit = await request(`/git/commits/${ref.object.sha}`);
-      const catalog = await request(`/contents/${CATALOG}?ref=${ref.object.sha}`);
-      return { revision: ref.object.sha, treeSha: commit.tree.sha, catalog: atob(catalog.content.replace(/\n/g, '')) };
+    async snapshot(revision = null) {
+      const resolved = revision || (await request(`/git/ref/heads/${branch}`)).object.sha;
+      const commit = await request(`/git/commits/${resolved}`);
+      const catalog = await request(`/contents/${CATALOG}?ref=${resolved}`);
+      return { revision: resolved, treeSha: commit.tree.sha, catalog: atob(catalog.content.replace(/\n/g, '')) };
+    },
+    async file(path, revision) {
+      const result = await request(`/contents/${path}?ref=${revision}`);
+      return decode64(result.content.replace(/\n/g, ''));
     },
     async commit({ revision, treeSha, message, actor: who, writes, deletes = [] }) {
       const tree = [];
@@ -155,6 +160,13 @@ export async function onRequest(context) {
     const repo = github(context.env);
     const snap = await repo.snapshot();
     if (context.request.method === 'GET' && path.endsWith('/catalog')) return json({ registry: JSON.parse(snap.catalog), revision: snap.revision });
+    if (context.request.method === 'GET' && path.endsWith('/artwork')) {
+      const url = new URL(context.request.url); const templateId = url.searchParams.get('templateId'); const revision = url.searchParams.get('revision');
+      if (!safeId(templateId) || !revision || revision !== snap.revision) return json({ error: 'published state changed; reload the Studio' }, 409);
+      const template = JSON.parse(snap.catalog).templates.find(({ id }) => id === templateId);
+      if (!template || template.art !== `art/${templateId}.jpg`) return json({ error: 'published artwork was not found' }, 404);
+      return new Response(await repo.file(`public/${template.art}`, revision), { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, no-store' } });
+    }
     const input = await context.request.json();
     if (path.endsWith('/validate')) {
       const errors = validateTemplate(input.draft || {});
@@ -170,6 +182,12 @@ export async function onRequest(context) {
       const image = artwork(input.artworkDataUrl);
       const art = `public/art/${input.draft.id}.jpg`;
       const sha = await repo.commit({ revision: snap.revision, treeSha: snap.treeSha, message: `${input.mode === 'new' ? 'Add' : 'Update'} ${input.draft.label} template`, actor: who, writes: { [CATALOG]: `${JSON.stringify(registry, null, 2)}\n`, [art]: image } });
+      const published = await repo.snapshot(sha); const publishedRegistry = JSON.parse(published.catalog);
+      const publishedTemplate = publishedRegistry.templates.find(({ id }) => id === input.draft.id);
+      const publishedArtwork = await repo.file(art, sha);
+      if (JSON.stringify(publishedTemplate) !== JSON.stringify(input.draft) || !equalBytes([...publishedArtwork], [...image])) {
+        throw new Error('publication readback did not match the submitted template; reload before continuing');
+      }
       return json({ ok: true, commitSha: sha, deployment: 'Published to GitHub; deployment in progress', affectedFiles: [CATALOG, art] });
     }
     if (path.endsWith('/retire')) {

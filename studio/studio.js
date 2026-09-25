@@ -180,7 +180,12 @@ async function loadExisting(id) {
   const template = state.registry.templates.find((item) => item.id === id);
   if (!template) return;
   state.mode = 'existing'; state.originalId = id; state.photoRegionCommitted = true; setTool('movePhoto'); writeDraft(template);
-  const response = await fetch(`/runtime/${template.art}`); const blob = await response.blob();
+  const source = state.hosted
+    ? `/api/studio/artwork?templateId=${encodeURIComponent(template.id)}&revision=${encodeURIComponent(state.baseRevision)}`
+    : `/runtime/${template.art}`;
+  const response = await fetch(source, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Published artwork could not be loaded (${response.status}). Reload the Studio.`);
+  const blob = await response.blob();
   await setArtwork(new File([blob], template.art.split('/').at(-1), { type: 'image/jpeg' }), { preserveDimensions: true });
   const categoryItems = state.registry.templates.filter((item) => item.category === template.category);
   els.categoryPosition.value = categoryItems.findIndex((item) => item.id === id);

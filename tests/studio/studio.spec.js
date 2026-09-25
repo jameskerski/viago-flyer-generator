@@ -5,8 +5,15 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const ARTWORK = fileURLToPath(new URL('../../public/art/club-4.jpg', import.meta.url));
+const ARTWORK_B = fileURLToPath(new URL('../../public/art/silver.jpg', import.meta.url));
+const ARTWORK_C = fileURLToPath(new URL('../../public/art/gold.jpg', import.meta.url));
 const REGISTRY = fileURLToPath(new URL('../../public/templates.json', import.meta.url));
 const sha = async (path) => createHash('sha256').update(await readFile(path)).digest('hex');
+
+async function mockHostedArtwork(page) {
+  const artwork = await readFile(ARTWORK);
+  await page.route('**/api/studio/artwork?*', (route) => route.fulfill({ contentType: 'image/jpeg', body: artwork }));
+}
 
 async function openStudio(page) {
   await page.setViewportSize({ width: 1500, height: 1000 });
@@ -48,6 +55,7 @@ test('Admin Instructions opens the approved guide in a new tab without discardin
 
 test('hosted-mode authority text retains Admin Instructions navigation', async ({ page }) => {
   const registry = JSON.parse(await readFile(REGISTRY, 'utf8'));
+  await mockHostedArtwork(page);
   await page.route('**/api/studio/catalog', (route) => route.fulfill({ json: { registry, revision: 'production-sha' } }));
   await openStudio(page);
   await expect(page.getByRole('link', { name: 'Admin Instructions' })).toHaveAttribute('target', '_blank');
@@ -56,6 +64,7 @@ test('hosted-mode authority text retains Admin Instructions navigation', async (
 
 test('hosted retirement is available only for an existing template and requires explicit confirmation', async ({ page }) => {
   let registry = JSON.parse(await readFile(REGISTRY, 'utf8'));
+  await mockHostedArtwork(page);
   let retirement = null;
   let revision = 'production-sha';
   await page.route('**/api/studio/catalog', (route) => route.fulfill({ json: { registry, revision } }));
@@ -95,6 +104,7 @@ test('hosted retirement is available only for an existing template and requires 
 
 test('hosted retirement failure reaches a clear terminal state', async ({ page }) => {
   const registry = JSON.parse(await readFile(REGISTRY, 'utf8'));
+  await mockHostedArtwork(page);
   await page.route('**/api/studio/catalog', (route) => route.fulfill({ json: { registry, revision: 'production-sha' } }));
   await page.route('**/api/studio/retire', (route) => route.fulfill({ status: 409, json: { error: 'production changed; reload the Studio and review before retiring', code: 'STALE_REVISION' } }));
   await openStudio(page);
@@ -195,6 +205,47 @@ test('existing rectangle and ellipse templates load as immediately manipulable r
   await page.locator('#existingTemplate').selectOption('cyprus-im');
   await page.locator('#photoShape').selectOption('circle');
   expect(await page.evaluate(() => window.__templateStudio.state.photoRegionCommitted)).toBe(true);
+});
+
+test('hosted existing-template publish survives complete editor reload for B and C revisions', async ({ page }) => {
+  let registry = JSON.parse(await readFile(REGISTRY, 'utf8'));
+  let revision = 'revision-a'; let publishedArtwork = await readFile(ARTWORK);
+  await page.route('**/api/studio/catalog', (route) => route.fulfill({ json: { registry, revision } }));
+  await page.route('**/api/studio/artwork?*', (route) => route.fulfill({ contentType: 'image/jpeg', body: publishedArtwork }));
+  await page.route('**/api/studio/publish', async (route) => {
+    const input = route.request().postDataJSON();
+    expect(input.mode).toBe('existing'); expect(input.originalId).toBe('club-4'); expect(input.baseRevision).toBe(revision);
+    registry = { ...registry, templates: registry.templates.map((template) => template.id === input.originalId ? input.draft : template) };
+    publishedArtwork = Buffer.from(input.artworkDataUrl.split(',')[1], 'base64');
+    revision = revision === 'revision-a' ? 'revision-b' : 'revision-c';
+    await route.fulfill({ json: { ok: true, commitSha: revision, deployment: 'Published to GitHub; deployment in progress' } });
+  });
+  const publishExisting = async (artworkPath, photo) => {
+    await page.locator('#artworkFile').setInputFiles(artworkPath);
+    await page.locator('#photoShape').selectOption(photo.shape);
+    for (const key of ['x', 'y', 'w', 'h']) await page.locator(`#photo${key.toUpperCase()}`).fill(String(photo[key]));
+    await page.evaluate(() => { window.__templateStudio.state.plan = { planToken: 'hosted-publication' }; });
+    return page.evaluate(() => window.__templateStudio.promote());
+  };
+  const reloadExisting = async () => {
+    await page.reload(); await page.waitForFunction(() => window.__templateStudio?.state?.registry?.templates?.length > 0);
+    await page.locator('#draftSource').selectOption('existing'); await page.locator('#existingTemplate').selectOption('club-4');
+    await expect(page.locator('#artworkMeta')).toContainText('SHA-256');
+  };
+
+  await openStudio(page); await page.locator('#draftSource').selectOption('existing'); await page.locator('#existingTemplate').selectOption('club-4');
+  const photoB = { shape: 'circle', x: .12, y: .23, w: .34, h: .45 };
+  await publishExisting(ARTWORK_B, photoB); await reloadExisting();
+  await expect(page.locator('#photoShape')).toHaveValue('circle');
+  for (const key of ['x', 'y', 'w', 'h']) await expect(page.locator(`#photo${key.toUpperCase()}`)).toHaveValue(String(photoB[key]));
+  await expect(page.locator('#artworkMeta')).toContainText((await sha(ARTWORK_B)).slice(0, 16));
+
+  const photoC = { shape: 'rect', x: .21, y: .13, w: .43, h: .35 };
+  await publishExisting(ARTWORK_C, photoC); await reloadExisting();
+  await expect(page.locator('#photoShape')).toHaveValue('rect');
+  for (const key of ['x', 'y', 'w', 'h']) await expect(page.locator(`#photo${key.toUpperCase()}`)).toHaveValue(String(photoC[key]));
+  await expect(page.locator('#artworkMeta')).toContainText((await sha(ARTWORK_C)).slice(0, 16));
+  await expect(page.locator('#artworkMeta')).not.toContainText((await sha(ARTWORK_B)).slice(0, 16));
 });
 
 test('name placement, presets, production preview, category, and insertion order stay inspectable', async ({ page }) => {
