@@ -92,33 +92,6 @@
       }
     },
     {
-      "id": "welcome",
-      "label": "Welcome",
-      "category": "General",
-      "accent": "#8dfa00",
-      "art": "art/welcome.jpg",
-      "w": 1080,
-      "h": 1080,
-      "photo": {
-        "shape": "rect",
-        "x": 0.55093,
-        "y": 0.28981,
-        "w": 0.3787,
-        "h": 0.51019
-      },
-      "name": {
-        "x": 0.50139,
-        "y": 0.89722,
-        "maxWidth": 0.92,
-        "size": 0.04722,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
       "id": "deluxepack",
       "label": "Deluxe Pack",
       "category": "General",
