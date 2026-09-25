@@ -119,11 +119,11 @@
       }
     },
     {
-      "id": "viago-life-deluxe",
+      "id": "deluxepack",
       "label": "Deluxe Pack",
       "category": "General",
       "accent": "#8dfa00",
-      "art": "art/viago-life-deluxe.jpg",
+      "art": "art/deluxepack.jpg",
       "w": 1545,
       "h": 2000,
       "photo": {
@@ -151,7 +151,7 @@
     },
     {
       "id": "viagolife-ultra",
-      "label": "VIÃÂÃÂGO Life Ultra",
+      "label": "VIÃÂÃÂÃÂÃÂGO Life Ultra",
       "category": "General",
       "accent": "#8dfa00",
       "art": "art/viagolife-ultra.jpg",
