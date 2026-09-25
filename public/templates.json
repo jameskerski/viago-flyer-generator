@@ -35,7 +35,7 @@
     },
     {
       "id": "join-viagolife-deluxe",
-      "label": "Welcome Viago Delux",
+      "label": "Welcome Viago Life",
       "category": "General",
       "accent": "#8dfa00",
       "art": "art/join-viagolife-deluxe.jpg",
@@ -43,14 +43,14 @@
       "h": 1600,
       "photo": {
         "shape": "circle",
-        "x": 0.33415,
-        "y": 0.35828,
-        "w": 0.32966,
-        "h": 0.25755
+        "x": 0.33173,
+        "y": 0.32901,
+        "w": 0.33628,
+        "h": 0.26686
       },
       "name": {
         "x": 0.5,
-        "y": 0.66,
+        "y": 0.634,
         "maxWidth": 0.57,
         "size": 0.05,
         "font": "Josefin Sans",
