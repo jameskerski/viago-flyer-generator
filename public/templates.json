@@ -3,6 +3,37 @@
   "source": "VIAGO Canva \"Viago Rank & Event Recognition\"",
   "templates": [
     {
+      "id": "expose-tempate",
+      "label": "EXPOSURE CAHLLENGE",
+      "category": "General",
+      "accent": "#8dfa00",
+      "art": "art/expose-tempate.jpg",
+      "w": 1236,
+      "h": 1600,
+      "photo": {
+        "shape": "circle",
+        "x": 0.2722,
+        "y": 0.37853,
+        "w": 0.43196,
+        "h": 0.3216
+      },
+      "name": {
+        "x": 0.5,
+        "y": 0.75,
+        "maxWidth": 0.7,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#3a88fe",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      }
+    },
+    {
       "id": "welcome-new-member",
       "label": "Welcome Template",
       "category": "General",
