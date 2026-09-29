@@ -21,6 +21,7 @@ const els = {
   rotationValue: $('#rotationValue'),
   cutout: $('#cutout'),
   nameInput: $('#nameInput'),
+  optionalTextInputs: $('#optionalTextInputs'),
   download: $('#download'),
   status: $('#status'),
   statusText: $('#statusText'),
@@ -38,6 +39,8 @@ const state = {
   category: null,
   templateId: null,
   name: '',
+  userText: { text2: '', text3: '' },
+  userTextByTemplate: {},
   photo: null,               // { img, url }
   place: { dx: 0, dy: 0, zoom: 1, rotation: 0 },
   original: null,            // the compressed upload, kept so cutout can be toggled
@@ -199,10 +202,10 @@ function drawName(t, W, H) {
   ctx.restore();
 }
 
-function drawText3(t, W, H) {
-  const s = t.text3;
-  if (!s?.enabled || !String(s.value || '').trim()) return;
-  const text = String(s.value).trim();
+function drawOptionalText(t, key, W, H) {
+  const s = t[key];
+  const text = String(state.userText[key] || '').trim();
+  if (!s?.enabled || !text) return;
   const family = s.font || 'Josefin Sans';
   const weight = s.weight || 700;
   const x = s.x * W, y = s.y * H, boxW = s.w * W, boxH = s.h * H;
@@ -268,7 +271,8 @@ async function render() {
   }
 
   drawName(t, W, H);
-  drawText3(t, W, H);
+  drawOptionalText(t, 'text2', W, H);
+  drawOptionalText(t, 'text3', W, H);
 }
 
 let queued = false;
@@ -320,9 +324,26 @@ function buildChips() {
 }
 
 function select(id) {
+  if (state.templateId) state.userTextByTemplate[state.templateId] = { ...state.userText };
   state.templateId = id;
+  state.userText = { text2: '', text3: '', ...(state.userTextByTemplate[id] || {}) };
   resetPlacement();
+  buildOptionalTextInputs();
   scheduleRender();
+}
+
+function buildOptionalTextInputs() {
+  const t = tpl();
+  els.optionalTextInputs.replaceChildren();
+  for (const key of ['text2', 'text3']) {
+    const definition = t?.[key];
+    if (!definition?.enabled) continue;
+    const field = document.createElement('div'); field.className = 'field optional-text-field'; field.dataset.region = key;
+    const input = document.createElement('input'); input.id = `${key}Input`; input.type = 'text'; input.maxLength = 48; input.autocomplete = 'off'; input.value = state.userText[key];
+    const label = document.createElement('label'); label.htmlFor = input.id; label.textContent = definition.label || (key === 'text2' ? 'Text 2' : 'Text 3');
+    input.addEventListener('input', () => { state.userText[key] = input.value; state.userTextByTemplate[state.templateId] = { ...state.userText }; scheduleRender(); });
+    field.append(label, input); els.optionalTextInputs.append(field);
+  }
 }
 
 /* ── photo ───────────────────────────────────────────────── */
@@ -549,6 +570,7 @@ window.__studio = { state, render, scheduleRender, useBlob, rotatedCoverScale };
     state.templates = data.templates;
     buildCategories();
     state.templateId = state.templates.find((t) => t.category === state.category).id;
+    buildOptionalTextInputs();
     buildChips();
     try {
       await document.fonts.load('700 100px "Josefin Sans"');

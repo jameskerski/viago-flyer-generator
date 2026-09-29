@@ -65,7 +65,7 @@ test('existing template A → B → C persists through production publish, fresh
   };
 
   try {
-    const targetB = { ...targetA, label: 'Club 4 B', photo: { shape: 'circle', x: .11, y: .22, w: .33, h: .44 }, name: { ...targetA.name, x: .61 }, text3: { enabled: true, value: '1', x: .8, y: .08, w: .06, h: .04, size: .04, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' } };
+    const targetB = { ...targetA, label: 'Club 4 B', photo: { shape: 'circle', x: .11, y: .22, w: .33, h: .44 }, name: { ...targetA.name, x: .61 }, text3: { enabled: true, label: 'Number', x: .8, y: .08, w: .06, h: .04, size: .04, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' } };
     const publishB = await publish(targetB, artworkB, 'revision-a');
     const reloadB = await freshRead();
     expect(reloadB.catalog.revision).toBe(publishB.commitSha);

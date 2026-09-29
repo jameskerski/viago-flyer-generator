@@ -47,7 +47,7 @@ test('public generator boots from a legitimately reduced active catalog', async 
   await expect(page.locator('#cats .cat')).toHaveText(['General', 'Ranks', 'Events']);
 });
 
-test('optional Text Region 3 is backward-compatible, rendered, and included in PNG export', async ({ page }) => {
+test('optional user text controls are template-driven, independent, rendered, exported, and backward-compatible', async ({ page }) => {
   let catalog = JSON.parse(await readFile(new URL('../../public/templates.json', import.meta.url), 'utf8'));
   await page.addInitScript(() => {
     window.__paintedText = [];
@@ -59,19 +59,28 @@ test('optional Text Region 3 is backward-compatible, rendered, and included in P
     await page.goto('/'); await expect(page.locator('#statusText')).toHaveText('Ready');
     await page.waitForFunction((length) => window.__studio?.state?.templates?.length === length, catalog.templates.length);
   };
+  const first = catalog.templates[0]; const region = (label) => ({ enabled: true, label, x: .7, y: .08, w: .2, h: .05, size: .045, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' });
   await load(); const absentDigest = await canvasDigest(page);
-  const first = catalog.templates[0];
-  catalog = { ...catalog, templates: catalog.templates.map((template, index) => index ? template : { ...template, text3: { enabled: false, value: '1', x: .8, y: .08, w: .08, h: .05, size: .045, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' } }) };
-  await load(); expect(await canvasDigest(page)).toBe(absentDigest);
-  catalog = { ...catalog, templates: catalog.templates.map((template) => template.id === first.id ? { ...template, text3: { ...template.text3, enabled: true } } : template) };
+  await expect(page.locator('#nameInput')).toBeVisible(); await expect(page.locator('#text2Input')).toHaveCount(0); await expect(page.locator('#text3Input')).toHaveCount(0);
+  catalog = { ...catalog, templates: catalog.templates.map((template, index) => index ? template : { ...template, text3: { ...region('Number'), enabled: false, value: 'LEGACY MUST NOT RENDER' } }) };
+  await load(); expect(await canvasDigest(page)).toBe(absentDigest); expect(await page.evaluate(() => window.__paintedText)).not.toContain('LEGACY MUST NOT RENDER');
+  catalog = { ...catalog, templates: catalog.templates.map((template, index) => index === 0 ? { ...template, text2: region('Rank') } : index === 1 ? { ...template, text3: { ...region('Placement'), value: 'STALE' } } : index === 2 ? { ...template, text2: region('Team'), text3: region('Code') } : template) };
   await load();
-  expect(await page.evaluate(() => window.__paintedText)).toContain('1');
-  expect(await canvasDigest(page)).not.toBe(absentDigest);
-  const before = await page.evaluate(() => window.__paintedText.filter((value) => value === '1').length);
+  await expect(page.locator('#text2Input')).toBeVisible(); await expect(page.locator('#text2Input')).toHaveAccessibleName('Rank'); await expect(page.locator('#text3Input')).toHaveCount(0);
+  await page.locator('#text2Input').fill('Gold'); await page.evaluate(() => window.__studio.render()); expect(await page.evaluate(() => window.__paintedText)).toContain('Gold');
+  await page.evaluate(() => { window.__paintedText = []; });
+  await selectTemplate(page, catalog.templates[1].label); await expect(page.locator('#text2Input')).toHaveCount(0); await expect(page.locator('#text3Input')).toHaveAccessibleName('Placement');
+  await page.evaluate(() => window.__studio.render()); expect(await page.evaluate(() => window.__paintedText)).not.toContain('Gold'); expect(await page.evaluate(() => window.__paintedText)).not.toContain('STALE');
+  await page.locator('#text3Input').fill('3 of 15');
+  await selectTemplate(page, catalog.templates[2].label); await expect(page.locator('#text2Input')).toBeVisible(); await expect(page.locator('#text3Input')).toBeVisible();
+  await page.locator('#text2Input').fill('Alpha'); await page.locator('#text3Input').fill('OK');
+  await page.waitForFunction(() => window.__paintedText.includes('OK'));
+  expect(await page.evaluate(() => window.__paintedText)).toEqual(expect.arrayContaining(['Alpha', 'OK']));
+  const before = await page.evaluate(() => window.__paintedText.filter((value) => value === 'OK').length);
   const downloadPromise = page.waitForEvent('download'); await page.locator('#download').click();
   const png = await downloadedPng(await downloadPromise);
   expect(png.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-  expect(await page.evaluate(() => window.__paintedText.filter((value) => value === '1').length)).toBeGreaterThan(before);
+  expect(await page.evaluate(() => window.__paintedText.filter((value) => value === 'OK').length)).toBeGreaterThan(before);
 });
 
 test('typed name and uploaded photo survive selection while placement resets', async ({ page }) => {

@@ -21,11 +21,12 @@ CONTRACT_VERSION = 1
 REGISTRY_VERSION = 2
 TOP_FIELDS = {"version", "source", "templates"}
 TEMPLATE_REQUIRED = {"id", "label", "category", "accent", "art", "w", "h", "photo", "name"}
-TEMPLATE_OPTIONAL = {"text3"}
+TEMPLATE_OPTIONAL = {"text2", "text3"}
 PHOTO_FIELDS = {"shape", "x", "y", "w", "h"}
 NAME_REQUIRED = {"x", "y", "maxWidth", "size", "font", "weight", "color", "align", "case"}
 NAME_OPTIONAL = {"tracking", "wrap", "maxLines", "lineHeight", "vAlign"}
-TEXT3_FIELDS = {"enabled", "value", "x", "y", "w", "h", "size", "font", "weight", "color", "align"}
+TEXT_REGION_REQUIRED = {"enabled", "x", "y", "w", "h", "size", "font", "weight", "color", "align"}
+TEXT_REGION_OPTIONAL = {"label", "value"}
 ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 ART_RE = re.compile(r"^art/([a-z0-9]+(?:-[a-z0-9]+)*)\.jpg$")
@@ -129,14 +130,16 @@ def validate_photo(v: Validation, photo: object, where: str) -> None:
     normalized(v, photo.get("h"), f"{where}.h", positive=True)
 
 
-def validate_text3(v: Validation, text3: object, where: str) -> None:
-    if not exact_fields(v, text3, where, TEXT3_FIELDS, TEXT3_FIELDS):
+def validate_text_region(v: Validation, text3: object, where: str) -> None:
+    if not exact_fields(v, text3, where, TEXT_REGION_REQUIRED, TEXT_REGION_REQUIRED | TEXT_REGION_OPTIONAL):
         return
     assert isinstance(text3, dict)
     if not isinstance(text3.get("enabled"), bool):
         v.error(f"{where}.enabled", "must be a boolean")
-    if not isinstance(text3.get("value"), str) or len(text3["value"]) > 24:
-        v.error(f"{where}.value", "must be a string of at most 24 characters")
+    if "label" in text3:
+        string(v, text3.get("label"), f"{where}.label")
+    if "value" in text3 and not isinstance(text3["value"], str):
+        v.error(f"{where}.value", "legacy value must be a string when present")
     for key in ("x", "y"):
         normalized(v, text3.get(key), f"{where}.{key}")
     for key in ("w", "h", "size"):
@@ -284,8 +287,9 @@ def validate_registry(v: Validation, root: Path) -> tuple[list[dict], set[str]]:
         integer(v, template.get("h"), f"{where}.h")
         validate_photo(v, template.get("photo"), f"{where}.photo")
         validate_name(v, template.get("name"), f"{where}.name")
-        if "text3" in template:
-            validate_text3(v, template.get("text3"), f"{where}.text3")
+        for key in ("text2", "text3"):
+            if key in template:
+                validate_text_region(v, template.get(key), f"{where}.{key}")
         art_path = safe_art_path(v, root, template, where)
         if art_path is not None:
             if not art_path.is_file():
@@ -317,11 +321,12 @@ def validate_fonts(v: Validation, root: Path, templates: list[dict]) -> None:
         family, weight = name.get("font"), name.get("weight")
         if isinstance(family, str) and isinstance(weight, int) and not font_supports(declared, family, weight):
             v.error(f"template[{template_id}].name.font", f"font family/weight '{family}' {weight} is not loaded by public/index.html")
-        text3 = template.get("text3")
-        if isinstance(text3, dict) and text3.get("enabled"):
-            family, weight = text3.get("font"), text3.get("weight")
-            if isinstance(family, str) and isinstance(weight, int) and not font_supports(declared, family, weight):
-                v.error(f"template[{template_id}].text3.font", f"font family/weight '{family}' {weight} is not loaded by public/index.html")
+        for key in ("text2", "text3"):
+            region = template.get(key)
+            if isinstance(region, dict) and region.get("enabled"):
+                family, weight = region.get("font"), region.get("weight")
+                if isinstance(family, str) and isinstance(weight, int) and not font_supports(declared, family, weight):
+                    v.error(f"template[{template_id}].{key}.font", f"font family/weight '{family}' {weight} is not loaded by public/index.html")
 
 
 def validate_routes(v: Validation, root: Path) -> None:

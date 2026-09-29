@@ -267,7 +267,7 @@ test('Text Region 3 visually moves, resizes small, publishes, reloads, and disab
   };
   await openStudio(page); await page.locator('#draftSource').selectOption('existing'); await page.locator('#existingTemplate').selectOption('club-4');
   await expect(page.locator('#text3Enabled')).not.toBeChecked();
-  await page.locator('#text3Enabled').check(); await page.locator('#text3Value').fill('1');
+  await page.locator('#text3Enabled').check(); await page.locator('#text3Label').fill('Number');
   await page.locator('#text3Font').fill('Josefin Sans'); await page.locator('#text3Size').fill('0.045'); await page.locator('#text3Weight').fill('700');
   await page.locator('#text3Color').fill('#ffffff'); await page.locator('#text3Align').selectOption('center');
   const canvas = page.locator('#authorCanvas'); const box = await canvas.boundingBox();
@@ -277,7 +277,8 @@ test('Text Region 3 visually moves, resizes small, publishes, reloads, and disab
   };
   await drag(.84, .12, .64, .32);
   let text3 = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.text3));
-  expect(text3).toMatchObject({ enabled: true, value: '1', x: .58, y: .28, w: .12, h: .08 });
+  expect(text3).toMatchObject({ enabled: true, label: 'Number', x: .58, y: .28, w: .12, h: .08 });
+  expect(text3).not.toHaveProperty('value');
   await drag(text3.x + text3.w, text3.y + text3.h, text3.x + .035, text3.y + .025);
   text3 = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.text3));
   expect(text3.w).toBeCloseTo(.035, 3); expect(text3.h).toBeCloseTo(.025, 3);
@@ -285,7 +286,7 @@ test('Text Region 3 visually moves, resizes small, publishes, reloads, and disab
   const guided = await canvas.screenshot(); await page.locator('#previewMode').click();
   expect(Buffer.compare(guided, await canvas.screenshot())).not.toBe(0);
   await publish(); await reload();
-  await expect(page.locator('#text3Enabled')).toBeChecked(); await expect(page.locator('#text3Value')).toHaveValue('1');
+  await expect(page.locator('#text3Enabled')).toBeChecked(); await expect(page.locator('#text3Label')).toHaveValue('Number');
   expect(await page.evaluate(() => window.__templateStudio.state.draft.text3)).toEqual(text3);
   await page.locator('#text3Enabled').uncheck(); await publish(); await reload();
   await expect(page.locator('#text3Enabled')).not.toBeChecked(); await expect(page.locator('#moveText3')).toBeDisabled();

@@ -30,6 +30,7 @@
         <button id="drawPhoto" class="tool">Redraw Photo Area</button>
         <button id="movePhoto" class="tool active">Select/move photo</button>
         <button id="moveName" class="tool">Move name/width</button>
+        <button id="moveText2" class="tool" disabled>Move/resize Text 2</button>
         <button id="moveText3" class="tool" disabled>Move/resize Text 3</button>
       </div>
       <p class="hint">Photo area: drag inside to move, or drag any handle to resize. Use Redraw Photo Area only when you intend to replace it. Name mode moves the anchor or max-width handle.</p>
@@ -71,10 +72,18 @@
       </article>
 
       <article>
-        <div class="section-title"><b>05</b><h2>Text Region 3</h2></div>
+        <div class="section-title"><b>05</b><h2>Optional user text</h2></div>
+        <label class="check"><input id="text2Enabled" type="checkbox"> Enable optional second text region</label>
+        <div id="text2Controls" hidden>
+          <div class="grid two"><label>Public field label<input id="text2Label" maxlength="40" placeholder="Rank"></label><label>Font<input id="text2Font" value="Josefin Sans"></label></div>
+          <div class="grid four"><label>Size<input id="text2Size" type="number" min="0.001" max="1" step="0.001"></label><label>Weight<input id="text2Weight" type="number" min="1" max="1000"></label><label>Color<input id="text2Color" type="color"></label><label>Align<select id="text2Align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label></div>
+          <p class="note">The label appears in the Public Generator. Its sample is used only while authoring and is never published as flyer content.</p>
+          <details><summary>Exact geometry (advanced)</summary><div class="grid four numeric"><label>x<input id="text2X" type="number" min="0" max="1" step="0.00001"></label><label>y<input id="text2Y" type="number" min="0" max="1" step="0.00001"></label><label>w<input id="text2W" type="number" min="0.001" max="1" step="0.00001"></label><label>h<input id="text2H" type="number" min="0.001" max="1" step="0.00001"></label></div></details>
+        </div>
+        <hr>
         <label class="check"><input id="text3Enabled" type="checkbox"> Enable optional third text region</label>
         <div id="text3Controls" hidden>
-          <div class="grid two"><label>Text / value<input id="text3Value" maxlength="24" placeholder="1"></label><label>Font<input id="text3Font" value="Josefin Sans"></label></div>
+          <div class="grid two"><label>Public field label<input id="text3Label" maxlength="40" placeholder="Number"></label><label>Font<input id="text3Font" value="Josefin Sans"></label></div>
           <div class="grid four"><label>Size<input id="text3Size" type="number" min="0.001" max="1" step="0.001"></label><label>Weight<input id="text3Weight" type="number" min="1" max="1000"></label><label>Color<input id="text3Color" type="color"></label><label>Align<select id="text3Align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label></div>
           <p class="note">Select “Move/resize Text 3,” then drag inside the box or use its handles.</p>
           <details><summary>Exact geometry (advanced)</summary><div class="grid four numeric"><label>x<input id="text3X" type="number" min="0" max="1" step="0.00001"></label><label>y<input id="text3Y" type="number" min="0" max="1" step="0.00001"></label><label>w<input id="text3W" type="number" min="0.001" max="1" step="0.00001"></label><label>h<input id="text3H" type="number" min="0.001" max="1" step="0.00001"></label></div></details>

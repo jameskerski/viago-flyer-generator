@@ -3,10 +3,11 @@ const round = (value) => Math.round(value * 100000) / 100000;
 const unknown = (value) => value.trim() || 'Unknown';
 
 const els = Object.fromEntries([
-  'authorCanvas','canvasEmpty','previewTitle','editMode','previewMode','drawPhoto','movePhoto','moveName','moveText3','runtimeFrame',
+  'authorCanvas','canvasEmpty','previewTitle','editMode','previewMode','drawPhoto','movePhoto','moveName','moveText2','moveText3','runtimeFrame',
   'draftSource','existingWrap','existingTemplate','artworkFile','artworkMeta','templateId','label','category','categoryList','accent','categoryPosition','orderPreview',
   'photoShape','photoX','photoY','photoW','photoH','samplePhoto','sampleName','nameX','nameY','nameMaxWidth','nameSize','nameFont','nameWeight','nameColor','nameAlign','nameCase','nameTracking','nameMaxLines','nameLineHeight','nameVAlign','nameWrap',
-  'text3Enabled','text3Controls','text3Value','text3Font','text3Size','text3Weight','text3Color','text3Align','text3X','text3Y','text3W','text3H',
+  'text2Enabled','text2Controls','text2Label','text2Font','text2Size','text2Weight','text2Color','text2Align','text2X','text2Y','text2W','text2H',
+  'text3Enabled','text3Controls','text3Label','text3Font','text3Size','text3Weight','text3Color','text3Align','text3X','text3Y','text3W','text3H',
   'provDesigner','provCanva','provApproval','provOwner','provReference','provNotes','validate','reviewArtifact','preparePromotion','validationResult','jsonPreview','planPreview','planDetails','promotionConfirmation','promote',
   'retireActions','retireTemplate','retireDialog','retireLabel','retireId','retireCategory','retireArtwork','cancelRetire','confirmRetire'
 ].map((id) => [id, $(`#${id}`)]));
@@ -24,12 +25,20 @@ function defaultDraft() {
     id: '', label: '', category: 'General', accent: '#8dfa00', art: '', w: 800, h: 1080,
     photo: { shape: 'rect', x: 0.2, y: 0.25, w: 0.5, h: 0.5 },
     name: { x: 0.5, y: 0.85, maxWidth: 0.7, size: 0.05, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center', case: 'upper', tracking: 0.02, wrap: false, maxLines: 3, lineHeight: 1.15 },
-    text3: { enabled: false, value: '', x: 0.78, y: 0.08, w: 0.12, h: 0.08, size: 0.05, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' }
+    text2: { enabled: false, label: 'Text 2', x: 0.1, y: 0.78, w: 0.8, h: 0.08, size: 0.05, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' },
+    text3: { enabled: false, label: 'Text 3', x: 0.78, y: 0.08, w: 0.12, h: 0.08, size: 0.05, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' }
   };
 }
 
-function normalizedText3(value) {
-  return { ...defaultDraft().text3, ...(value || {}), enabled: Boolean(value?.enabled) };
+function normalizedTextRegion(key, value) {
+  const normalized = { ...defaultDraft()[key], ...(value || {}), enabled: Boolean(value?.enabled) };
+  delete normalized.value;
+  normalized.label = String(value?.label || defaultDraft()[key].label);
+  return normalized;
+}
+
+function readTextRegion(key, number) {
+  return { enabled: els[`${key}Enabled`].checked, label: els[`${key}Label`].value.trim(), x: number(`${key}X`), y: number(`${key}Y`), w: number(`${key}W`), h: number(`${key}H`), size: number(`${key}Size`), font: els[`${key}Font`].value.trim(), weight: number(`${key}Weight`), color: els[`${key}Color`].value, align: els[`${key}Align`].value };
 }
 
 async function fileDataUrl(file) {
@@ -51,7 +60,7 @@ async function imageDimensions(file) {
 
 function setTool(tool) {
   state.tool = tool;
-  for (const key of ['drawPhoto', 'movePhoto', 'moveName', 'moveText3']) els[key].classList.toggle('active', key === tool);
+  for (const key of ['drawPhoto', 'movePhoto', 'moveName', 'moveText2', 'moveText3']) els[key].classList.toggle('active', key === tool);
 }
 
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
@@ -122,10 +131,8 @@ function readDraft() {
       weight: number('nameWeight'), color: els.nameColor.value, align: els.nameAlign.value, case: els.nameCase.value,
       tracking: number('nameTracking'), wrap: els.nameWrap.checked, maxLines: number('nameMaxLines'), lineHeight: number('nameLineHeight')
     },
-    text3: {
-      enabled: els.text3Enabled.checked, value: els.text3Value.value, x: number('text3X'), y: number('text3Y'), w: number('text3W'), h: number('text3H'),
-      size: number('text3Size'), font: els.text3Font.value.trim(), weight: number('text3Weight'), color: els.text3Color.value, align: els.text3Align.value
-    }
+    text2: readTextRegion('text2', number),
+    text3: readTextRegion('text3', number)
   };
   if (els.nameVAlign.value !== 'baseline') draft.name.vAlign = els.nameVAlign.value;
   state.draft = draft;
@@ -135,21 +142,23 @@ function readDraft() {
 
 function writeDraft(draft) {
   state.draft = structuredClone(draft);
-  state.draft.text3 = normalizedText3(draft.text3);
-  const text3 = state.draft.text3;
+  state.draft.text2 = normalizedTextRegion('text2', draft.text2);
+  state.draft.text3 = normalizedTextRegion('text3', draft.text3);
   const values = {
     templateId: draft.id, label: draft.label, category: draft.category, accent: draft.accent,
     photoShape: draft.photo.shape, photoX: draft.photo.x, photoY: draft.photo.y, photoW: draft.photo.w, photoH: draft.photo.h,
     nameX: draft.name.x, nameY: draft.name.y, nameMaxWidth: draft.name.maxWidth, nameSize: draft.name.size,
     nameFont: draft.name.font, nameWeight: draft.name.weight, nameColor: draft.name.color, nameAlign: draft.name.align, nameCase: draft.name.case,
     nameTracking: draft.name.tracking ?? 0.02, nameMaxLines: draft.name.maxLines ?? 3, nameLineHeight: draft.name.lineHeight ?? 1.15,
-    nameVAlign: draft.name.vAlign ?? 'baseline',
-    text3Value: text3.value, text3Font: text3.font, text3Size: text3.size, text3Weight: text3.weight, text3Color: text3.color, text3Align: text3.align,
-    text3X: text3.x, text3Y: text3.y, text3W: text3.w, text3H: text3.h
+    nameVAlign: draft.name.vAlign ?? 'baseline'
   };
+  for (const key of ['text2', 'text3']) {
+    const region = state.draft[key];
+    Object.assign(values, { [`${key}Label`]: region.label, [`${key}Font`]: region.font, [`${key}Size`]: region.size, [`${key}Weight`]: region.weight, [`${key}Color`]: region.color, [`${key}Align`]: region.align, [`${key}X`]: region.x, [`${key}Y`]: region.y, [`${key}W`]: region.w, [`${key}H`]: region.h });
+  }
   for (const [id, value] of Object.entries(values)) els[id].value = value;
   els.nameWrap.checked = Boolean(draft.name.wrap);
-  els.text3Enabled.checked = text3.enabled; els.text3Controls.hidden = !text3.enabled; els.moveText3.disabled = !text3.enabled;
+  for (const key of ['text2', 'text3']) { const region = state.draft[key]; els[`${key}Enabled`].checked = region.enabled; els[`${key}Controls`].hidden = !region.enabled; els[`move${key[0].toUpperCase()}${key.slice(1)}`].disabled = !region.enabled; }
   els.jsonPreview.textContent = JSON.stringify(state.draft, null, 2);
   els.previewTitle.textContent = draft.label || draft.id || 'Untitled draft';
   updatePositionOptions();
@@ -233,6 +242,8 @@ async function render() {
   const frame = els.runtimeFrame.contentWindow; const template = productionTemplate();
   frame.__studio.state.templates = [template]; frame.__studio.state.category = template.category; frame.__studio.state.templateId = template.id;
   frame.__studio.state.name = els.sampleName.value;
+  frame.__studio.state.userText.text2 = template.text2?.label || 'Text 2';
+  frame.__studio.state.userText.text3 = template.text3?.label || 'Text 3';
   if (state.sampleFile && state.sampleFile !== state.lastSampleFile) { await frame.__studio.useBlob(state.sampleFile); state.lastSampleFile = state.sampleFile; }
   await frame.__studio.render();
   if (els.authorCanvas.width !== template.w || els.authorCanvas.height !== template.h) {
@@ -263,16 +274,16 @@ function drawGuides(template) {
   const nx = n.x * W, ny = n.y * H, half = n.maxWidth * W / 2;
   ctx.strokeStyle = '#34d3ff'; ctx.beginPath(); ctx.moveTo(nx - half, ny); ctx.lineTo(nx + half, ny); ctx.stroke();
   ctx.fillStyle = '#34d3ff'; ctx.beginPath(); ctx.arc(nx, ny, W / 100, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(nx + half - W / 120, ny - W / 120, W / 60, W / 60);
-  if (template.text3?.enabled) {
-    const t = template.text3; const tx = t.x * W, ty = t.y * H, tw = t.w * W, th = t.h * H;
+  for (const [key, guideColor] of [['text2', '#b98cff'], ['text3', '#ffb347']]) if (template[key]?.enabled) {
+    const t = template[key]; const tx = t.x * W, ty = t.y * H, tw = t.w * W, th = t.h * H;
     ctx.setLineDash([]); ctx.lineWidth = Math.max(7, W / 120); ctx.strokeStyle = '#05070acc'; ctx.strokeRect(tx, ty, tw, th);
-    ctx.lineWidth = Math.max(3, W / 300); ctx.strokeStyle = '#ffb347'; ctx.strokeRect(tx, ty, tw, th);
+    ctx.lineWidth = Math.max(3, W / 300); ctx.strokeStyle = guideColor; ctx.strokeRect(tx, ty, tw, th);
     const handleSize = Math.max(10, W / 70);
     for (const [hx, hy] of Object.values(handlePoints(t))) {
       const px = hx * W, py = hy * H;
       ctx.fillStyle = '#05070a'; ctx.fillRect(px - handleSize / 2 - 2, py - handleSize / 2 - 2, handleSize + 4, handleSize + 4);
       ctx.fillStyle = '#fff8ec'; ctx.fillRect(px - handleSize / 2, py - handleSize / 2, handleSize, handleSize);
-      ctx.lineWidth = Math.max(2, W / 500); ctx.strokeStyle = '#ffb347'; ctx.strokeRect(px - handleSize / 2, py - handleSize / 2, handleSize, handleSize);
+      ctx.lineWidth = Math.max(2, W / 500); ctx.strokeStyle = guideColor; ctx.strokeRect(px - handleSize / 2, py - handleSize / 2, handleSize, handleSize);
     }
   }
   ctx.restore();
@@ -285,19 +296,20 @@ function point(event) {
 
 els.authorCanvas.addEventListener('pointerdown', (event) => {
   if (!state.draft || !state.artworkFile || !state.overlays) return;
-  const at = point(event); const p = state.draft.photo; const n = state.draft.name; const text3 = state.draft.text3;
+  const at = point(event); const p = state.draft.photo; const n = state.draft.name;
   let action = state.tool;
   let handle = null;
   if (state.tool === 'moveName') action = Math.abs(at.x - (n.x + n.maxWidth / 2)) < .04 ? 'resizeName' : 'moveName';
-  else if (state.tool === 'moveText3') {
-    if (!text3.enabled) return;
-    const hit = rectHit(at, text3); if (!hit) return; ({ action, handle } = hit);
+  else if (state.tool === 'moveText2' || state.tool === 'moveText3') {
+    const key = state.tool === 'moveText2' ? 'text2' : 'text3'; const region = state.draft[key];
+    if (!region.enabled) return;
+    const hit = rectHit(at, region); if (!hit) return; action = hit.action.replace('Text3', key === 'text2' ? 'Text2' : 'Text3'); handle = hit.handle;
   } else {
     if (!state.photoRegionCommitted) action = 'drawPhoto';
     else { const hit = photoHit(at, p); if (!hit) return; ({ action, handle } = hit); }
   }
   els.authorCanvas.setPointerCapture(event.pointerId);
-  state.drag = { action, handle, start: at, photo: { ...p }, name: { ...n }, text3: { ...text3 } };
+  state.drag = { action, handle, start: at, photo: { ...p }, name: { ...n }, text2: { ...state.draft.text2 }, text3: { ...state.draft.text3 } };
 });
 
 window.addEventListener('pointermove', (event) => {
@@ -317,14 +329,17 @@ window.addEventListener('pointermove', (event) => {
   }
   else if (state.drag.action === 'moveName') { state.draft.name.x = round(Math.max(0, Math.min(1, state.drag.name.x + dx))); state.draft.name.y = round(Math.max(0, Math.min(1, state.drag.name.y + dy))); }
   else if (state.drag.action === 'resizeName') state.draft.name.maxWidth = round(Math.max(.00001, Math.min(1, state.drag.name.maxWidth + dx * 2)));
-  else if (state.drag.action === 'moveText3') { state.draft.text3.x = round(clamp(state.drag.text3.x + dx, 0, 1 - state.drag.text3.w)); state.draft.text3.y = round(clamp(state.drag.text3.y + dy, 0, 1 - state.drag.text3.h)); }
-  else if (state.drag.action === 'resizeText3') {
-    const minimum = .002; let left = state.drag.text3.x, top = state.drag.text3.y, right = left + state.drag.text3.w, bottom = top + state.drag.text3.h;
+  else if (/^(move|resize)Text[23]$/.test(state.drag.action)) {
+    const key = state.drag.action.endsWith('2') ? 'text2' : 'text3'; const original = state.drag[key];
+    if (state.drag.action.startsWith('move')) { state.draft[key].x = round(clamp(original.x + dx, 0, 1 - original.w)); state.draft[key].y = round(clamp(original.y + dy, 0, 1 - original.h)); }
+    else {
+    const minimum = .002; let left = original.x, top = original.y, right = left + original.w, bottom = top + original.h;
     if (state.drag.handle.includes('w')) left = clamp(left + dx, 0, right - minimum);
     if (state.drag.handle.includes('e')) right = clamp(right + dx, left + minimum, 1);
     if (state.drag.handle.includes('n')) top = clamp(top + dy, 0, bottom - minimum);
     if (state.drag.handle.includes('s')) bottom = clamp(bottom + dy, top + minimum, 1);
-    state.draft.text3 = { ...state.draft.text3, x: round(left), y: round(top), w: round(right - left), h: round(bottom - top) };
+    state.draft[key] = { ...state.draft[key], x: round(left), y: round(top), w: round(right - left), h: round(bottom - top) };
+    }
   }
   writeDraft(state.draft); invalidate(); render();
 });
@@ -333,7 +348,7 @@ window.addEventListener('pointerup', () => { if (state.drag?.action === 'drawPho
 window.addEventListener('pointercancel', () => { state.drag = null; });
 els.authorCanvas.addEventListener('pointermove', (event) => {
   if (state.drag || !state.overlays) return;
-  if (state.tool === 'moveText3') els.authorCanvas.style.cursor = regionCursor(rectHit(point(event), state.draft.text3));
+  if (state.tool === 'moveText2' || state.tool === 'moveText3') { const key = state.tool === 'moveText2' ? 'text2' : 'text3'; els.authorCanvas.style.cursor = regionCursor(rectHit(point(event), state.draft[key])); }
   else if (state.tool !== 'moveName') els.authorCanvas.style.cursor = photoCursor(photoHit(point(event), state.draft.photo));
 });
 els.authorCanvas.addEventListener('pointerleave', () => { if (!state.drag) els.authorCanvas.style.cursor = ''; });
@@ -449,16 +464,16 @@ els.artworkFile.addEventListener('change', guarded(async () => {
 }));
 els.samplePhoto.addEventListener('change', guarded(async () => { state.sampleFile = els.samplePhoto.files[0]; state.lastSampleFile = null; await render(); }));
 for (const button of document.querySelectorAll('[data-name]')) button.addEventListener('click', () => { els.sampleName.value = button.dataset.name; render(); });
-for (const id of ['templateId','label','category','accent','photoShape','photoX','photoY','photoW','photoH','sampleName','nameX','nameY','nameMaxWidth','nameSize','nameFont','nameWeight','nameColor','nameAlign','nameCase','nameTracking','nameMaxLines','nameLineHeight','nameVAlign','nameWrap','text3Value','text3Font','text3Size','text3Weight','text3Color','text3Align','text3X','text3Y','text3W','text3H']) {
+for (const id of ['templateId','label','category','accent','photoShape','photoX','photoY','photoW','photoH','sampleName','nameX','nameY','nameMaxWidth','nameSize','nameFont','nameWeight','nameColor','nameAlign','nameCase','nameTracking','nameMaxLines','nameLineHeight','nameVAlign','nameWrap', ...['text2','text3'].flatMap((key) => ['Label','Font','Size','Weight','Color','Align','X','Y','W','H'].map((suffix) => key + suffix))]) {
   els[id].addEventListener('input', () => { readDraft(); if (id === 'category') updatePositionOptions(); else updateOrderPreview(); invalidate(); render(); });
 }
-els.text3Enabled.addEventListener('change', () => {
-  els.text3Controls.hidden = !els.text3Enabled.checked; els.moveText3.disabled = !els.text3Enabled.checked;
-  if (els.text3Enabled.checked) setTool('moveText3'); else if (state.tool === 'moveText3') setTool('movePhoto');
+for (const key of ['text2', 'text3']) els[`${key}Enabled`].addEventListener('change', () => {
+  const enabled = els[`${key}Enabled`].checked; els[`${key}Controls`].hidden = !enabled; const tool = `move${key[0].toUpperCase()}${key.slice(1)}`; els[tool].disabled = !enabled;
+  if (enabled) setTool(tool); else if (state.tool === tool) setTool('movePhoto');
   readDraft(); invalidate(); render();
 });
 els.categoryPosition.addEventListener('change', () => { updateOrderPreview(); invalidate(); });
-els.drawPhoto.addEventListener('click', () => { state.photoRegionCommitted = false; setTool('drawPhoto'); els.authorCanvas.style.cursor = 'crosshair'; render(); }); els.movePhoto.addEventListener('click', () => setTool('movePhoto')); els.moveName.addEventListener('click', () => setTool('moveName')); els.moveText3.addEventListener('click', () => setTool('moveText3'));
+els.drawPhoto.addEventListener('click', () => { state.photoRegionCommitted = false; setTool('drawPhoto'); els.authorCanvas.style.cursor = 'crosshair'; render(); }); els.movePhoto.addEventListener('click', () => setTool('movePhoto')); els.moveName.addEventListener('click', () => setTool('moveName')); els.moveText2.addEventListener('click', () => setTool('moveText2')); els.moveText3.addEventListener('click', () => setTool('moveText3'));
 els.editMode.addEventListener('click', () => { state.overlays = true; els.editMode.classList.add('active'); els.previewMode.classList.remove('active'); render(); });
 els.previewMode.addEventListener('click', () => { state.overlays = false; els.authorCanvas.style.cursor = ''; els.previewMode.classList.add('active'); els.editMode.classList.remove('active'); render(); });
 els.validate.addEventListener('click', guarded(validate)); els.reviewArtifact.addEventListener('click', guarded(artifact)); els.preparePromotion.addEventListener('click', guarded(preparePlan)); els.promote.addEventListener('click', guarded(promote));
