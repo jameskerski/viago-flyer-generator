@@ -34,6 +34,50 @@
       }
     },
     {
+      "id": "whatsapp-image-2026-09-28-at-20-56-09",
+      "label": "EXPOSURE CHALLENGE UPDATE",
+      "category": "General",
+      "accent": "#8dfa00",
+      "art": "art/whatsapp-image-2026-09-28-at-20-56-09.jpg",
+      "w": 1236,
+      "h": 1600,
+      "photo": {
+        "shape": "rect",
+        "x": 0.3046,
+        "y": 0.34401,
+        "w": 0.37418,
+        "h": 0.33995
+      },
+      "name": {
+        "x": 0.49574,
+        "y": 0.74163,
+        "maxWidth": 0.7,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#00a3d7",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      },
+      "text3": {
+        "enabled": true,
+        "value": "1",
+        "x": 0.74292,
+        "y": 0.48626,
+        "w": 0.13689,
+        "h": 0.10777,
+        "size": 0.107,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center"
+      }
+    },
+    {
       "id": "welcome-new-member",
       "label": "Welcome Template",
       "category": "General",
