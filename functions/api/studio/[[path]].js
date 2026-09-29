@@ -120,6 +120,19 @@ function validateTemplate(template) {
     if (name === 'shape') continue;
     if (!Number.isFinite(value) || value < 0 || value > 1) errors.push(`${name} must be between 0 and 1.`);
   }
+  if (template.text3 !== undefined) {
+    const text3 = template.text3;
+    if (!text3 || typeof text3 !== 'object' || typeof text3.enabled !== 'boolean') errors.push('Text Region 3 must declare an enabled boolean.');
+    else {
+      if (typeof text3.value !== 'string' || text3.value.length > 24) errors.push('Text Region 3 value must be at most 24 characters.');
+      for (const [name, value] of Object.entries({ x: text3.x, y: text3.y, w: text3.w, h: text3.h, size: text3.size })) {
+        if (!Number.isFinite(value) || value < 0 || value > 1 || (['w', 'h', 'size'].includes(name) && value === 0)) errors.push(`Text Region 3 ${name} must be ${['w', 'h', 'size'].includes(name) ? 'greater than 0 and ' : ''}between 0 and 1.`);
+      }
+      if (!text3.font || !Number.isInteger(text3.weight) || text3.weight < 1 || text3.weight > 1000) errors.push('Text Region 3 typography is invalid.');
+      if (!/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(text3.color || '') || !['left', 'center', 'right'].includes(text3.align)) errors.push('Text Region 3 color or alignment is invalid.');
+      if (text3.x + text3.w > 1 || text3.y + text3.h > 1) errors.push('Text Region 3 must stay within the canvas.');
+    }
+  }
   return errors;
 }
 

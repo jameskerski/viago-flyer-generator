@@ -20,10 +20,12 @@ from urllib.parse import parse_qs, unquote, urlparse
 CONTRACT_VERSION = 1
 REGISTRY_VERSION = 2
 TOP_FIELDS = {"version", "source", "templates"}
-TEMPLATE_FIELDS = {"id", "label", "category", "accent", "art", "w", "h", "photo", "name"}
+TEMPLATE_REQUIRED = {"id", "label", "category", "accent", "art", "w", "h", "photo", "name"}
+TEMPLATE_OPTIONAL = {"text3"}
 PHOTO_FIELDS = {"shape", "x", "y", "w", "h"}
 NAME_REQUIRED = {"x", "y", "maxWidth", "size", "font", "weight", "color", "align", "case"}
 NAME_OPTIONAL = {"tracking", "wrap", "maxLines", "lineHeight", "vAlign"}
+TEXT3_FIELDS = {"enabled", "value", "x", "y", "w", "h", "size", "font", "weight", "color", "align"}
 ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 ART_RE = re.compile(r"^art/([a-z0-9]+(?:-[a-z0-9]+)*)\.jpg$")
@@ -125,6 +127,30 @@ def validate_photo(v: Validation, photo: object, where: str) -> None:
     normalized(v, photo.get("y"), f"{where}.y")
     normalized(v, photo.get("w"), f"{where}.w", positive=True)
     normalized(v, photo.get("h"), f"{where}.h", positive=True)
+
+
+def validate_text3(v: Validation, text3: object, where: str) -> None:
+    if not exact_fields(v, text3, where, TEXT3_FIELDS, TEXT3_FIELDS):
+        return
+    assert isinstance(text3, dict)
+    if not isinstance(text3.get("enabled"), bool):
+        v.error(f"{where}.enabled", "must be a boolean")
+    if not isinstance(text3.get("value"), str) or len(text3["value"]) > 24:
+        v.error(f"{where}.value", "must be a string of at most 24 characters")
+    for key in ("x", "y"):
+        normalized(v, text3.get(key), f"{where}.{key}")
+    for key in ("w", "h", "size"):
+        normalized(v, text3.get(key), f"{where}.{key}", positive=True)
+    string(v, text3.get("font"), f"{where}.font")
+    integer(v, text3.get("weight"), f"{where}.weight", 1, 1000)
+    if not isinstance(text3.get("color"), str) or not COLOR_RE.fullmatch(text3["color"]):
+        v.error(f"{where}.color", "must be a supported hex CSS color")
+    if text3.get("align") not in {"left", "center", "right"}:
+        v.error(f"{where}.align", "must be one of: left, center, right")
+    if is_number(text3.get("x")) and is_number(text3.get("w")) and text3["x"] + text3["w"] > 1:
+        v.error(where, "x + w must not exceed 1")
+    if is_number(text3.get("y")) and is_number(text3.get("h")) and text3["y"] + text3["h"] > 1:
+        v.error(where, "y + h must not exceed 1")
 
 
 def jpeg_size(path: Path) -> tuple[int, int]:
@@ -239,7 +265,7 @@ def validate_registry(v: Validation, root: Path) -> tuple[list[dict], set[str]]:
         if isinstance(template, dict) and isinstance(template.get("id"), str):
             fallback = template["id"]
         where = f"template[{fallback}]"
-        if not exact_fields(v, template, where, TEMPLATE_FIELDS, TEMPLATE_FIELDS):
+        if not exact_fields(v, template, where, TEMPLATE_REQUIRED, TEMPLATE_REQUIRED | TEMPLATE_OPTIONAL):
             continue
         assert isinstance(template, dict)
         template_id = template.get("id")
@@ -258,6 +284,8 @@ def validate_registry(v: Validation, root: Path) -> tuple[list[dict], set[str]]:
         integer(v, template.get("h"), f"{where}.h")
         validate_photo(v, template.get("photo"), f"{where}.photo")
         validate_name(v, template.get("name"), f"{where}.name")
+        if "text3" in template:
+            validate_text3(v, template.get("text3"), f"{where}.text3")
         art_path = safe_art_path(v, root, template, where)
         if art_path is not None:
             if not art_path.is_file():
@@ -289,6 +317,11 @@ def validate_fonts(v: Validation, root: Path, templates: list[dict]) -> None:
         family, weight = name.get("font"), name.get("weight")
         if isinstance(family, str) and isinstance(weight, int) and not font_supports(declared, family, weight):
             v.error(f"template[{template_id}].name.font", f"font family/weight '{family}' {weight} is not loaded by public/index.html")
+        text3 = template.get("text3")
+        if isinstance(text3, dict) and text3.get("enabled"):
+            family, weight = text3.get("font"), text3.get("weight")
+            if isinstance(family, str) and isinstance(weight, int) and not font_supports(declared, family, weight):
+                v.error(f"template[{template_id}].text3.font", f"font family/weight '{family}' {weight} is not loaded by public/index.html")
 
 
 def validate_routes(v: Validation, root: Path) -> None:

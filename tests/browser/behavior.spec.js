@@ -47,6 +47,33 @@ test('public generator boots from a legitimately reduced active catalog', async 
   await expect(page.locator('#cats .cat')).toHaveText(['General', 'Ranks', 'Events']);
 });
 
+test('optional Text Region 3 is backward-compatible, rendered, and included in PNG export', async ({ page }) => {
+  let catalog = JSON.parse(await readFile(new URL('../../public/templates.json', import.meta.url), 'utf8'));
+  await page.addInitScript(() => {
+    window.__paintedText = [];
+    const original = CanvasRenderingContext2D.prototype.fillText;
+    CanvasRenderingContext2D.prototype.fillText = function (text, ...args) { window.__paintedText.push(String(text)); return original.call(this, text, ...args); };
+  });
+  await page.route('**/templates.json', (route) => route.fulfill({ json: catalog }));
+  const load = async () => {
+    await page.goto('/'); await expect(page.locator('#statusText')).toHaveText('Ready');
+    await page.waitForFunction((length) => window.__studio?.state?.templates?.length === length, catalog.templates.length);
+  };
+  await load(); const absentDigest = await canvasDigest(page);
+  const first = catalog.templates[0];
+  catalog = { ...catalog, templates: catalog.templates.map((template, index) => index ? template : { ...template, text3: { enabled: false, value: '1', x: .8, y: .08, w: .08, h: .05, size: .045, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' } }) };
+  await load(); expect(await canvasDigest(page)).toBe(absentDigest);
+  catalog = { ...catalog, templates: catalog.templates.map((template) => template.id === first.id ? { ...template, text3: { ...template.text3, enabled: true } } : template) };
+  await load();
+  expect(await page.evaluate(() => window.__paintedText)).toContain('1');
+  expect(await canvasDigest(page)).not.toBe(absentDigest);
+  const before = await page.evaluate(() => window.__paintedText.filter((value) => value === '1').length);
+  const downloadPromise = page.waitForEvent('download'); await page.locator('#download').click();
+  const png = await downloadedPng(await downloadPromise);
+  expect(png.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  expect(await page.evaluate(() => window.__paintedText.filter((value) => value === '1').length)).toBeGreaterThan(before);
+});
+
 test('typed name and uploaded photo survive selection while placement resets', async ({ page }) => {
   await boot(page);
   await page.locator('#nameInput').fill('Casey Rivera');

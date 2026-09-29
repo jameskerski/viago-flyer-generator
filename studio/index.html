@@ -30,6 +30,7 @@
         <button id="drawPhoto" class="tool">Redraw Photo Area</button>
         <button id="movePhoto" class="tool active">Select/move photo</button>
         <button id="moveName" class="tool">Move name/width</button>
+        <button id="moveText3" class="tool" disabled>Move/resize Text 3</button>
       </div>
       <p class="hint">Photo area: drag inside to move, or drag any handle to resize. Use Redraw Photo Area only when you intend to replace it. Name mode moves the anchor or max-width handle.</p>
       <iframe id="runtimeFrame" src="/runtime/" title="Production renderer used for draft preview" hidden></iframe>
@@ -70,13 +71,24 @@
       </article>
 
       <article>
-        <div class="section-title"><b>05</b><h2>Source and provenance</h2></div>
+        <div class="section-title"><b>05</b><h2>Text Region 3</h2></div>
+        <label class="check"><input id="text3Enabled" type="checkbox"> Enable optional third text region</label>
+        <div id="text3Controls" hidden>
+          <div class="grid two"><label>Text / value<input id="text3Value" maxlength="24" placeholder="1"></label><label>Font<input id="text3Font" value="Josefin Sans"></label></div>
+          <div class="grid four"><label>Size<input id="text3Size" type="number" min="0.001" max="1" step="0.001"></label><label>Weight<input id="text3Weight" type="number" min="1" max="1000"></label><label>Color<input id="text3Color" type="color"></label><label>Align<select id="text3Align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label></div>
+          <p class="note">Select “Move/resize Text 3,” then drag inside the box or use its handles.</p>
+          <details><summary>Exact geometry (advanced)</summary><div class="grid four numeric"><label>x<input id="text3X" type="number" min="0" max="1" step="0.00001"></label><label>y<input id="text3Y" type="number" min="0" max="1" step="0.00001"></label><label>w<input id="text3W" type="number" min="0.001" max="1" step="0.00001"></label><label>h<input id="text3H" type="number" min="0.001" max="1" step="0.00001"></label></div></details>
+        </div>
+      </article>
+
+      <article>
+        <div class="section-title"><b>06</b><h2>Source and provenance</h2></div>
         <div class="grid two"><label>Designer / source<input id="provDesigner" placeholder="Unknown"></label><label>Canva URL or design ID<input id="provCanva" placeholder="Unknown"></label><label>Approval reference<input id="provApproval" placeholder="Unknown"></label><label>Source owner / contact<input id="provOwner" placeholder="Unknown"></label><label>Reference-export checksum<input id="provReference" placeholder="Unknown"></label><label>Notes<textarea id="provNotes" rows="2" placeholder="Unknown"></textarea></label></div>
         <p class="note">Unknown provenance stays explicitly “Unknown”; the Studio never invents ownership evidence.</p>
       </article>
 
       <article class="review">
-        <div class="section-title"><b>06</b><h2>Validate, review, promote</h2></div>
+        <div class="section-title"><b>07</b><h2>Validate, review, promote</h2></div>
         <div class="actions"><button id="validate" class="primary">Validate template</button><button id="reviewArtifact">Generate review artifact</button><button id="preparePromotion">Prepare promotion</button></div>
         <div id="validationResult" class="result neutral">Not validated.</div>
         <details><summary>Proposed template JSON</summary><pre id="jsonPreview"></pre></details>

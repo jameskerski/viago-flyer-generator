@@ -199,6 +199,36 @@ function drawName(t, W, H) {
   ctx.restore();
 }
 
+function drawText3(t, W, H) {
+  const s = t.text3;
+  if (!s?.enabled || !String(s.value || '').trim()) return;
+  const text = String(s.value).trim();
+  const family = s.font || 'Josefin Sans';
+  const weight = s.weight || 700;
+  const x = s.x * W, y = s.y * H, boxW = s.w * W, boxH = s.h * H;
+  let px = s.size * W;
+  const tracking = 0;
+  for (let guard = 0; guard < 60 && px > 2; guard++) {
+    setFont(px, weight, family, tracking);
+    const metrics = ctx.measureText(text);
+    const glyphH = (metrics.actualBoundingBoxAscent || px * .72) + (metrics.actualBoundingBoxDescent || px * .08);
+    if (measure(text, px, weight, family, tracking) <= boxW && glyphH <= boxH) break;
+    px *= .94;
+  }
+  setFont(px, weight, family, tracking);
+  const metrics = ctx.measureText(text);
+  const ascent = metrics.actualBoundingBoxAscent || px * .72;
+  const descent = metrics.actualBoundingBoxDescent || px * .08;
+  const align = s.align || 'center';
+  const drawX = align === 'left' ? x : align === 'right' ? x + boxW : x + boxW / 2;
+  const baseline = y + (boxH + ascent - descent) / 2;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, boxW, boxH); ctx.clip();
+  ctx.textBaseline = 'alphabetic';
+  paint(text, drawX, baseline, px, weight, family, tracking, align, s.color || '#ffffff');
+  ctx.restore();
+}
+
 /* ── render ──────────────────────────────────────────────── */
 
 async function render() {
@@ -238,6 +268,7 @@ async function render() {
   }
 
   drawName(t, W, H);
+  drawText3(t, W, H);
 }
 
 let queued = false;
