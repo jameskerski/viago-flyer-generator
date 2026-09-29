@@ -473,6 +473,37 @@
       }
     },
     {
+      "id": "whatsapp-image-2026-09-28-at-19-10-19",
+      "label": "MEMBER ONLY PASSPORT",
+      "category": "Events",
+      "accent": "#8dfa00",
+      "art": "art/whatsapp-image-2026-09-28-at-19-10-19.jpg",
+      "w": 800,
+      "h": 1080,
+      "photo": {
+        "shape": "rect",
+        "x": 0.5342,
+        "y": 0.23473,
+        "w": 0.4237,
+        "h": 0.51678
+      },
+      "name": {
+        "x": 0.75,
+        "y": 0.8,
+        "maxWidth": 0.5,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#0433ff",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      }
+    },
+    {
       "id": "cyprus-im",
       "label": "Cyprus (Individual)",
       "category": "Events",
