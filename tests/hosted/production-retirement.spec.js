@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { exportJWK, exportPKCS8, generateKeyPair, SignJWT } from 'jose';
-import { onRequest, validateEvolvingCatalog, validateTemplate } from '../../functions/api/studio/[[path]].js';
+import { onRequest, prepareRetirement, validateEvolvingCatalog, validateTemplate } from '../../functions/api/studio/[[path]].js';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -33,15 +33,21 @@ test('production Worker route retires one template through GitHub App with an ev
     return response({ message: `unexpected request ${href}` }, 500);
   };
   try {
+    const env = {
+      CF_ACCESS_AUD: 'studio-audience', CF_TEAM_DOMAIN: 'https://team.cloudflareaccess.com',
+      GITHUB_APP_ID: '4530195', GITHUB_APP_INSTALLATION_ID: '152276767', GITHUB_APP_PRIVATE_KEY: await exportPKCS8(appPrivate),
+      GITHUB_OWNER: 'jameskerski', GITHUB_REPOSITORY: 'viago-flyer-generator', GITHUB_BRANCH: 'main'
+    };
+    const authHeaders = { 'cf-access-jwt-assertion': accessToken };
+    const diagnostics = await onRequest({ request: new Request('https://studio.example/api/studio/diagnostics', { headers: authHeaders }), env });
+    expect(await diagnostics.json()).toMatchObject({ worker: 'legacy-optional-text-v3', retirementRoute: '/api/studio/retire' });
+    const preflight = await onRequest({ request: new Request('https://studio.example/api/studio/retire-preflight?templateId=passport', { headers: authHeaders }), env });
+    expect(await preflight.json()).toMatchObject({ ok: true, worker: 'legacy-optional-text-v3', target: { id: 'passport' }, errors: [] });
     const request = new Request('https://studio.example/api/studio/retire', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'cf-access-jwt-assertion': accessToken },
       body: JSON.stringify({ templateId: 'cyprus-im', baseRevision: 'base-sha', confirmed: true })
     });
-    const result = await onRequest({ request, env: {
-      CF_ACCESS_AUD: 'studio-audience', CF_TEAM_DOMAIN: 'https://team.cloudflareaccess.com',
-      GITHUB_APP_ID: '4530195', GITHUB_APP_INSTALLATION_ID: '152276767', GITHUB_APP_PRIVATE_KEY: await exportPKCS8(appPrivate),
-      GITHUB_OWNER: 'jameskerski', GITHUB_REPOSITORY: 'viago-flyer-generator', GITHUB_BRANCH: 'main'
-    } });
+    const result = await onRequest({ request, env });
     expect(result.status).toBe(200);
     expect(await result.json()).toMatchObject({ ok: true, commitSha: 'retirement-commit', affectedFiles: ['public/templates.json', 'public/art/cyprus-im.jpg'] });
     const tree = calls.find(({ href }) => href.endsWith('/git/trees')).body.tree;
@@ -72,4 +78,11 @@ test('legacy compatibility is catalog-only while current enabled regions require
   expect(validateTemplate(currentEdit)).toContain('Text Region 3 public label is required and must be at most 40 characters.');
   currentEdit.text3.label = 'Placement';
   expect(validateTemplate(currentEdit)).toEqual([]);
+
+  for (const templateId of ['passport', 'expose-tempate']) {
+    const preflight = prepareRetirement(registry, templateId);
+    expect(preflight.errors).toEqual([]);
+    expect(preflight.after.templates.some(({ id }) => id === templateId)).toBe(false);
+    expect(preflight.after.templates.find(({ id }) => id === legacy.id)).toEqual(legacy);
+  }
 });

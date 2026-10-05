@@ -3,6 +3,7 @@ import { createGitHubAppTokenProvider } from '../../../hosted/github-app-auth.mj
 
 const ALLOWED_DOMAIN = 'goodlifetrainings.com';
 const CATALOG = 'public/templates.json';
+const RETIREMENT_COMPATIBILITY = 'legacy-optional-text-v3';
 
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const decode64 = (value) => Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=')), (c) => c.charCodeAt(0));
@@ -155,6 +156,15 @@ function validateEvolvingCatalog(registry) {
   return errors;
 }
 
+function prepareRetirement(registry, templateId) {
+  if (!safeId(templateId)) throw new Error('invalid template target');
+  const target = registry.templates.find(({ id }) => id === templateId);
+  if (!target) throw new Error('template was not found; reload the Studio');
+  const after = { ...registry, templates: registry.templates.filter(({ id }) => id !== target.id) };
+  const errors = validateEvolvingCatalog(after);
+  return { target, after, errors };
+}
+
 function artwork(dataUrl) {
   if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/jpeg;base64,')) throw new Error('approved JPEG artwork is required');
   const bytes = decode64(dataUrl.split(',')[1]);
@@ -176,6 +186,15 @@ export async function onRequest(context) {
     const repo = github(context.env);
     const snap = await repo.snapshot();
     if (context.request.method === 'GET' && path.endsWith('/catalog')) return json({ registry: JSON.parse(snap.catalog), revision: snap.revision });
+    if (context.request.method === 'GET' && path.endsWith('/diagnostics')) return json({
+      worker: RETIREMENT_COMPATIBILITY, revision: snap.revision,
+      retirementRoute: '/api/studio/retire', catalogValidation: 'legacy-compatible-existing/current-strict-authored'
+    });
+    if (context.request.method === 'GET' && path.endsWith('/retire-preflight')) {
+      const templateId = new URL(context.request.url).searchParams.get('templateId');
+      const { target, after, errors } = prepareRetirement(JSON.parse(snap.catalog), templateId);
+      return json({ ok: errors.length === 0, worker: RETIREMENT_COMPATIBILITY, revision: snap.revision, target: { id: target.id, label: target.label, art: target.art }, resultingTemplateCount: after.templates.length, errors });
+    }
     if (context.request.method === 'GET' && path.endsWith('/artwork')) {
       const url = new URL(context.request.url); const templateId = url.searchParams.get('templateId'); const revision = url.searchParams.get('revision');
       if (!safeId(templateId) || !revision || revision !== snap.revision) return json({ error: 'published state changed; reload the Studio' }, 409);
@@ -208,13 +227,9 @@ export async function onRequest(context) {
     }
     if (path.endsWith('/retire')) {
       if (input.confirmed !== true) throw new Error('retirement confirmation is required');
-      if (!safeId(input.templateId)) throw new Error('invalid template target');
       if (input.baseRevision !== snap.revision) return json({ error: 'production changed; reload the Studio and review before retiring', code: 'STALE_REVISION' }, 409);
       const before = JSON.parse(snap.catalog);
-      const target = before.templates.find(({ id }) => id === input.templateId);
-      if (!target) throw new Error('template was not found; reload the Studio');
-      const after = { ...before, templates: before.templates.filter(({ id }) => id !== target.id) };
-      const errors = validateEvolvingCatalog(after);
+      const { target, after, errors } = prepareRetirement(before, input.templateId);
       if (errors.length) throw new Error(`resulting catalog validation failed: ${errors.join(' ')}`);
       const art = `public/art/${target.id}.jpg`;
       const referenced = after.templates.some(({ art: path }) => path === target.art);
@@ -232,4 +247,4 @@ export async function onRequest(context) {
   }
 }
 
-export { validateEvolvingCatalog, validateTemplate };
+export { prepareRetirement, validateEvolvingCatalog, validateTemplate };
