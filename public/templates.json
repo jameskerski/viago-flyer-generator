@@ -205,6 +205,63 @@
       }
     },
     {
+      "id": "tulum",
+      "label": "tulum",
+      "category": "General",
+      "accent": "#8dfa00",
+      "art": "art/tulum.jpg",
+      "w": 1159,
+      "h": 1500,
+      "photo": {
+        "shape": "circle",
+        "x": 0.29097,
+        "y": 0.34297,
+        "w": 0.41005,
+        "h": 0.3159
+      },
+      "name": {
+        "x": 0.49792,
+        "y": 0.75873,
+        "maxWidth": 0.7,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#0d0c0c",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      },
+      "text2": {
+        "enabled": false,
+        "label": "Text 2",
+        "x": 0.1,
+        "y": 0.78,
+        "w": 0.8,
+        "h": 0.08,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center"
+      },
+      "text3": {
+        "enabled": false,
+        "label": "Text 3",
+        "x": 0.78,
+        "y": 0.08,
+        "w": 0.12,
+        "h": 0.08,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center"
+      }
+    },
+    {
       "id": "passport",
       "label": "Passport",
       "category": "General",
