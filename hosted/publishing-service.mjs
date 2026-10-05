@@ -8,6 +8,16 @@ const artPath = (id) => `public/art/${id}.jpg`;
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const safeId = (id) => typeof id === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
 
+function validateCurrentOptionalRegions(template) {
+  for (const key of ['text2', 'text3']) {
+    const region = template?.[key];
+    if (!region?.enabled) continue;
+    if (typeof region.label !== 'string' || !region.label.trim() || region.label.length > 40) {
+      throw new Error(`${key} public label is required and must be at most 40 characters`);
+    }
+  }
+}
+
 function jpeg(dataUrl) {
   if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/jpeg;base64,')) throw new Error('approved JPEG artwork is required');
   const bytes = Buffer.from(dataUrl.split(',')[1], 'base64');
@@ -53,15 +63,22 @@ export function createPublishingService({ repository, validatorRoot }) {
       return await runValidator(temporary, validator);
     } finally { await rm(temporary, { recursive: true, force: true }); }
   }
+  async function validateCompatibleMutation(before, after, artworkWrites = {}, deletions = []) {
+    const [baseline, result] = await Promise.all([validateResult(before), validateResult(after, artworkWrites, deletions)]);
+    const priorErrors = new Set(baseline.messages.filter((message) => message.startsWith('ERROR:')));
+    const introduced = result.messages.filter((message) => message.startsWith('ERROR:') && !priorErrors.has(message));
+    return { ok: introduced.length === 0, messages: introduced };
+  }
   return {
     async catalog() { const snap = await repository.snapshot(); return { registry: JSON.parse(snap.catalog), revision: snap.revision, catalogHash: hash(snap.catalog) }; },
     async publish(input, actor) {
       if (!actor?.id) throw new Error('authenticated TEMPLATE_ADMIN is required');
+      validateCurrentOptionalRegions(input.draft);
       const snap = await repository.snapshot();
       if (input.baseRevision !== snap.revision) { const error = new Error('production changed; reload and review before publishing'); error.code = 'STALE_REVISION'; throw error; }
       const before = JSON.parse(snap.catalog); const after = insert(before, input); const artwork = jpeg(input.artworkDataUrl);
       const path = artPath(input.draft.id); if (input.draft.art !== `art/${input.draft.id}.jpg`) throw new Error('artwork path must match template id');
-      const validation = await validateResult(after, { [path]: artwork });
+      const validation = await validateCompatibleMutation(before, after, { [path]: artwork });
       if (!validation.ok) { const error = new Error(`candidate validation failed: ${validation.messages.join(' | ')}`); error.validation = validation; throw error; }
       const message = `${input.mode === 'new' ? 'Add' : 'Update'} ${input.draft.label} template`;
       const result = await repository.commit({ baseRevision: snap.revision, baseTree: snap.treeSha, message, actor, writes: { [CATALOG]: JSON.stringify(after, null, 2) + '\n', [path]: artwork } });
@@ -77,7 +94,7 @@ export function createPublishingService({ repository, validatorRoot }) {
       if (!target) throw new Error('template was not found');
       const after = { ...before, templates: before.templates.filter(({ id }) => id !== input.templateId) };
       const path = artPath(target.id); const referenced = after.templates.some(({ art }) => art === target.art); const deletes = referenced ? [] : [path];
-      const validation = await validateResult(after, {}, deletes);
+      const validation = await validateCompatibleMutation(before, after, {}, deletes);
       if (!validation.ok) { const error = new Error(`resulting catalog validation failed: ${validation.messages.join(' | ')}`); error.validation = validation; throw error; }
       const result = await repository.commit({ baseRevision: snap.revision, baseTree: snap.treeSha, message: `Retire ${target.label} template`, actor, writes: { [CATALOG]: JSON.stringify(after, null, 2) + '\n' }, deletes });
       return { ok: true, commitSha: result.sha, deployment: 'Published to GitHub; deployment in progress', affectedFiles: [CATALOG, ...deletes] };

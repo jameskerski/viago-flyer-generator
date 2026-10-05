@@ -137,7 +137,11 @@ def validate_text_region(v: Validation, text3: object, where: str) -> None:
     if not isinstance(text3.get("enabled"), bool):
         v.error(f"{where}.enabled", "must be a boolean")
     if "label" in text3:
-        string(v, text3.get("label"), f"{where}.label")
+        label = text3.get("label")
+        if not isinstance(label, str) or len(label) > 40:
+            v.error(f"{where}.label", "must be a string of at most 40 characters")
+        elif text3.get("enabled") and not label.strip():
+            v.error(f"{where}.label", "must be non-empty when the region is enabled")
     if "value" in text3 and not isinstance(text3["value"], str):
         v.error(f"{where}.value", "legacy value must be a string when present")
     for key in ("x", "y"):

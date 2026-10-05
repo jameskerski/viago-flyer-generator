@@ -83,6 +83,15 @@ test('validation, stale revision, and unsafe paths block publication before comm
   expect(commits).toHaveLength(0);
 });
 
+test('new or edited enabled optional regions require a public label while disabled regions do not', async () => {
+  const { service, candidate, commits } = await fixture();
+  candidate.draft.text3 = { enabled: true, x: .8, y: .1, w: .1, h: .05, size: .04, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' };
+  await expect(service.publish(candidate, actor)).rejects.toThrow('text3 public label is required');
+  candidate.draft.text3.enabled = false;
+  await service.publish(candidate, actor);
+  expect(commits).toHaveLength(1);
+});
+
 test('retirement requires confirmation and atomically removes catalog entry and unreferenced art', async () => {
   const { service, commits } = await fixture();
   await expect(service.retire({ templateId: 'cyprus-im', baseRevision: 'base-sha', confirmed: false }, actor)).rejects.toThrow('confirmation');

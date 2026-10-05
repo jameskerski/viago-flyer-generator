@@ -111,7 +111,7 @@ function apply(registry, input) {
   return { ...registry, templates };
 }
 
-function validateTemplate(template) {
+function validateTemplate(template, { allowLegacyEnabledLabel = false } = {}) {
   const errors = [];
   if (!safeId(template.id)) errors.push('Template ID must use lowercase words and hyphens.');
   if (!template.label || !template.category) errors.push('Label and category are required.');
@@ -124,7 +124,10 @@ function validateTemplate(template) {
     const text3 = template[key]; const title = key === 'text2' ? 'Text Region 2' : 'Text Region 3';
     if (!text3 || typeof text3 !== 'object' || typeof text3.enabled !== 'boolean') errors.push(`${title} must declare an enabled boolean.`);
     else {
-      if (typeof text3.label !== 'string' || !text3.label.trim() || text3.label.length > 40) errors.push(`${title} public label is required and must be at most 40 characters.`);
+      const hasValidLabel = typeof text3.label === 'string' && Boolean(text3.label.trim()) && text3.label.length <= 40;
+      if (text3.enabled && !hasValidLabel && !allowLegacyEnabledLabel) errors.push(`${title} public label is required and must be at most 40 characters.`);
+      if (text3.enabled && allowLegacyEnabledLabel && text3.label !== undefined && !hasValidLabel) errors.push(`${title} public label must be a non-empty string of at most 40 characters when present.`);
+      if (!text3.enabled && text3.label !== undefined && (typeof text3.label !== 'string' || text3.label.length > 40)) errors.push(`${title} public label must be a string of at most 40 characters when present.`);
       for (const [name, value] of Object.entries({ x: text3.x, y: text3.y, w: text3.w, h: text3.h, size: text3.size })) {
         if (!Number.isFinite(value) || value < 0 || value > 1 || (['w', 'h', 'size'].includes(name) && value === 0)) errors.push(`${title} ${name} must be ${['w', 'h', 'size'].includes(name) ? 'greater than 0 and ' : ''}between 0 and 1.`);
       }
@@ -143,7 +146,7 @@ function validateEvolvingCatalog(registry) {
   }
   const seen = new Set();
   for (const template of registry.templates) {
-    errors.push(...validateTemplate(template).map((message) => `${template?.id || 'unknown'}: ${message}`));
+    errors.push(...validateTemplate(template, { allowLegacyEnabledLabel: true }).map((message) => `${template?.id || 'unknown'}: ${message}`));
     if (!safeId(template?.id)) continue;
     if (seen.has(template.id)) errors.push(`Duplicate template ID: ${template.id}.`);
     seen.add(template.id);
@@ -217,6 +220,10 @@ export async function onRequest(context) {
       const referenced = after.templates.some(({ art: path }) => path === target.art);
       const deletes = referenced ? [] : [art];
       const sha = await repo.commit({ revision: snap.revision, treeSha: snap.treeSha, message: `Retire ${target.label} template`, actor: who, writes: { [CATALOG]: `${JSON.stringify(after, null, 2)}\n` }, deletes });
+      const published = await repo.snapshot(sha);
+      if (published.revision !== sha || JSON.stringify(JSON.parse(published.catalog)) !== JSON.stringify(after)) {
+        throw new Error('retirement readback did not match the resulting catalog; reload before continuing');
+      }
       return json({ ok: true, commitSha: sha, deployment: 'Published to GitHub; deployment in progress', affectedFiles: [CATALOG, ...deletes] });
     }
     return json({ error: 'not found' }, 404);
@@ -224,3 +231,5 @@ export async function onRequest(context) {
     return json({ error: error.message }, 400);
   }
 }
+
+export { validateEvolvingCatalog, validateTemplate };
