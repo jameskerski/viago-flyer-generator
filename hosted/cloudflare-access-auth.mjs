@@ -1,11 +1,6 @@
-const ALLOWED_DOMAIN = 'goodlifetrainings.com';
+import { authorizeGoogleIdentity, INTERNAL_EMAIL_DOMAIN } from './platform/identity.mjs';
 
-export function authorizeGoogleIdentity(claims) {
-  const email = typeof claims?.email === 'string' ? claims.email.trim().toLowerCase() : '';
-  const parts = email.split('@');
-  if (parts.length !== 2 || !parts[0] || parts[1] !== ALLOWED_DOMAIN) return null;
-  return { id: email, displayName: claims.name || email, email, role: 'TEMPLATE_ADMIN' };
-}
+const ALLOWED_DOMAIN = INTERNAL_EMAIL_DOMAIN;
 
 function bytes(value) {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
@@ -34,4 +29,4 @@ export function createCloudflareAccessAuthenticator({ teamDomain, audience, fetc
   };
 }
 
-export { ALLOWED_DOMAIN };
+export { ALLOWED_DOMAIN, authorizeGoogleIdentity };

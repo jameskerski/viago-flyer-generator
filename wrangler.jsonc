@@ -14,5 +14,12 @@
     "GITHUB_BRANCH": "main",
     "GITHUB_OWNER": "jameskerski",
     "GITHUB_REPOSITORY": "viago-flyer-generator"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "PLATFORM_DB",
+      "database_name": "glt-unified-admin-platform",
+      "database_id": "91c093c8-53f9-4823-b339-bff6b1216cc7"
+    }
+  ]
 }

@@ -1,7 +1,9 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { createGitHubAppTokenProvider } from '../../../hosted/github-app-auth.mjs';
+import { createIdentityFromAccessClaims } from '../../../hosted/platform/identity.mjs';
+import { authorizeOperation, MODULES, requiredTemplatePermission } from '../../../hosted/platform/authorization.mjs';
+import { createD1Registry } from '../../../hosted/platform/d1-registry.mjs';
 
-const ALLOWED_DOMAIN = 'goodlifetrainings.com';
 const CATALOG = 'public/templates.json';
 const RETIREMENT_COMPATIBILITY = 'legacy-optional-text-v3';
 
@@ -16,7 +18,7 @@ const encode64 = (bytes) => {
 const safeId = (id) => typeof id === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
 const equalBytes = (left, right) => left.length === right.length && left.every((byte, index) => byte === right[index]);
 
-async function actor(request, env) {
+async function identity(request, env) {
   const cookieToken = request.headers.get('cookie')?.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
   const token = request.headers.get('cf-access-jwt-assertion') || cookieToken;
   if (!token) throw new Error('missing_access_assertion');
@@ -27,9 +29,19 @@ async function actor(request, env) {
     audience: env.CF_ACCESS_AUD,
     issuer: env.CF_TEAM_DOMAIN.replace(/\/$/, '')
   });
-  const email = typeof claims.email === 'string' ? claims.email.trim().toLowerCase() : '';
-  const pieces = email.split('@');
-  return pieces.length === 2 && pieces[0] && pieces[1] === ALLOWED_DOMAIN ? { id: email, displayName: claims.name || email } : null;
+  return createIdentityFromAccessClaims(claims);
+}
+
+async function templateActor(request, env, pathname) {
+  const verifiedIdentity = await identity(request, env);
+  const decision = await authorizeOperation({
+    identity: verifiedIdentity,
+    registry: env.PLATFORM_DB ? createD1Registry(env.PLATFORM_DB) : null,
+    module: MODULES.TEMPLATE_STUDIO,
+    permission: requiredTemplatePermission(request.method, pathname),
+    allowTemplateCompatibility: true
+  });
+  return decision.allowed ? decision.actor : null;
 }
 
 let appProvider;
@@ -173,14 +185,14 @@ function artwork(dataUrl) {
 }
 
 export async function onRequest(context) {
+  const path = new URL(context.request.url).pathname;
   let who;
   try {
-    who = await actor(context.request, context.env);
+    who = await templateActor(context.request, context.env, path);
   } catch (error) {
     return json({ error: `authentication validation failed: ${error.code || error.message}` }, 401);
   }
   if (!who) return json({ error: 'sign in with an authorized Good Life Trainings account' }, 401);
-  const path = new URL(context.request.url).pathname;
   try {
     if (context.request.method === 'GET' && path.endsWith('/session')) return json({ actor: who });
     const repo = github(context.env);
