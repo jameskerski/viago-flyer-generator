@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#050806">
+  <title>Good Life Photo Studio</title>
+  <link rel="stylesheet" href="photo-studio.css">
+  <link rel="stylesheet" href="photo-studio-enhancements.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="/photos/" aria-label="Good Life Photo Studio home">
+      <span class="brand-mark">GL</span><span><b>GOOD LIFE</b><strong>PHOTO STUDIO</strong></span>
+    </a>
+    <nav id="nav" aria-label="Photo Studio" hidden>
+      <button data-view="overview">Overview</button><button data-view="events">Events</button>
+      <button class="admin-only" data-view="photographers">Photographers</button>
+      <button class="admin-only" data-view="activity">Activity</button>
+    </nav>
+    <div class="identity"><span id="actorName">Authenticating…</span><span id="actorRole"></span></div>
+  </header>
+
+  <main id="main">
+    <section id="loading" class="loading" aria-live="polite"><span class="spinner"></span>Verifying secure access…</section>
+    <section id="denied" class="empty" hidden><p class="eyebrow">ACCESS REQUIRED</p><h1>Photo Studio is invite-only.</h1><p id="deniedMessage">Your Google account does not currently have Photo Studio access.</p></section>
+
+    <div id="app" hidden>
+      <section class="hero">
+        <div><p class="eyebrow">GOOD LIFE TRAININGS</p><h1>PHOTO <span>STUDIO</span></h1><p id="heroCopy">Manage event photography, people and publication readiness.</p></div>
+        <div class="sync-pill"><i></i><span>Drive reconciliation active</span><small>Hourly verification</small></div>
+      </section>
+
+      <section class="view" data-view-panel="overview">
+        <div class="section-head"><div><p class="eyebrow">OPERATIONS</p><h2>Studio overview</h2></div><p>Verified Wix publication data and controlled photographer access.</p></div>
+        <div id="metrics" class="metrics"></div>
+        <div class="split">
+          <section class="panel"><div class="panel-head"><h3>Event readiness</h3><button data-view="events">View all</button></div><div id="overviewEvents" class="event-list"></div></section>
+          <section class="panel"><div class="panel-head"><h3>System status</h3></div><ul class="status-list"><li><i></i><span><b>Google Drive</b><small>Storage authority connected</small></span></li><li><i></i><span><b>Wix CMS</b><small>Publication authority confirmed</small></span></li><li><i></i><span><b>Hourly reconciliation</b><small>Successor automation operational</small></span></li><li class="pending"><i></i><span><b>Direct uploads</b><small>Disabled pending resumable-upload qualification</small></span></li></ul></section>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="events" hidden>
+        <div class="section-head"><div><p class="eyebrow">PHOTO EVENTS</p><h2 id="eventsTitle">All events</h2></div><button class="primary admin-only" id="newEvent">Create event</button></div>
+        <div id="eventGrid" class="event-grid"></div>
+        <section id="eventDetail" class="event-detail" hidden></section>
+      </section>
+
+      <section class="view admin-only" data-view-panel="photographers" hidden>
+        <div class="section-head"><div><p class="eyebrow">ACCESS CONTROL</p><h2>Photographers</h2></div><p>Invite-only Google accounts with event-scoped access.</p></div>
+        <div class="split photographers-layout">
+          <form id="inviteForm" class="panel form-panel"><h3>Invite photographer</h3><label>Google email<input required name="email" type="email" autocomplete="email" placeholder="photographer@example.com"></label><label>Assigned event<select required name="eventId"><option value="">Select an event</option></select></label><button class="primary" type="submit">Create invitation</button><p class="form-note">The invitation grants Photo Studio only. It never grants Template Studio access.</p><output id="inviteResult" aria-live="polite"></output></form>
+          <section class="panel"><div class="panel-head"><h3>Approved photographers</h3></div><div id="photographerList" class="people-list"></div></section>
+        </div>
+      </section>
+
+      <section class="view admin-only" data-view-panel="activity" hidden>
+        <div class="section-head"><div><p class="eyebrow">AUDIT TRAIL</p><h2>Recent activity</h2></div><p>Only genuine administrative operations are recorded.</p></div>
+        <section class="panel"><div id="activityList" class="activity-list"></div></section>
+      </section>
+    </div>
+  </main>
+  <dialog id="eventWizard" aria-labelledby="eventWizardTitle">
+    <form method="dialog" class="wizard">
+      <div class="panel-head"><div><p class="eyebrow">VALIDATED DRAFT</p><h2 id="eventWizardTitle">Create photo event</h2></div><button value="cancel" aria-label="Close">Close</button></div>
+      <p>Define the intended event identity. Final creation remains unavailable until atomic Wix CMS and canonical Drive-root provisioning are qualified.</p>
+      <div class="wizard-fields"><label>Event series<input required name="series"></label><label>Region<input required name="region"></label><label>Year<input required name="year" type="number" min="2020" max="2100"></label><label>Public event name<input required name="publicName"></label><label>Start date (optional)<input name="startDate" type="date"></label><label>End date (optional)<input name="endDate" type="date"></label><label class="wide">Artwork URL (optional)<input name="artworkUrl" type="url"></label></div>
+      <div class="notice"><strong>Creation unavailable</strong><p>No Wix record or Drive folder will be created. This prevents partial public events while cross-system rollback and identity guarantees remain unqualified.</p></div>
+      <button class="primary" type="button" disabled>Create event</button>
+    </form>
+  </dialog>
+  <script type="module" src="photo-studio.js"></script>
+</body>
+</html>

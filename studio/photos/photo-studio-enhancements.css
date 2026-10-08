@@ -1,0 +1,25 @@
+dialog {
+  width: min(760px, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  padding: 0;
+  border: 1px solid #3d5c47;
+  border-radius: 18px;
+  background: #080d0a;
+  color: var(--white);
+  box-shadow: 0 30px 100px #000;
+}
+dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(5px); }
+.wizard { padding: 1.4rem; }
+.wizard > p { color: var(--muted); }
+.wizard-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.3rem 0; }
+.wizard-fields label { display: grid; gap: .35rem; color: #c6d1ca; }
+.wizard-fields .wide { grid-column: 1 / -1; }
+.wizard-fields input { width: 100%; background: #050806; color: white; border: 1px solid #34483b; border-radius: 8px; padding: .8rem; font: inherit; }
+.assignment-control { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+.assignment-control select { max-width: 210px; background: #050806; color: white; border: 1px solid #34483b; border-radius: 7px; padding: .45rem; }
+.person-main { min-width: 0; }
+.person-main small { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .wizard-fields { grid-template-columns: 1fr; }
+  .wizard-fields .wide { grid-column: auto; }
+}

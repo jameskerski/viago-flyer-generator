@@ -13,7 +13,8 @@
     "CF_TEAM_DOMAIN": "https://delicate-thunder-f5d6.cloudflareaccess.com",
     "GITHUB_BRANCH": "main",
     "GITHUB_OWNER": "jameskerski",
-    "GITHUB_REPOSITORY": "viago-flyer-generator"
+    "GITHUB_REPOSITORY": "viago-flyer-generator",
+    "PHOTO_STUDIO_BOOTSTRAP_ADMINS": "admin@goodlifetrainings.com"
   },
   "d1_databases": [
     {
