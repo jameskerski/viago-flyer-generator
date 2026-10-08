@@ -3,6 +3,7 @@ import { createIdentityFromAccessClaims } from '../../../hosted/platform/identit
 import { authorizeOperation, MODULES, PERMISSIONS } from '../../../hosted/platform/authorization.mjs';
 import { createD1Registry } from '../../../hosted/platform/d1-registry.mjs';
 import { createPhotoRegistry } from '../../../hosted/platform/photo-registry.mjs';
+import { authorizedSync, parseSyncPayload, reconcilePhotoReadModel } from '../../../hosted/platform/photo-sync.mjs';
 
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
@@ -37,12 +38,23 @@ async function context(request, env, permission, eventId = null) {
 export async function onRequest({ request, env }) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/photos\/?/, '');
+  if (request.method === 'POST' && path === 'sync') {
+    if (!(await authorizedSync(request, env))) return json({ error: 'unauthorized_sync' }, 401);
+    try {
+      const payload = await parseSyncPayload(request);
+      return json({ success: true, ...(await reconcilePhotoReadModel(env.PLATFORM_DB, payload)) });
+    } catch (error) {
+      return json({ success: false, error: error.message }, error.message === 'payload_too_large' ? 413 : 400);
+    }
+  }
   const eventMatch = path.match(/^events\/([^/]+)$/);
   const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview'].includes(path);
   const permission = manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
   let auth;
   try {
-    auth = await context(request, env, permission, eventMatch?.[1] || null);
+    // Event-scope authorization is resolved from the explicit Photo Studio
+    // permission profile in the registry, not from a browser-supplied id.
+    auth = await context(request, env, permission, null);
   } catch (error) {
     return json({ error: 'authentication validation failed', code: error.message }, 401);
   }
@@ -51,7 +63,10 @@ export async function onRequest({ request, env }) {
   const photos = auth.photos;
 
   try {
-    if (request.method === 'GET' && path === 'session') return json({ actor });
+    if (request.method === 'GET' && path === 'session') {
+      const profile = actor.role === 'PHOTOGRAPHER' ? await photos.photographerProfile(actor.id) : null;
+      return json({ actor: { ...actor, profile } });
+    }
     if (request.method === 'GET' && path === 'events') return json({ events: await photos.listEvents(actor) });
     if (request.method === 'GET' && eventMatch) {
       const event = await photos.event(actor, eventMatch[1]);
@@ -60,11 +75,16 @@ export async function onRequest({ request, env }) {
     if (request.method === 'GET' && path === 'overview') return json({ overview: await photos.overview() });
     if (request.method === 'GET' && path === 'photographers') return json({ photographers: await photos.listPhotographers() });
     if (request.method === 'GET' && path === 'activity') return json({ activity: await photos.activity() });
+    if (request.method === 'GET' && path === 'media-assets') return json({ collections: await photos.mediaAssets() });
 
     const body = await request.json();
     if (request.method === 'POST' && path === 'invitations') return json({ invitation: await photos.invite(actor, body) }, 201);
     if (request.method === 'POST' && path === 'photographers/status') {
       await photos.setUserStatus(actor, body.userId, body.status);
+      return json({ ok: true });
+    }
+    if (request.method === 'POST' && path === 'photographers/permissions') {
+      await photos.setPermissionProfile(actor, body.userId, body.preset);
       return json({ ok: true });
     }
     if (request.method === 'POST' && path === 'assignments') {

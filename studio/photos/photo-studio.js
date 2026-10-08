@@ -14,7 +14,9 @@ function metric(value, label) { return `<article class="metric"><strong>${Number
 function eventRow(event) { return `<article class="event-row"><span><b>${escapeHtml(event.public_name)}</b><small>${escapeHtml(event.region)} · ${escapeHtml(event.event_year)}</small></span><span>${escapeHtml(event.gallery_count)} galleries · ${Number(event.photo_count).toLocaleString()} photos</span></article>`; }
 function eventCard(event) {
   const letters = escapeHtml(event.series.slice(0, 2).toUpperCase());
-  return `<button class="event-card" data-event="${escapeHtml(event.id)}" aria-label="Open ${escapeHtml(event.public_name)}"><span class="event-art"><b>${letters}</b></span><span class="event-body"><h3>${escapeHtml(event.public_name)}</h3><p>${escapeHtml(event.region)} · ${escapeHtml(event.event_year)}</p><span class="event-stats"><span>${escapeHtml(event.gallery_count)} galleries</span><span>${Number(event.photo_count).toLocaleString()} photos</span></span></span></button>`;
+  const art = event.artwork_url ? `<img src="${escapeHtml(event.artwork_url)}" alt="" loading="lazy">` : `<b>${letters}</b>`;
+  const stale = event.sync_status !== 'CONFIRMED' || !event.last_reconciled_at || Date.now() - new Date(event.last_reconciled_at).getTime() > 26 * 60 * 60 * 1000;
+  return `<button class="event-card" data-event="${escapeHtml(event.id)}" aria-label="Open ${escapeHtml(event.public_name)}"><span class="event-art">${art}<i class="sync-state ${stale ? 'stale' : ''}">${stale ? 'STALE' : 'CURRENT'}</i></span><span class="event-body"><h3>${escapeHtml(event.public_name)}</h3><p>${escapeHtml(event.region)} · ${escapeHtml(event.event_year)}</p><span class="event-stats"><span>${escapeHtml(event.gallery_count)} galleries</span><span>${Number(event.photo_count).toLocaleString()} photos</span></span></span></button>`;
 }
 
 function showView(name) {
@@ -22,6 +24,7 @@ function showView(name) {
   $$('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
   if (name === 'photographers') loadPhotographers();
   if (name === 'activity') loadActivity();
+  if (name === 'media-assets') loadMediaAssets();
   history.replaceState(null, '', name === 'overview' ? '/photos/' : `/photos/?view=${name}`);
 }
 
@@ -29,14 +32,19 @@ async function openEvent(id) {
   const { event } = await api(`events/${encodeURIComponent(id)}`);
   const detail = $('#eventDetail');
   detail.hidden = false;
-  detail.innerHTML = `<div class="section-head"><div><p class="eyebrow">${escapeHtml(event.series)} · ${escapeHtml(event.region)}</p><h2>${escapeHtml(event.public_name)}</h2></div><p>${escapeHtml(event.event_year)} · ${escapeHtml(event.sync_status.replaceAll('_', ' '))}</p></div><div class="detail-grid"><section><h3>Galleries</h3>${event.galleries.length ? event.galleries.map((g) => eventRow({ public_name: g.public_name, region: `${g.photo_count} photos`, event_year: g.sync_status, gallery_count: '', photo_count: '' })).join('') : `<div class="gallery-empty">Aggregate gallery metadata is confirmed in Wix. Per-gallery records are not yet imported into the platform registry, so gallery writes remain unavailable.</div>`}</section><section><h3>Operations</h3><div class="notice"><strong>Read-only foundation</strong><p>Drive-backed gallery creation, renaming, cover selection and uploads remain disabled until narrowly scoped Google Drive write sessions are qualified.</p></div></section></div>`;
+  const galleries = event.galleries.length ? `<div class="gallery-grid">${event.galleries.map((g) => `<article class="gallery-card"><a href="${escapeHtml(g.destination_url)}" target="_blank" rel="noopener"><span class="gallery-cover">${g.cover_url ? `<img src="${escapeHtml(g.cover_url)}" alt="" loading="lazy">` : ''}</span><span class="gallery-copy"><b>${escapeHtml(g.public_name)}</b><small>${Number(g.photo_count).toLocaleString()} photos · ${escapeHtml(g.sync_status)}</small><small>Folder ${escapeHtml(g.drive_folder_id)}</small></span></a><div class="gallery-actions"><span>View available</span><span>Create · Rename · Cover · Upload pending qualification</span></div></article>`).join('')}</div>` : `<div class="gallery-empty">No reconciled public galleries are available for this event.</div>`;
+  detail.innerHTML = `<div class="section-head"><div><p class="eyebrow">${escapeHtml(event.series)} · ${escapeHtml(event.region)}</p><h2>${escapeHtml(event.public_name)}</h2></div><p>${escapeHtml(event.event_year)} · ${escapeHtml(event.sync_status.replaceAll('_', ' '))}</p></div>${galleries}`;
   detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function loadPhotographers() {
   const { photographers } = await api('photographers');
   const options = state.events.map((event) => `<option value="${escapeHtml(event.id)}">${escapeHtml(event.public_name)} ${escapeHtml(event.event_year)}</option>`).join('');
-  $('#photographerList').innerHTML = photographers.length ? photographers.map((person) => `<article class="person"><span class="person-main"><b>${escapeHtml(person.display_name)}</b><small>${escapeHtml(person.email || 'Invitation pending')} · ${escapeHtml(person.event_ids || 'No assignments')}</small></span><span class="person-actions"><span class="assignment-control"><select data-assignment-select="${escapeHtml(person.id)}" aria-label="Event assignment for ${escapeHtml(person.display_name)}"><option value="">Select event</option>${options}</select><button data-assignment="${escapeHtml(person.id)}" data-active="true">Assign</button><button data-assignment="${escapeHtml(person.id)}" data-active="false">Revoke event</button></span><button data-status="${escapeHtml(person.id)}" data-next="${person.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">${person.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</button><button data-status="${escapeHtml(person.id)}" data-next="REVOKED">Revoke account</button></span></article>`).join('') : '<div class="gallery-empty">No photographers have accepted an invitation yet.</div>';
+  $('#photographerList').innerHTML = photographers.length ? photographers.map((person) => `<article class="person"><span class="person-main"><b>${escapeHtml(person.display_name)}</b><small>${escapeHtml(person.email || 'Invitation pending')} · ${escapeHtml(person.event_ids || 'No assignments')}</small><small>${escapeHtml(person.event_scope)} · ${(person.capabilities || []).map(escapeHtml).join(', ')}</small></span><span class="person-actions"><span class="assignment-control"><select data-preset-select="${escapeHtml(person.id)}" aria-label="Permission preset for ${escapeHtml(person.display_name)}"><option value="ASSIGNED" ${person.preset_key === 'ASSIGNED' ? 'selected' : ''}>Assigned</option><option value="GENERAL" ${person.preset_key === 'GENERAL' ? 'selected' : ''}>General</option><option value="LEAD" ${person.preset_key === 'LEAD' ? 'selected' : ''}>Lead</option></select><button data-permissions="${escapeHtml(person.id)}">Apply preset</button></span><span class="assignment-control"><select data-assignment-select="${escapeHtml(person.id)}" aria-label="Event assignment for ${escapeHtml(person.display_name)}"><option value="">Select event</option>${options}</select><button data-assignment="${escapeHtml(person.id)}" data-active="true">Assign</button><button data-assignment="${escapeHtml(person.id)}" data-active="false">Revoke event</button></span><button data-status="${escapeHtml(person.id)}" data-next="${person.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">${person.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</button><button data-status="${escapeHtml(person.id)}" data-next="REVOKED">Revoke account</button></span></article>`).join('') : '<div class="gallery-empty">No photographers have accepted an invitation yet.</div>';
+}
+async function loadMediaAssets() {
+  const { collections } = await api('media-assets');
+  $('#mediaAssets').innerHTML = collections.map((item) => `<a class="event-card media-card" href="${escapeHtml(item.public_destination || '#')}" target="_blank" rel="noopener"><span class="event-art"><b>LH</b></span><span class="event-body"><h3>${escapeHtml(item.public_name)}</h3><p>${escapeHtml(item.source_system)} · ${escapeHtml(item.sync_status.replaceAll('_', ' '))}</p><span class="event-stats"><span>${Number(item.item_count).toLocaleString()} indexed assets</span></span></span></a>`).join('');
 }
 async function loadActivity() {
   const { activity } = await api('activity');
@@ -78,6 +86,11 @@ document.addEventListener('click', async (event) => {
     const select = $(`[data-assignment-select="${CSS.escape(assignment.dataset.assignment)}"]`);
     if (!select?.value) { select?.focus(); return; }
     await api('assignments', { method: 'POST', body: JSON.stringify({ userId: assignment.dataset.assignment, eventId: select.value, active: assignment.dataset.active === 'true' }) });
+    await loadPhotographers(); await loadActivity();
+  }
+  const permissions = event.target.closest('[data-permissions]'); if (permissions) {
+    const select = $(`[data-preset-select="${CSS.escape(permissions.dataset.permissions)}"]`);
+    await api('photographers/permissions', { method: 'POST', body: JSON.stringify({ userId: permissions.dataset.permissions, preset: select.value }) });
     await loadPhotographers(); await loadActivity();
   }
 });
