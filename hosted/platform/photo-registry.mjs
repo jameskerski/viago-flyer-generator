@@ -24,15 +24,16 @@ export function createPhotoRegistry(database) {
       if (!allowed.includes(identity.verifiedEmail)) return;
       const binding = await database.prepare(`SELECT user_id FROM identity_bindings WHERE provider = ? AND issuer = ? AND provider_subject = ? AND status = 'ACTIVE'`)
         .bind(identity.provider, identity.issuer, identity.providerSubject).first();
-      if (binding) return;
       const identityKey = `${identity.provider}:${identity.issuer}:${identity.providerSubject}`;
-      const userId = await stableId('user', identityKey);
+      const userId = binding?.user_id || await stableId('user', identityKey);
       const identityId = await stableId('identity', identityKey);
-      const grantId = await stableId('grant', `${userId}:${MODULES.PHOTO_STUDIO}`);
+      const photoGrantId = await stableId('grant', `${userId}:${MODULES.PHOTO_STUDIO}`);
+      const templateGrantId = await stableId('grant', `${userId}:${MODULES.TEMPLATE_STUDIO}`);
       await database.batch([
         database.prepare(`INSERT OR IGNORE INTO platform_users (id, display_name, status) VALUES (?, ?, 'ACTIVE')`).bind(userId, identity.displayName),
         database.prepare(`INSERT OR IGNORE INTO identity_bindings (id, user_id, provider, issuer, provider_subject, verified_email, status, last_authenticated_at) VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', CURRENT_TIMESTAMP)`).bind(identityId, userId, identity.provider, identity.issuer, identity.providerSubject, identity.verifiedEmail),
-        database.prepare(`INSERT OR IGNORE INTO module_grants (id, user_id, module_key, role_key, status) VALUES (?, ?, ?, ?, 'ACTIVE')`).bind(grantId, userId, MODULES.PHOTO_STUDIO, ROLES.PHOTO_ADMIN)
+        database.prepare(`INSERT OR IGNORE INTO module_grants (id, user_id, module_key, role_key, status) VALUES (?, ?, ?, ?, 'ACTIVE')`).bind(photoGrantId, userId, MODULES.PHOTO_STUDIO, ROLES.PHOTO_ADMIN),
+        database.prepare(`INSERT OR IGNORE INTO module_grants (id, user_id, module_key, role_key, status) VALUES (?, ?, ?, ?, 'ACTIVE')`).bind(templateGrantId, userId, MODULES.TEMPLATE_STUDIO, ROLES.TEMPLATE_ADMIN)
       ]);
     },
 
