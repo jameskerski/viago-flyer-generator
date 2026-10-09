@@ -15,7 +15,7 @@ async function mockPhotoApi(page, role = 'PHOTO_ADMIN') {
     else if (path === 'overview') body = { overview: { events: 7, photographers: 2, galleries: 26, photos: 10049 } };
     else if (path === 'photographers') body = { photographers: [{ id: 'photographer-1', display_name: 'Approved Photographer', email: 'photographer@example.com', status: 'ACTIVE', event_ids: 'elevate-na-2026' }] };
     else if (path === 'activity') body = { activity: [] };
-    else if (path === 'creation-operations') body = { operations: [], qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
+    else if (path === 'event-drafts') body = { operations: [], qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
     else if (path === 'creation-capabilities') body = { qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
     else if (path.startsWith('events/')) body = { event: events.find(({ id }) => id === path.slice(7)) };
     else body = { ok: true };
