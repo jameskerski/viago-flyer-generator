@@ -26,5 +26,6 @@ test('idempotency hash is deterministic and request-sensitive', async () => {
 
 test('production creation fails closed until every write boundary is configured', () => {
   assert.deepEqual(creationQualification({ }).enabled, false);
-  assert.equal(creationQualification({ PHOTO_EVENT_DRIVE_PROVISION_ENDPOINT: 'https://drive.example', PHOTO_EVENT_DRIVE_PROVISION_SECRET: 'x', PHOTO_EVENT_DRIVE_PARENT_MAP: '{}', PHOTO_EVENT_WIX_REGISTER_ENDPOINT: 'https://wix.example', PHOTO_EVENT_WIX_REGISTER_SECRET: 'y' }).enabled, true);
+  assert.equal(creationQualification({ PHOTO_EVENT_PROVISION_ENDPOINT: 'https://script.google.com/macros/s/example/exec', PHOTO_STUDIO_SYNC_SECRET: 'x' }).enabled, true);
+  assert.equal(creationQualification({ PHOTO_EVENT_PROVISION_ENDPOINT: 'https://script.google.com/macros/s/example/exec' }).enabled, false);
 });
