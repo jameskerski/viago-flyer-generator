@@ -9,7 +9,7 @@ export function normalizeGalleryName(value) {
 }
 async function hash(value) { const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(value))); return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join(''); }
 const operationId = () => `gallery-operation-${crypto.randomUUID()}`;
-const select = `SELECT id,idempotency_key,requested_by_user_id,event_id,operation_type,operation_state,gallery_folder_id,requested_name,cover_file_id,drive_folder_url,safe_error_code,safe_error_message,retry_count,created_at,updated_at,confirmed_at FROM photo_gallery_operations`;
+const select = `SELECT id,idempotency_key,request_hash,requested_by_user_id,event_id,operation_type,operation_state,gallery_folder_id,requested_name,cover_file_id,drive_folder_url,safe_error_code,safe_error_message,retry_count,created_at,updated_at,confirmed_at FROM photo_gallery_operations`;
 
 export function createGalleryManagement(database, env, photos) {
   const endpointReady = Boolean(env.PHOTO_EVENT_PROVISION_ENDPOINT && env.PHOTO_STUDIO_SYNC_SECRET);
@@ -40,7 +40,7 @@ export function createGalleryManagement(database, env, photos) {
     if (operationType !== 'CREATE' && !normalized.galleryFolderId) throw new Error('gallery_identity_required');
     const idempotencyKey = clean(key, 128); if (idempotencyKey.length < 16) throw new Error('idempotency_key_required');
     const requestHash = await hash(normalized);
-    const existing = await database.prepare(`${select},request_hash FROM photo_gallery_operations WHERE idempotency_key=?`).bind(idempotencyKey).first();
+    const existing = await database.prepare(`${select} WHERE idempotency_key=?`).bind(idempotencyKey).first();
     if (existing) { if (existing.request_hash !== requestHash) throw new Error('idempotency_key_conflict'); return { operation: existing, idempotent: true }; }
     const id = operationId();
     await database.prepare(`INSERT INTO photo_gallery_operations (id,idempotency_key,request_hash,requested_by_user_id,requested_by_email,event_id,operation_type,operation_state,gallery_folder_id,requested_name,cover_file_id) VALUES (?,?,?,?,?,?,?,'VALIDATED',NULLIF(?,''),NULLIF(?,''),NULLIF(?,''))`).bind(id,idempotencyKey,requestHash,actor.id,actor.email,event.id,operationType,normalized.galleryFolderId,normalized.requestedName,normalized.coverFileId).run();
