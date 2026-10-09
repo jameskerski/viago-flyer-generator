@@ -10,18 +10,20 @@ async function mockPhotoApi(page, role = 'PHOTO_ADMIN') {
     const url = new URL(route.request().url());
     const path = url.pathname.replace('/api/photos/', '');
     let body;
-    if (path === 'session') body = { actor: { id: 'owner', displayName: role === 'PHOTO_ADMIN' ? 'GLT Owner' : 'Event Photographer', role } };
+    if (path === 'session') body = { actor: { id: 'owner', displayName: role === 'PHOTO_ADMIN' ? 'GLT Owner' : 'Event Photographer', role, canCreateEvent: role === 'PHOTO_ADMIN' } };
     else if (path === 'events') body = { events: role === 'PHOTO_ADMIN' ? events : events.slice(0, 1) };
     else if (path === 'overview') body = { overview: { events: 7, photographers: 2, galleries: 26, photos: 10049 } };
     else if (path === 'photographers') body = { photographers: [{ id: 'photographer-1', display_name: 'Approved Photographer', email: 'photographer@example.com', status: 'ACTIVE', event_ids: 'elevate-na-2026' }] };
     else if (path === 'activity') body = { activity: [] };
+    else if (path === 'creation-operations') body = { operations: [], qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
+    else if (path === 'creation-capabilities') body = { qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
     else if (path.startsWith('events/')) body = { event: events.find(({ id }) => id === path.slice(7)) };
     else body = { ok: true };
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
   });
 }
 
-test('administrator dashboard exposes management without enabling unqualified writes', async ({ page }) => {
+test('administrator wizard validates a draft without pretending external provisioning is qualified', async ({ page }) => {
   await mockPhotoApi(page);
   await page.goto('/studio/photos/index.html');
   await expect(page.getByRole('heading', { name: 'PHOTO STUDIO' })).toBeVisible();
@@ -30,7 +32,8 @@ test('administrator dashboard exposes management without enabling unqualified wr
   await expect(page.locator('.event-card')).toHaveCount(2);
   await page.getByRole('button', { name: 'Create event' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.getByRole('dialog').getByRole('button', { name: 'Create event' })).toBeDisabled();
+  await expect(page.getByRole('dialog')).toContainText('external provisioning is paused');
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Validate event draft' })).toBeEnabled();
 });
 
 test('photographer sees only assigned events and no administrator navigation', async ({ page }) => {
@@ -41,6 +44,7 @@ test('photographer sees only assigned events and no administrator navigation', a
   await page.getByRole('button', { name: 'Events', exact: true }).click();
   await expect(page.locator('.event-card')).toHaveCount(1);
   await expect(page.getByText('Playbook North America')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Create event' })).toBeHidden();
 });
 
 for (const width of [375, 390, 430, 1280, 1440]) {

@@ -14,7 +14,10 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(5px); }
 .wizard-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.3rem 0; }
 .wizard-fields label { display: grid; gap: .35rem; color: #c6d1ca; }
 .wizard-fields .wide { grid-column: 1 / -1; }
-.wizard-fields input { width: 100%; background: #050806; color: white; border: 1px solid #34483b; border-radius: 8px; padding: .8rem; font: inherit; }
+.wizard-fields input,.wizard-fields select { width: 100%; background: #050806; color: white; border: 1px solid #34483b; border-radius: 8px; padding: .8rem; font: inherit; }
+.wizard-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1rem; }
+.wizard-actions > button:not(.primary),.operation-card button { border: 1px solid #36503f; background: #101b14; color: white; border-radius: 8px; padding: .7rem .9rem; font: inherit; cursor: pointer; }
+.wizard output { display: block; min-height: 1.5rem; color: var(--lime2); overflow-wrap: anywhere; }
 .assignment-control { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
 .assignment-control select { max-width: 210px; background: #050806; color: white; border: 1px solid #34483b; border-radius: 7px; padding: .45rem; }
 .person-main { min-width: 0; }
@@ -39,5 +42,16 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(5px); }
 .gallery-actions { display: grid; gap: .2rem; padding: .7rem .85rem; border-top: 1px solid var(--line); color: var(--lime); font-size: .7rem; }
 .gallery-actions span:last-child { color: var(--muted); }
 .media-card { text-decoration: none; }
+.creation-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .8rem; margin: 0 0 1.2rem; }
+.operation-group { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: #080d0a; }
+.operation-group h3 { margin: 0 0 .7rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .11em; color: var(--muted); }
+.operation-empty { margin: 0; color: #64766b; font-size: .82rem; }
+.operation-card { display: grid; gap: .55rem; padding: .8rem; border-radius: 10px; background: #0d1611; border: 1px solid #1c2f23; }
+.operation-card + .operation-card { margin-top: .55rem; }
+.operation-card span:first-child { display: grid; min-width: 0; }
+.operation-card small,.operation-card p { color: var(--muted); margin: 0; overflow-wrap: anywhere; }
+.operation-state { width: max-content; max-width: 100%; padding: .22rem .45rem; border-radius: 999px; background: rgba(140,255,0,.08); border: 1px solid #426529; color: var(--lime2); font-size: .67rem; }
+.state-failed_needs_attention { border-color: #7c3639; color: #ff9da0; }
 @media (max-width: 900px) { .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .gallery-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .creation-summary { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 560px) { .gallery-grid,.creation-summary { grid-template-columns: 1fr; } .wizard-actions { flex-direction: column-reverse; } .wizard-actions button { width: 100%; } }

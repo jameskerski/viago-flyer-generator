@@ -41,6 +41,18 @@ test('active assignment permits the photo operation', async () => {
   expect(decision.actor).toMatchObject({ id: 'user-photo', role: 'PHOTOGRAPHER', authorizationSource: 'platform_registry' });
 });
 
+test('photographer access never implies event creation authority', async () => {
+  const decision = await authorizeOperation({ identity, registry: registryWith(photographer), module: MODULES.PHOTO_STUDIO, permission: PERMISSIONS.EVENT_CREATE });
+  expect(decision).toEqual({ allowed: false, reason: 'permission_denied' });
+});
+
+test('Photo Studio administrator receives explicit event creation authority', async () => {
+  const admin = { ...photographer, id: 'owner', moduleGrants: [{ module: MODULES.PHOTO_STUDIO, role: 'PHOTO_ADMIN', status: 'ACTIVE' }] };
+  const decision = await authorizeOperation({ identity, registry: registryWith(admin), module: MODULES.PHOTO_STUDIO, permission: PERMISSIONS.EVENT_CREATE });
+  expect(decision.allowed).toBe(true);
+  expect(decision.actor.role).toBe('PHOTO_ADMIN');
+});
+
 test('browser role claims do not influence server authorization', async () => {
   const tampered = { ...identity, role: 'TEMPLATE_ADMIN', moduleGrants: [{ module: MODULES.TEMPLATE_STUDIO, role: 'TEMPLATE_ADMIN' }] };
   const decision = await authorizeOperation({ identity: tampered, registry: registryWith(photographer), module: MODULES.TEMPLATE_STUDIO, permission: PERMISSIONS.TEMPLATE_PUBLISH });

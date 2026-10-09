@@ -71,6 +71,11 @@ export function createPhotoRegistry(database) {
     },
 
     photographerProfile,
+    async canCreateEvent(actor) {
+      if (actor.role === ROLES.PHOTO_ADMIN) return true;
+      const profile = await photographerProfile(actor.id);
+      return profile.capabilities.includes('EVENT_CREATE');
+    },
     eventAllowed,
 
     async listEvents(actor) {

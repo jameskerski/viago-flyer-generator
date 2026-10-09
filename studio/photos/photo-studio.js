@@ -1,6 +1,6 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const state = { actor: null, events: [], overview: null };
+const state = { actor: null, events: [], overview: null, creationQualification: null, creationOperations: [] };
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 
 async function api(path, options = {}) {
@@ -13,10 +13,49 @@ async function api(path, options = {}) {
 function metric(value, label) { return `<article class="metric"><strong>${Number(value || 0).toLocaleString()}</strong><span>${label}</span></article>`; }
 function eventRow(event) { return `<article class="event-row"><span><b>${escapeHtml(event.public_name)}</b><small>${escapeHtml(event.region)} · ${escapeHtml(event.event_year)}</small></span><span>${escapeHtml(event.gallery_count)} galleries · ${Number(event.photo_count).toLocaleString()} photos</span></article>`; }
 function eventCard(event) {
-  const letters = escapeHtml(event.series.slice(0, 2).toUpperCase());
+  const letters = escapeHtml((event.series || event.public_name || 'GL').slice(0, 2).toUpperCase());
   const art = event.artwork_url ? `<img src="${escapeHtml(event.artwork_url)}" alt="" loading="lazy">` : `<b>${letters}</b>`;
   const stale = event.sync_status !== 'CONFIRMED' || !event.last_reconciled_at || Date.now() - new Date(event.last_reconciled_at).getTime() > 26 * 60 * 60 * 1000;
   return `<button class="event-card" data-event="${escapeHtml(event.id)}" aria-label="Open ${escapeHtml(event.public_name)}"><span class="event-art">${art}<i class="sync-state ${stale ? 'stale' : ''}">${stale ? 'STALE' : 'CURRENT'}</i></span><span class="event-body"><h3>${escapeHtml(event.public_name)}</h3><p>${escapeHtml(event.region)} · ${escapeHtml(event.event_year)}</p><span class="event-stats"><span>${escapeHtml(event.gallery_count)} galleries</span><span>${Number(event.photo_count).toLocaleString()} photos</span></span></span></button>`;
+}
+
+const creationLabels = {
+  REQUESTED: 'Requested', VALIDATED: 'Validated', DRIVE_ROOT_CREATED: 'Drive root created',
+  WIX_EVENT_REGISTERED: 'Wix event registered', VERIFIED: 'Verified',
+  READY_FOR_PUBLICATION: 'Ready for publication', FAILED_NEEDS_ATTENTION: 'Needs attention'
+};
+function operationCard(operation) {
+  const retry = ['VALIDATED', 'FAILED_NEEDS_ATTENTION', 'DRIVE_ROOT_CREATED', 'WIX_EVENT_REGISTERED'].includes(operation.operation_state);
+  return `<article class="operation-card"><span><b>${escapeHtml(operation.event_name)}</b><small>${escapeHtml(operation.event_type.replaceAll('_', ' '))} · ${escapeHtml(operation.event_year)}</small></span><span class="operation-state state-${escapeHtml(operation.operation_state.toLowerCase())}">${escapeHtml(creationLabels[operation.operation_state] || operation.operation_state)}</span>${operation.safe_error_message ? `<p>${escapeHtml(operation.safe_error_message)}</p>` : ''}${retry ? `<button data-retry-operation="${escapeHtml(operation.id)}">Retry safely</button>` : ''}</article>`;
+}
+function renderCreationOperations() {
+  const container = $('#creationSummary');
+  if (!state.actor?.canCreateEvent) { container.hidden = true; return; }
+  const groups = [
+    ['Draft events', ['VALIDATED']], ['Creation in progress', ['REQUESTED', 'DRIVE_ROOT_CREATED', 'WIX_EVENT_REGISTERED', 'VERIFIED']],
+    ['Ready for publication', ['READY_FOR_PUBLICATION']], ['Failed / needs attention', ['FAILED_NEEDS_ATTENTION']]
+  ];
+  container.innerHTML = groups.map(([label, states]) => {
+    const rows = state.creationOperations.filter((item) => states.includes(item.operation_state));
+    return `<section class="operation-group"><h3>${label}</h3>${rows.length ? rows.map(operationCard).join('') : '<p class="operation-empty">None</p>'}</section>`;
+  }).join('');
+  container.hidden = false;
+}
+async function loadCreationOperations() {
+  if (!state.actor?.canCreateEvent) return;
+  const result = await api('creation-operations');
+  state.creationOperations = result.operations || [];
+  state.creationQualification = result.qualification;
+  renderCreationOperations();
+}
+function renderQualification() {
+  const qualification = state.creationQualification;
+  const output = $('#creationQualification');
+  if (!qualification) { output.innerHTML = '<strong>Checking production qualification…</strong>'; return; }
+  output.innerHTML = qualification.enabled
+    ? '<strong>Production provisioning qualified</strong><p>Creation will provision the authorized Drive root, register an inactive Wix event, and verify both identities.</p>'
+    : `<strong>Draft validation available; external provisioning is paused</strong><p>${qualification.blockers.map(escapeHtml).join(' ')}</p><p>No Drive folder or Wix record will be created until these server-side boundaries are qualified.</p>`;
+  $('#submitEventCreation').textContent = qualification.enabled ? 'Create inactive event' : 'Validate event draft';
 }
 
 function showView(name) {
@@ -59,6 +98,7 @@ async function boot() {
     const isAdmin = actor.role === 'PHOTO_ADMIN';
     document.body.classList.toggle('is-admin', isAdmin);
     $$('.admin-only').forEach((item) => { item.hidden = !isAdmin; });
+    $$('.creator-only').forEach((item) => { item.hidden = !actor.canCreateEvent; });
     $('#actorName').textContent = actor.displayName;
     $('#actorRole').textContent = isAdmin ? 'Administrator' : 'Photographer';
     $('#nav').hidden = false; $('#loading').hidden = true; $('#app').hidden = false;
@@ -71,6 +111,7 @@ async function boot() {
       $('#metrics').innerHTML = metric(overview.events, 'Registered events') + metric(overview.photographers, 'Active photographers') + metric(overview.galleries, 'Confirmed galleries') + metric(overview.photos, 'Confirmed photos');
       const select = $('#inviteForm select'); events.forEach((event) => select.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(event.id)}">${escapeHtml(event.public_name)} ${escapeHtml(event.event_year)}</option>`));
     } else $('#metrics').innerHTML = metric(events.length, 'Assigned events') + metric(events.reduce((n,e)=>n+e.gallery_count,0), 'Available galleries') + metric(events.reduce((n,e)=>n+e.photo_count,0), 'Confirmed photos');
+    if (actor.canCreateEvent) await loadCreationOperations();
     const requested = new URL(location.href).searchParams.get('view'); showView(requested && $(`[data-view-panel="${requested}"]`) ? requested : 'overview');
   } catch (error) {
     $('#loading').hidden = true; $('#denied').hidden = false;
@@ -93,8 +134,34 @@ document.addEventListener('click', async (event) => {
     await api('photographers/permissions', { method: 'POST', body: JSON.stringify({ userId: permissions.dataset.permissions, preset: select.value }) });
     await loadPhotographers(); await loadActivity();
   }
+  const retry = event.target.closest('[data-retry-operation]'); if (retry) {
+    retry.disabled = true;
+    try { await api(`creation-operations/${encodeURIComponent(retry.dataset.retryOperation)}/retry`, { method: 'POST', body: '{}' }); await loadCreationOperations(); }
+    catch (error) { $('#creationResult').value = error.message; }
+    finally { retry.disabled = false; }
+  }
+  if (event.target.closest('[data-close-wizard]')) $('#eventWizard').close();
 });
-$('#newEvent').addEventListener('click', () => $('#eventWizard').showModal());
+$('#newEvent').addEventListener('click', async () => {
+  if (!state.creationQualification) {
+    const result = await api('creation-capabilities'); state.creationQualification = result.qualification;
+  }
+  renderQualification(); $('#eventWizard').showModal();
+});
+$('#eventCreationForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const submit = $('#submitEventCreation'); const output = $('#creationResult');
+  const input = Object.fromEntries(new FormData(event.currentTarget));
+  const idempotencyKey = crypto.randomUUID();
+  submit.disabled = true; output.value = 'Validating and recording the recoverable operation…';
+  try {
+    const result = await api('creation-operations', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify(input) });
+    state.creationQualification = result.qualification;
+    output.value = result.qualification.enabled ? `Event workflow started: ${creationLabels[result.operation.operation_state]}.` : 'Draft validated and recorded. External provisioning remains safely paused.';
+    event.currentTarget.reset(); await loadCreationOperations(); renderQualification();
+  } catch (error) { output.value = error.message.replaceAll('_', ' '); }
+  finally { submit.disabled = false; }
+});
 $('#inviteForm').addEventListener('submit', async (event) => {
   event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget)); const output = $('#inviteResult'); output.value = 'Creating invitation…';
   try { const { invitation } = await api('invitations', { method: 'POST', body: JSON.stringify(data) }); output.value = `Invitation ready for ${invitation.email}. Access is granted when that Google account signs in.`; event.currentTarget.reset(); await loadActivity(); }

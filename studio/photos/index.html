@@ -43,7 +43,8 @@
       </section>
 
       <section class="view" data-view-panel="events" hidden>
-        <div class="section-head"><div><p class="eyebrow">PHOTO EVENTS</p><h2 id="eventsTitle">All events</h2></div><button class="primary admin-only" id="newEvent">Create event</button></div>
+        <div class="section-head"><div><p class="eyebrow">PHOTO EVENTS</p><h2 id="eventsTitle">All events</h2></div><button class="primary creator-only" id="newEvent" hidden>Create event</button></div>
+        <div id="creationSummary" class="creation-summary creator-only" hidden></div>
         <div id="eventGrid" class="event-grid"></div>
         <section id="eventDetail" class="event-detail" hidden></section>
       </section>
@@ -68,12 +69,23 @@
     </div>
   </main>
   <dialog id="eventWizard" aria-labelledby="eventWizardTitle">
-    <form method="dialog" class="wizard">
-      <div class="panel-head"><div><p class="eyebrow">VALIDATED DRAFT</p><h2 id="eventWizardTitle">Create photo event</h2></div><button value="cancel" aria-label="Close">Close</button></div>
-      <p>Define the intended event identity. Final creation remains unavailable until atomic Wix CMS and canonical Drive-root provisioning are qualified.</p>
-      <div class="wizard-fields"><label>Event series<input required name="series"></label><label>Region<input required name="region"></label><label>Year<input required name="year" type="number" min="2020" max="2100"></label><label>Public event name<input required name="publicName"></label><label>Start date (optional)<input name="startDate" type="date"></label><label>End date (optional)<input name="endDate" type="date"></label><label class="wide">Artwork URL (optional)<input name="artworkUrl" type="url"></label></div>
-      <div class="notice"><strong>Creation unavailable</strong><p>No Wix record or Drive folder will be created. This prevents partial public events while cross-system rollback and identity guarantees remain unqualified.</p></div>
-      <button class="primary" type="button" disabled>Create event</button>
+    <form id="eventCreationForm" class="wizard">
+      <div class="panel-head"><div><p class="eyebrow">RECOVERABLE WORKFLOW</p><h2 id="eventWizardTitle">Create photo event</h2></div><button type="button" data-close-wizard aria-label="Close">Close</button></div>
+      <p>Define the event once. Photo Studio validates the identity and preserves progress before any external resource is created.</p>
+      <div class="wizard-fields">
+        <label>Event name<input required name="eventName" maxlength="160" placeholder="Elevate North America"></label>
+        <label>Event type<select required name="eventType"><option value="SIGNATURE_EVENT">Signature Event</option><option value="TRIP_INCENTIVE">Trip / Incentive</option><option value="WELLNESS_ESCAPE">Wellness Escape</option><option value="SPECIAL_EVENT">Special Event</option><option value="OTHER">Other</option></select></label>
+        <label>Event series (optional)<input name="eventSeries" maxlength="100" list="eventSeriesOptions" placeholder="Amplify, Elevate or Playbook"><datalist id="eventSeriesOptions"><option value="Amplify"><option value="Elevate"><option value="Playbook"></datalist></label>
+        <label>Region (optional)<input name="region" maxlength="100" placeholder="North America"></label>
+        <label>Year<input required name="eventYear" type="number" min="2020" max="2100"></label>
+        <label>Location (optional)<input name="location" maxlength="180"></label>
+        <label>Start date (optional)<input name="startDate" type="date"></label>
+        <label>End date (optional)<input name="endDate" type="date"></label>
+        <label class="wide">Artwork URL (optional)<input name="artworkUrl" type="url" inputmode="url" placeholder="https://…"></label>
+      </div>
+      <div id="creationQualification" class="notice" aria-live="polite"></div>
+      <output id="creationResult" aria-live="polite"></output>
+      <div class="wizard-actions"><button type="button" data-close-wizard>Cancel</button><button id="submitEventCreation" class="primary" type="submit">Validate event draft</button></div>
     </form>
   </dialog>
   <script type="module" src="photo-studio.js"></script>

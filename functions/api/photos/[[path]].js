@@ -4,6 +4,7 @@ import { authorizeOperation, MODULES, PERMISSIONS } from '../../../hosted/platfo
 import { createD1Registry } from '../../../hosted/platform/d1-registry.mjs';
 import { createPhotoRegistry } from '../../../hosted/platform/photo-registry.mjs';
 import { authorizedSync, parseSyncPayload, reconcilePhotoReadModel } from '../../../hosted/platform/photo-sync.mjs';
+import { createPhotoEventCreationRegistry, creationQualification } from '../../../hosted/platform/photo-event-creation.mjs';
 
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
@@ -48,8 +49,10 @@ export async function onRequest({ request, env }) {
     }
   }
   const eventMatch = path.match(/^events\/([^/]+)$/);
+  const creationMatch = path.match(/^creation-operations\/([^/]+)\/retry$/);
+  const creationRoute = path === 'creation-operations' || path === 'creation-capabilities' || Boolean(creationMatch);
   const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview'].includes(path);
-  const permission = manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
+  const permission = creationRoute ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
   let auth;
   try {
     // Event-scope authorization is resolved from the explicit Photo Studio
@@ -63,9 +66,11 @@ export async function onRequest({ request, env }) {
   const photos = auth.photos;
 
   try {
+    if (creationRoute && !(await photos.canCreateEvent(actor))) return json({ error: 'event_create_permission_required' }, 403);
+    const creations = creationRoute ? createPhotoEventCreationRegistry(env.PLATFORM_DB, env) : null;
     if (request.method === 'GET' && path === 'session') {
       const profile = actor.role === 'PHOTOGRAPHER' ? await photos.photographerProfile(actor.id) : null;
-      return json({ actor: { ...actor, profile } });
+      return json({ actor: { ...actor, profile, canCreateEvent: await photos.canCreateEvent(actor) } });
     }
     if (request.method === 'GET' && path === 'events') return json({ events: await photos.listEvents(actor) });
     if (request.method === 'GET' && eventMatch) {
@@ -76,8 +81,20 @@ export async function onRequest({ request, env }) {
     if (request.method === 'GET' && path === 'photographers') return json({ photographers: await photos.listPhotographers() });
     if (request.method === 'GET' && path === 'activity') return json({ activity: await photos.activity() });
     if (request.method === 'GET' && path === 'media-assets') return json({ collections: await photos.mediaAssets() });
+    if (request.method === 'GET' && path === 'creation-capabilities') return json({ qualification: creationQualification(env) });
+    if (request.method === 'GET' && path === 'creation-operations') return json({ operations: await creations.list(actor), qualification: creations.qualification });
 
     const body = await request.json();
+    if (request.method === 'POST' && path === 'creation-operations') {
+      const result = await creations.request(actor, body, request.headers.get('idempotency-key'));
+      await photos.audit(actor, 'event.creation.request', 'event_creation_operation', result.operation.id, 'SUCCEEDED', { state: result.operation.operation_state, eventType: result.operation.event_type, enabled: result.qualification.enabled });
+      return json(result, 202);
+    }
+    if (request.method === 'POST' && creationMatch) {
+      const result = await creations.retry(actor, creationMatch[1]);
+      await photos.audit(actor, 'event.creation.retry', 'event_creation_operation', creationMatch[1], 'SUCCEEDED', { resumed: result.resumed, state: result.operation.operation_state });
+      return json(result, 202);
+    }
     if (request.method === 'POST' && path === 'invitations') return json({ invitation: await photos.invite(actor, body) }, 201);
     if (request.method === 'POST' && path === 'photographers/status') {
       await photos.setUserStatus(actor, body.userId, body.status);
