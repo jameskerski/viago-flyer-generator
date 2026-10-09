@@ -103,7 +103,7 @@ export async function onRequest({ request, env }) {
     }
     if (request.method === 'POST' && path === 'setup') {
       const result = await creations.request(actor, body, request.headers.get('idempotency-key'));
-      if (result.operation?.operation_state === 'READY_FOR_PUBLICATION') {
+      if (result.operation?.operation_state === 'READY_FOR_PUBLICATION' && driveAccess.qualified) {
         for (const userId of await photos.futureAccessUserIds()) await driveAccess.reconcileUser(actor, userId);
       }
       await photos.audit(actor, 'event.creation.request', 'event_creation_operation', result.operation.id, 'SUCCEEDED', { state: result.operation.operation_state, eventType: result.operation.event_type, enabled: result.qualification.enabled });
@@ -116,14 +116,17 @@ export async function onRequest({ request, env }) {
     }
     if (request.method === 'POST' && path === 'invitations') return json({ invitation: await photos.invite(actor, body) }, 201);
     if (request.method === 'POST' && path === 'photographers/status') {
+      driveAccess.assertQualified();
       await photos.setUserStatus(actor, body.userId, body.status);
       return json({ ok: true, driveAccess: await driveAccess.reconcileUser(actor, body.userId) });
     }
     if (request.method === 'POST' && path === 'photographers/permissions') {
+      driveAccess.assertQualified();
       await photos.setPermissionProfile(actor, body.userId, body.preset);
       return json({ ok: true, driveAccess: await driveAccess.reconcileUser(actor, body.userId) });
     }
     if (request.method === 'POST' && path === 'assignments') {
+      driveAccess.assertQualified();
       await photos.setAssignment(actor, body.userId, body.eventId, body.active === true);
       return json({ ok: true, driveAccess: await driveAccess.reconcileUser(actor, body.userId) });
     }

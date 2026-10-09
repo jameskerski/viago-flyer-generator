@@ -14,6 +14,7 @@ async function appsRequest(env, action, input = {}) {
 
 export function createPhotoDriveAccess(database, env, photos) {
   if (!database?.prepare) throw new Error('platform_database_missing');
+  const qualified = env.PHOTO_DRIVE_ACCESS_ENABLED === 'true';
 
   async function target(userId) {
     const row = await database.prepare(`SELECT u.id,u.status,i.verified_email AS email,g.status AS grant_status,
@@ -83,12 +84,15 @@ export function createPhotoDriveAccess(database, env, photos) {
   }
 
   return {
+    qualified,
+    assertQualified() { if (!qualified) throw new Error('drive_access_grant_revoke_pending_controlled_qualification'); },
     async audit(actor) {
       const result = await appsRequest(env, 'AUDIT_DRIVE_ROOTS');
       await recordOperation(actor, null, null, 'AUDIT', 'SUCCEEDED', { rootCount: (result.roots || []).length });
       return result;
     },
     async reconcileUser(actor, userId) {
+      if (!qualified) throw new Error('drive_access_grant_revoke_pending_controlled_qualification');
       const person = await target(userId); const desired = await desiredEvents(person); const desiredIds = new Set(desired.map((event) => event.id));
       const existingResult = await database.prepare(`SELECT * FROM photo_drive_access_grants WHERE user_id=?`).bind(userId).all();
       const existing = existingResult.results || []; const byEvent = new Map(existing.map((grant) => [grant.event_id, grant])); const results = [];
