@@ -157,15 +157,16 @@ $('#newEvent').addEventListener('click', async () => {
 });
 $('#eventCreationForm').addEventListener('submit', async (event) => {
   event.preventDefault();
+  const form = event.currentTarget;
   const submit = $('#submitEventCreation'); const output = $('#creationResult');
-  const input = Object.fromEntries(new FormData(event.currentTarget));
+  const input = Object.fromEntries(new FormData(form));
   const idempotencyKey = crypto.randomUUID();
   submit.disabled = true; output.value = 'Validating and recording the recoverable operation…';
   try {
     const result = await api('setup', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify(input) });
     state.creationQualification = result.qualification;
     output.value = result.qualification.enabled ? `Event workflow started: ${creationLabels[result.operation.operation_state]}.` : 'Draft validated and recorded. External provisioning remains safely paused.';
-    event.currentTarget.reset(); await loadCreationOperations(); renderQualification();
+    form.reset(); await loadCreationOperations(); renderQualification();
   } catch (error) { output.value = error.message.replaceAll('_', ' '); }
   finally { submit.disabled = false; }
 });
