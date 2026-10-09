@@ -9,6 +9,7 @@
     "run_worker_first": ["/api/studio/*"]
   },
   "vars": {
+    "PHOTO_DRIVE_ACCESS_ENABLED": "true",
     "CF_ACCESS_AUD": "26cfba579cd198e792f7c9ebeb4ef533209bd3a2d94452636bf39dd43cd10a3e",
     "PHOTO_CF_ACCESS_AUD": "f093afacc6bc29e191a7e0256d3fc24b2fbe8811c7d03219263a9fdc461cff32",
     "CF_TEAM_DOMAIN": "https://delicate-thunder-f5d6.cloudflareaccess.com",
