@@ -14,7 +14,8 @@
     "GITHUB_BRANCH": "main",
     "GITHUB_OWNER": "jameskerski",
     "GITHUB_REPOSITORY": "viago-flyer-generator",
-    "PHOTO_STUDIO_BOOTSTRAP_ADMINS": "admin@goodlifetrainings.com"
+    "PHOTO_STUDIO_BOOTSTRAP_ADMINS": "admin@goodlifetrainings.com",
+    "PHOTO_EVENT_PROVISION_ENDPOINT": "https://script.google.com/macros/s/AKfycbwTYVLXXZPb7RCH4_Zq4tkCyEIO-xcKzD5A9E1RpBS2sZMOU4rtYdQDC_4lx8Tr3-qm/exec"
   },
   "d1_databases": [
     {
