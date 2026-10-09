@@ -60,7 +60,13 @@ export async function parseSyncPayload(request) {
       displayOrder: count(gallery.displayOrder || index + 1)
     }))
   };
-  if (!normalized.publicName || !normalized.series || !normalized.region || normalized.year < 2000 || !normalized.fingerprint || !normalized.reconciledAt) throw new Error('invalid_event_metadata');
+  // Series and region are optional classification metadata. Flagship and
+  // miscellaneous events (for example VIAGO Fest) are still authoritative
+  // PHOTO_EVENT_YEARS records even when one or both classifications are not
+  // applicable. Identity and storage authority remain strict: Wix item ID,
+  // public name, year, Drive root, fingerprint, and reconciliation timestamp
+  // must all be present.
+  if (!normalized.wixItemId || !normalized.publicName || normalized.year < 2000 || !normalized.allPhotosUrl || !normalized.fingerprint || !normalized.reconciledAt) throw new Error('invalid_event_metadata');
   const folderIds = new Set(normalized.galleries.map((gallery) => gallery.folderId));
   if (folderIds.size !== normalized.galleries.length) throw new Error('duplicate_gallery_identity');
   const galleryCount = count(body.galleryCount);
