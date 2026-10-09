@@ -38,7 +38,13 @@ export function createPhotoEventCreationRegistry(database, env = {}) {
       if (current.operation_state === 'VALIDATED' || current.operation_state === 'FAILED_NEEDS_ATTENTION') current = await advance(current.id, 'DRIVE_ROOT_CREATED', await provision(env, 'CREATE_DRIVE_ROOT', current));
       if (current.operation_state === 'DRIVE_ROOT_CREATED') current = await advance(current.id, 'WIX_EVENT_REGISTERED', await provision(env, 'REGISTER_WIX_EVENT', current));
       if (current.operation_state === 'WIX_EVENT_REGISTERED') current = await advance(current.id, 'VERIFIED', await provision(env, 'VERIFY_EVENT', current));
-      if (current.operation_state === 'VERIFIED') current = await advance(current.id, 'READY_FOR_PUBLICATION');
+      if (current.operation_state === 'VERIFIED') {
+        await database.prepare(`INSERT INTO photo_events (id,wix_item_id,public_name,series,region,event_year,artwork_url,gallery_count,photo_count,sync_status,active,all_photos_url,updated_at)
+          VALUES (?,?,?,?,?,?,?,0,0,'AWAITING_RECONCILIATION',1,?,CURRENT_TIMESTAMP)
+          ON CONFLICT(wix_item_id) DO UPDATE SET public_name=excluded.public_name,series=excluded.series,region=excluded.region,event_year=excluded.event_year,artwork_url=excluded.artwork_url,all_photos_url=excluded.all_photos_url,updated_at=CURRENT_TIMESTAMP`)
+          .bind(`wix-${current.wix_item_id}`,current.wix_item_id,current.event_name,current.event_series,current.region,current.event_year,current.artwork_url || null,current.drive_root_url).run();
+        current = await advance(current.id, 'READY_FOR_PUBLICATION');
+      }
       return { operation: current, resumed: true, qualification };
     } catch (error) {
       await database.prepare(`UPDATE photo_event_creation_operations SET operation_state = 'FAILED_NEEDS_ATTENTION', safe_error_code = 'PROVISIONING_FAILED', safe_error_message = ?, retry_count = retry_count + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).bind(clean(error.message, 400), operation.id).run();
