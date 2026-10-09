@@ -4,6 +4,7 @@ const events = [
   { id: 'elevate-na-2026', public_name: 'Elevate North America', series: 'Elevate', region: 'North America', event_year: 2026, gallery_count: 5, photo_count: 4749, sync_status: 'CONFIRMED', galleries: [] },
   { id: 'playbook-na-2026', public_name: 'Playbook North America', series: 'Playbook', region: 'North America', event_year: 2026, gallery_count: 7, photo_count: 1194, sync_status: 'CONFIRMED', galleries: [] }
 ];
+const sampleGallery = { drive_folder_id: 'drive-gallery-1', public_name: 'Stage & Speakers', photo_count: 12, sync_status: 'CONFIRMED', destination_url: 'https://drive.google.com/drive/folders/drive-gallery-1', cover_url: '' };
 
 async function mockPhotoApi(page, role = 'PHOTO_ADMIN') {
   await page.route('**/api/photos/**', async (route) => {
@@ -17,7 +18,7 @@ async function mockPhotoApi(page, role = 'PHOTO_ADMIN') {
     else if (path === 'activity') body = { activity: [] };
     else if (path === 'setup') body = { operations: [], qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
     else if (path === 'creation-capabilities') body = { qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
-    else if (path.startsWith('events/')) body = { event: events.find(({ id }) => id === path.slice(7)) };
+    else if (path.startsWith('events/')) body = { event: { ...events.find(({ id }) => id === path.slice(7)), capabilities: ['GALLERY_UPLOAD'], galleries: [sampleGallery] }, uploadAccess: { authorized: role === 'PHOTO_ADMIN' || role === 'PHOTOGRAPHER', source: role === 'PHOTO_ADMIN' ? 'ADMIN' : 'STUDIO_MANAGED', state: 'VERIFIED' }, galleryOperations: [], galleryManagementQualified: true };
     else body = { ok: true };
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
   });
@@ -45,6 +46,10 @@ test('photographer sees only assigned events and no administrator navigation', a
   await expect(page.locator('.event-card')).toHaveCount(1);
   await expect(page.getByText('Playbook North America')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Create event' })).toBeHidden();
+  await page.getByRole('button', { name: 'Open Elevate North America' }).click();
+  const upload = page.getByRole('link', { name: 'Open upload folder' });
+  await expect(upload).toBeVisible();
+  await expect(upload).toHaveAttribute('href', 'https://drive.google.com/drive/folders/drive-gallery-1');
 });
 
 for (const width of [375, 390, 430, 1280, 1440]) {

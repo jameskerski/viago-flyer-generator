@@ -6,6 +6,7 @@ import { createPhotoRegistry } from '../../../hosted/platform/photo-registry.mjs
 import { authorizedSync, parseSyncPayload, reconcilePhotoReadModel } from '../../../hosted/platform/photo-sync.mjs';
 import { createPhotoEventCreationRegistry, creationQualification } from '../../../hosted/platform/photo-event-creation.mjs';
 import { createGalleryManagement } from '../../../hosted/platform/photo-gallery-management.mjs';
+import { createPhotoDriveAccess } from '../../../hosted/platform/photo-drive-access.mjs';
 
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
@@ -53,7 +54,7 @@ export async function onRequest({ request, env }) {
   const creationMatch = path.match(/^setup\/([^/]+)\/retry$/);
   const galleryMatch = path.match(/^events\/([^/]+)\/galleries(?:\/operations)?$/);
   const creationRoute = path === 'setup' || path === 'creation-capabilities' || Boolean(creationMatch);
-  const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview'].includes(path);
+  const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview', 'drive-access/audit'].includes(path);
   const permission = creationRoute || galleryMatch ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
   let auth;
   try {
@@ -66,6 +67,7 @@ export async function onRequest({ request, env }) {
   if (!auth.decision.allowed) return json({ error: auth.decision.reason }, auth.decision.reason === 'authentication_required' ? 401 : 403);
   const actor = auth.decision.actor;
   const photos = auth.photos;
+  const driveAccess = createPhotoDriveAccess(env.PLATFORM_DB, env, photos);
 
   try {
     if (creationRoute && !(await photos.canCreateEvent(actor))) return json({ error: 'event_create_permission_required' }, 403);
@@ -79,13 +81,14 @@ export async function onRequest({ request, env }) {
       const event = await photos.event(actor, eventMatch[1]);
       if (!event) return json({ error: 'event_not_found' }, 404);
       const manager = createGalleryManagement(env.PLATFORM_DB, env, photos);
-      return json({ event, galleryOperations: await manager.list(event.id), galleryManagementQualified: manager.endpointReady });
+      return json({ event, uploadAccess: await driveAccess.accessFor(actor, event.id), galleryOperations: await manager.list(event.id), galleryManagementQualified: manager.endpointReady });
     }
     if (request.method === 'GET' && path === 'overview') return json({ overview: await photos.overview() });
     if (request.method === 'GET' && path === 'photographers') return json({ photographers: await photos.listPhotographers() });
     if (request.method === 'GET' && path === 'activity') return json({ activity: await photos.activity() });
     if (request.method === 'GET' && path === 'media-assets') return json({ collections: await photos.mediaAssets() });
     if (request.method === 'GET' && path === 'creation-capabilities') return json({ qualification: creationQualification(env) });
+    if (request.method === 'GET' && path === 'drive-access/audit') return json({ audit: await driveAccess.audit(actor) });
     if (request.method === 'GET' && path === 'setup') return json({ operations: await creations.list(actor), qualification: creations.qualification });
 
     const body = await request.json();
@@ -100,6 +103,9 @@ export async function onRequest({ request, env }) {
     }
     if (request.method === 'POST' && path === 'setup') {
       const result = await creations.request(actor, body, request.headers.get('idempotency-key'));
+      if (result.operation?.operation_state === 'READY_FOR_PUBLICATION') {
+        for (const userId of await photos.futureAccessUserIds()) await driveAccess.reconcileUser(actor, userId);
+      }
       await photos.audit(actor, 'event.creation.request', 'event_creation_operation', result.operation.id, 'SUCCEEDED', { state: result.operation.operation_state, eventType: result.operation.event_type, enabled: result.qualification.enabled });
       return json(result, 202);
     }
@@ -111,15 +117,15 @@ export async function onRequest({ request, env }) {
     if (request.method === 'POST' && path === 'invitations') return json({ invitation: await photos.invite(actor, body) }, 201);
     if (request.method === 'POST' && path === 'photographers/status') {
       await photos.setUserStatus(actor, body.userId, body.status);
-      return json({ ok: true });
+      return json({ ok: true, driveAccess: await driveAccess.reconcileUser(actor, body.userId) });
     }
     if (request.method === 'POST' && path === 'photographers/permissions') {
       await photos.setPermissionProfile(actor, body.userId, body.preset);
-      return json({ ok: true });
+      return json({ ok: true, driveAccess: await driveAccess.reconcileUser(actor, body.userId) });
     }
     if (request.method === 'POST' && path === 'assignments') {
       await photos.setAssignment(actor, body.userId, body.eventId, body.active === true);
-      return json({ ok: true });
+      return json({ ok: true, driveAccess: await driveAccess.reconcileUser(actor, body.userId) });
     }
     return json({ error: 'not_found' }, 404);
   } catch (error) {

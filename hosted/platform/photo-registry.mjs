@@ -111,6 +111,11 @@ export function createPhotoRegistry(database) {
       return (result.results || []).map((row) => ({ ...row, preset_key: row.preset_key || 'ASSIGNED', event_scope: row.event_scope || 'ASSIGNED_ONLY', capabilities: JSON.parse(row.capabilities_json || JSON.stringify(PHOTO_PRESETS.ASSIGNED.capabilities)) }));
     },
 
+    async futureAccessUserIds() {
+      const result = await database.prepare(`SELECT p.user_id FROM photo_permission_profiles p JOIN platform_users u ON u.id=p.user_id JOIN module_grants g ON g.user_id=p.user_id AND g.module_key='PHOTO_STUDIO' AND g.role_key='PHOTOGRAPHER' AND g.status='ACTIVE' WHERE p.event_scope IN ('ALL_CURRENT','ALL_CURRENT_FUTURE') AND u.status='ACTIVE'`).all();
+      return (result.results || []).map((row) => row.user_id);
+    },
+
     async invite(actor, { email }) {
       const normalized = normalizedEmail(email);
       if (!/^\S+@\S+\.\S+$/.test(normalized)) throw new Error('A valid Google account email is required');
@@ -128,12 +133,14 @@ export function createPhotoRegistry(database) {
       if (!target) throw new Error('Photographer not found');
       await database.prepare(`INSERT OR REPLACE INTO photo_permission_profiles (user_id, preset_key, event_scope, capabilities_json, updated_by_user_id, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(userId, key, preset.scope, JSON.stringify(preset.capabilities), actor.id).run();
       await audit(actor, 'photographer.permissions', 'user', userId, 'SUCCEEDED', { preset: key, eventScope: preset.scope, capabilities: preset.capabilities });
+      return { userId, preset: key, eventScope: preset.scope };
     },
 
     async setUserStatus(actor, userId, status) {
       if (!['ACTIVE', 'INACTIVE', 'REVOKED'].includes(status)) throw new Error('Invalid account status');
       await database.prepare(`UPDATE platform_users SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).bind(status, userId).run();
       await audit(actor, 'photographer.status', 'user', userId, 'SUCCEEDED', { status });
+      return { userId, status };
     },
 
     async setAssignment(actor, userId, eventId, active) {
@@ -141,6 +148,7 @@ export function createPhotoRegistry(database) {
       if (active) await database.prepare(`INSERT OR REPLACE INTO event_assignments (id, user_id, event_id, permission_key, status) VALUES (COALESCE((SELECT id FROM event_assignments WHERE user_id = ? AND event_id = ? AND permission_key = 'PHOTO_UPLOAD'), ?), ?, ?, 'PHOTO_UPLOAD', 'ACTIVE')`).bind(userId, eventId, id('assignment'), userId, eventId).run();
       else await database.prepare(`UPDATE event_assignments SET status = 'REVOKED', updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND event_id = ?`).bind(userId, eventId).run();
       await audit(actor, active ? 'assignment.grant' : 'assignment.revoke', 'event_assignment', `${userId}:${eventId}`, 'SUCCEEDED', { userId, eventId });
+      return { userId, eventId, active };
     },
 
     async activity() {
