@@ -67,12 +67,22 @@ function showView(name) {
   history.replaceState(null, '', name === 'overview' ? '/photos/' : `/photos/?view=${name}`);
 }
 
+async function galleryAction(eventId, action, values = {}) {
+  const result = await api(`events/${encodeURIComponent(eventId)}/galleries/operations`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ action, ...values }) });
+  if (result.operation?.operation_state === 'FAILED_NEEDS_ATTENTION') throw new Error(result.operation.safe_error_message || 'Gallery operation needs attention');
+  await openEvent(eventId);
+}
+
 async function openEvent(id) {
-  const { event } = await api(`events/${encodeURIComponent(id)}`);
+  const { event, galleryOperations = [], galleryManagementQualified } = await api(`events/${encodeURIComponent(id)}`);
   const detail = $('#eventDetail');
   detail.hidden = false;
-  const galleries = event.galleries.length ? `<div class="gallery-grid">${event.galleries.map((g) => `<article class="gallery-card"><a href="${escapeHtml(g.destination_url)}" target="_blank" rel="noopener"><span class="gallery-cover">${g.cover_url ? `<img src="${escapeHtml(g.cover_url)}" alt="" loading="lazy">` : ''}</span><span class="gallery-copy"><b>${escapeHtml(g.public_name)}</b><small>${Number(g.photo_count).toLocaleString()} photos · ${escapeHtml(g.sync_status)}</small><small>Folder ${escapeHtml(g.drive_folder_id)}</small></span></a><div class="gallery-actions"><span>View available</span><span>Create · Rename · Cover · Upload pending qualification</span></div></article>`).join('')}</div>` : `<div class="gallery-empty">No reconciled public galleries are available for this event.</div>`;
-  detail.innerHTML = `<div class="section-head"><div><p class="eyebrow">${escapeHtml(event.series)} · ${escapeHtml(event.region)}</p><h2>${escapeHtml(event.public_name)}</h2></div><p>${escapeHtml(event.event_year)} · ${escapeHtml(event.sync_status.replaceAll('_', ' '))}</p></div>${galleries}`;
+  const known = new Map(event.galleries.map((g) => [g.drive_folder_id, g]));
+  galleryOperations.filter((o) => o.gallery_folder_id && !known.has(o.gallery_folder_id) && o.operation_type === 'CREATE').forEach((o) => known.set(o.gallery_folder_id, { drive_folder_id: o.gallery_folder_id, public_name: o.requested_name, photo_count: 0, sync_status: o.operation_state, destination_url: o.drive_folder_url, cover_url: '' }));
+  const canCreate = event.capabilities.includes('GALLERY_CREATE'); const canRename = event.capabilities.includes('GALLERY_RENAME'); const canCover = event.capabilities.includes('GALLERY_COVER_SELECT');
+  const cards = [...known.values()];
+  const galleries = cards.length ? `<div class="gallery-grid">${cards.map((g) => `<article class="gallery-card"><a href="${escapeHtml(g.destination_url || '#')}" target="_blank" rel="noopener"><span class="gallery-cover">${g.cover_url ? `<img src="${escapeHtml(g.cover_url)}" alt="" loading="lazy">` : '<span class="empty-cover">EMPTY GALLERY</span>'}</span><span class="gallery-copy"><b>${escapeHtml(g.public_name)}</b><small>${Number(g.photo_count).toLocaleString()} photos · ${escapeHtml(String(g.sync_status || 'SYNC_PENDING').replaceAll('_',' '))}</small></span></a><div class="gallery-actions"><a href="${escapeHtml(g.destination_url || '#')}" target="_blank" rel="noopener">Open gallery</a>${canRename ? `<button data-gallery-rename="${escapeHtml(g.drive_folder_id)}" data-gallery-name="${escapeHtml(g.public_name)}" data-gallery-event="${escapeHtml(event.id)}">Rename</button>` : ''}${canCover ? `<button data-gallery-cover="${escapeHtml(g.drive_folder_id)}" data-gallery-event="${escapeHtml(event.id)}" ${Number(g.photo_count) ? '' : 'disabled'}>Set cover</button>` : ''}</div></article>`).join('')}</div>` : `<div class="gallery-empty">No galleries exist for this event yet.</div>`;
+  detail.innerHTML = `<div class="section-head"><div><p class="eyebrow">${escapeHtml(event.series)} · ${escapeHtml(event.region)}</p><h2>${escapeHtml(event.public_name)}</h2></div><div class="event-management"><p>${escapeHtml(event.event_year)} · ${escapeHtml(event.sync_status.replaceAll('_', ' '))}</p>${canCreate ? `<button class="primary" data-gallery-create="${escapeHtml(event.id)}" ${galleryManagementQualified ? '' : 'disabled'}>Create gallery</button>` : ''}</div></div>${galleries}`;
   detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -129,6 +139,15 @@ async function boot() {
 document.addEventListener('click', async (event) => {
   const view = event.target.closest('[data-view]'); if (view) showView(view.dataset.view);
   const card = event.target.closest('[data-event]'); if (card) await openEvent(card.dataset.event);
+  const create = event.target.closest('[data-gallery-create]'); if (create) {
+    const name = prompt('Public gallery name'); if (name !== null) await galleryAction(create.dataset.galleryCreate, 'CREATE', { galleryName: name });
+  }
+  const rename = event.target.closest('[data-gallery-rename]'); if (rename) {
+    const name = prompt('New public gallery name', rename.dataset.galleryName); if (name !== null) await galleryAction(rename.dataset.galleryEvent, 'RENAME', { galleryFolderId: rename.dataset.galleryRename, galleryName: name });
+  }
+  const cover = event.target.closest('[data-gallery-cover]'); if (cover) {
+    const fileId = prompt('Google Drive file ID for the cover photograph'); if (fileId !== null) await galleryAction(cover.dataset.galleryEvent, 'SET_COVER', { galleryFolderId: cover.dataset.galleryCover, coverFileId: fileId });
+  }
   const status = event.target.closest('[data-status]'); if (status) { await api('photographers/status', { method: 'POST', body: JSON.stringify({ userId: status.dataset.status, status: status.dataset.next }) }); await loadPhotographers(); }
   const assignment = event.target.closest('[data-assignment]'); if (assignment) {
     const select = $(`[data-assignment-select="${CSS.escape(assignment.dataset.assignment)}"]`);

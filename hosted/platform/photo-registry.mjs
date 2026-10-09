@@ -91,7 +91,8 @@ export function createPhotoRegistry(database) {
       const event = await database.prepare(`SELECT * FROM photo_events WHERE id = ? AND active = 1`).bind(eventId).first();
       if (!event) return null;
       const galleries = await database.prepare(`SELECT * FROM photo_galleries WHERE event_id = ? AND active = 1 ORDER BY display_order, public_name`).bind(eventId).all();
-      return { ...event, galleries: galleries.results || [] };
+      const profile = actor.role === ROLES.PHOTO_ADMIN ? { capabilities: ['GALLERY_CREATE','GALLERY_RENAME','GALLERY_COVER_SELECT'] } : await photographerProfile(actor.id);
+      return { ...event, galleries: galleries.results || [], capabilities: profile.capabilities || [] };
     },
 
     async overview() {

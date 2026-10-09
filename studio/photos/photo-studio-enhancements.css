@@ -39,8 +39,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(5px); }
 .gallery-cover img { width: 100%; height: 100%; object-fit: cover; }
 .gallery-copy { display: grid; gap: .25rem; padding: .85rem; }
 .gallery-copy small { color: var(--muted); overflow-wrap: anywhere; }
-.gallery-actions { display: grid; gap: .2rem; padding: .7rem .85rem; border-top: 1px solid var(--line); color: var(--lime); font-size: .7rem; }
-.gallery-actions span:last-child { color: var(--muted); }
+.gallery-actions { display: flex; flex-wrap: wrap; gap: .45rem; padding: .7rem .85rem; border-top: 1px solid var(--line); color: var(--lime); font-size: .75rem; }
+.gallery-actions a,.gallery-actions button { border: 1px solid #36503f; background: #101b14; color: white; border-radius: 7px; padding: .45rem .65rem; font: inherit; text-decoration: none; cursor: pointer; }
+.gallery-actions button:disabled { opacity: .45; cursor: not-allowed; }
+.empty-cover { display:grid;place-items:center;height:100%;color:var(--muted);font-size:.7rem;letter-spacing:.15em; }
+.event-management { display:flex;align-items:center;gap:1rem; }
 .media-card { text-decoration: none; }
 .creation-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .8rem; margin: 0 0 1.2rem; }
 .operation-group { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: #080d0a; }

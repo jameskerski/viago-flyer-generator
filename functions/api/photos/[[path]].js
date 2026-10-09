@@ -5,6 +5,7 @@ import { createD1Registry } from '../../../hosted/platform/d1-registry.mjs';
 import { createPhotoRegistry } from '../../../hosted/platform/photo-registry.mjs';
 import { authorizedSync, parseSyncPayload, reconcilePhotoReadModel } from '../../../hosted/platform/photo-sync.mjs';
 import { createPhotoEventCreationRegistry, creationQualification } from '../../../hosted/platform/photo-event-creation.mjs';
+import { createGalleryManagement } from '../../../hosted/platform/photo-gallery-management.mjs';
 
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
@@ -50,9 +51,10 @@ export async function onRequest({ request, env }) {
   }
   const eventMatch = path.match(/^events\/([^/]+)$/);
   const creationMatch = path.match(/^setup\/([^/]+)\/retry$/);
+  const galleryMatch = path.match(/^events\/([^/]+)\/galleries(?:\/operations)?$/);
   const creationRoute = path === 'setup' || path === 'creation-capabilities' || Boolean(creationMatch);
   const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview'].includes(path);
-  const permission = creationRoute ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
+  const permission = creationRoute || galleryMatch ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
   let auth;
   try {
     // Event-scope authorization is resolved from the explicit Photo Studio
@@ -75,7 +77,9 @@ export async function onRequest({ request, env }) {
     if (request.method === 'GET' && path === 'events') return json({ events: await photos.listEvents(actor) });
     if (request.method === 'GET' && eventMatch) {
       const event = await photos.event(actor, eventMatch[1]);
-      return event ? json({ event }) : json({ error: 'event_not_found' }, 404);
+      if (!event) return json({ error: 'event_not_found' }, 404);
+      const manager = createGalleryManagement(env.PLATFORM_DB, env, photos);
+      return json({ event, galleryOperations: await manager.list(event.id), galleryManagementQualified: manager.endpointReady });
     }
     if (request.method === 'GET' && path === 'overview') return json({ overview: await photos.overview() });
     if (request.method === 'GET' && path === 'photographers') return json({ photographers: await photos.listPhotographers() });
@@ -85,6 +89,15 @@ export async function onRequest({ request, env }) {
     if (request.method === 'GET' && path === 'setup') return json({ operations: await creations.list(actor), qualification: creations.qualification });
 
     const body = await request.json();
+    if (request.method === 'POST' && galleryMatch) {
+      const event = await photos.event(actor, galleryMatch[1]);
+      if (!event) return json({ error: 'event_not_found' }, 404);
+      const action = String(body.action || '').toUpperCase();
+      const required = action === 'RENAME' ? 'GALLERY_RENAME' : action === 'SET_COVER' ? 'GALLERY_COVER_SELECT' : 'GALLERY_CREATE';
+      if (!event.capabilities.includes(required)) return json({ error: 'gallery_permission_required' }, 403);
+      const result = await createGalleryManagement(env.PLATFORM_DB, env, photos).request(actor, event, action, body, request.headers.get('idempotency-key'));
+      return json(result, 202);
+    }
     if (request.method === 'POST' && path === 'setup') {
       const result = await creations.request(actor, body, request.headers.get('idempotency-key'));
       await photos.audit(actor, 'event.creation.request', 'event_creation_operation', result.operation.id, 'SUCCEEDED', { state: result.operation.operation_state, eventType: result.operation.event_type, enabled: result.qualification.enabled });
