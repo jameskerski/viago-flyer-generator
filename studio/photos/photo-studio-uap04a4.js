@@ -210,8 +210,8 @@ $('#eventCreationForm').addEventListener('submit', async (event) => {
   finally { submit.disabled = false; }
 });
 $('#inviteForm').addEventListener('submit', async (event) => {
-  event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget)); const output = $('#inviteResult'); output.value = 'Creating invitation…';
-  try { const { invitation } = await api('invitations', { method: 'POST', body: JSON.stringify(data) }); output.value = `Invitation ready for ${invitation.email}. Access is granted when that Google account signs in.`; event.currentTarget.reset(); await loadActivity(); }
+  event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); const output = $('#inviteResult'); output.value = 'Creating invitation…';
+  try { const { invitation } = await api('invitations', { method: 'POST', body: JSON.stringify(data) }); output.value = `Invitation ready for ${invitation.email}. Access is granted when that account signs in.`; form.reset(); await loadActivity(); }
   catch (error) { output.value = error.message; }
 });
 $('#auditDriveAccess').addEventListener('click', async (event) => {

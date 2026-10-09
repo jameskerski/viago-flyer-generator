@@ -15,9 +15,9 @@ async function identity(request, env) {
   const token = request.headers.get('cf-access-jwt-assertion') || cookieToken;
   if (!token) throw new Error('missing_access_assertion');
   const team = env.CF_TEAM_DOMAIN?.replace(/\/$/, '');
-  if (!team || !env.CF_ACCESS_AUD) throw new Error('access_configuration_missing');
+  if (!team || !env.PHOTO_CF_ACCESS_AUD) throw new Error('photo_access_configuration_missing');
   const jwks = createRemoteJWKSet(new URL(`${team}/cdn-cgi/access/certs`));
-  const { payload } = await jwtVerify(token, jwks, { audience: env.CF_ACCESS_AUD, issuer: team });
+  const { payload } = await jwtVerify(token, jwks, { audience: env.PHOTO_CF_ACCESS_AUD, issuer: team });
   return createIdentityFromAccessClaims(payload);
 }
 
