@@ -72,6 +72,14 @@ async function galleryAction(eventId, action, values = {}) {
   if (result.operation?.operation_state === 'FAILED_NEEDS_ATTENTION') throw new Error(result.operation.safe_error_message || 'Gallery operation needs attention');
   await openEvent(eventId);
 }
+function openGalleryDialog({ eventId, action, galleryFolderId = '', galleryName = '' }) {
+  const form = $('#galleryForm'); form.reset();
+  form.elements.eventId.value = eventId; form.elements.action.value = action; form.elements.galleryFolderId.value = galleryFolderId; form.elements.galleryName.value = galleryName;
+  $('#galleryDialogTitle').textContent = action === 'CREATE' ? 'Create gallery' : action === 'RENAME' ? 'Rename gallery' : 'Set gallery cover';
+  $('#galleryNameField').hidden = action === 'SET_COVER'; $('#coverFileField').hidden = action !== 'SET_COVER';
+  form.elements.galleryName.required = action !== 'SET_COVER'; form.elements.coverFileId.required = action === 'SET_COVER'; $('#galleryResult').value = '';
+  $('#galleryDialog').showModal();
+}
 
 async function openEvent(id) {
   const { event, galleryOperations = [], galleryManagementQualified } = await api(`events/${encodeURIComponent(id)}`);
@@ -140,13 +148,13 @@ document.addEventListener('click', async (event) => {
   const view = event.target.closest('[data-view]'); if (view) showView(view.dataset.view);
   const card = event.target.closest('[data-event]'); if (card) await openEvent(card.dataset.event);
   const create = event.target.closest('[data-gallery-create]'); if (create) {
-    const name = prompt('Public gallery name'); if (name !== null) await galleryAction(create.dataset.galleryCreate, 'CREATE', { galleryName: name });
+    openGalleryDialog({ eventId: create.dataset.galleryCreate, action: 'CREATE' });
   }
   const rename = event.target.closest('[data-gallery-rename]'); if (rename) {
-    const name = prompt('New public gallery name', rename.dataset.galleryName); if (name !== null) await galleryAction(rename.dataset.galleryEvent, 'RENAME', { galleryFolderId: rename.dataset.galleryRename, galleryName: name });
+    openGalleryDialog({ eventId: rename.dataset.galleryEvent, action: 'RENAME', galleryFolderId: rename.dataset.galleryRename, galleryName: rename.dataset.galleryName });
   }
   const cover = event.target.closest('[data-gallery-cover]'); if (cover) {
-    const fileId = prompt('Google Drive file ID for the cover photograph'); if (fileId !== null) await galleryAction(cover.dataset.galleryEvent, 'SET_COVER', { galleryFolderId: cover.dataset.galleryCover, coverFileId: fileId });
+    openGalleryDialog({ eventId: cover.dataset.galleryEvent, action: 'SET_COVER', galleryFolderId: cover.dataset.galleryCover });
   }
   const status = event.target.closest('[data-status]'); if (status) { await api('photographers/status', { method: 'POST', body: JSON.stringify({ userId: status.dataset.status, status: status.dataset.next }) }); await loadPhotographers(); }
   const assignment = event.target.closest('[data-assignment]'); if (assignment) {
@@ -167,6 +175,13 @@ document.addEventListener('click', async (event) => {
     finally { retry.disabled = false; }
   }
   if (event.target.closest('[data-close-wizard]')) $('#eventWizard').close();
+  if (event.target.closest('[data-close-gallery-dialog]')) $('#galleryDialog').close();
+});
+$('#galleryForm').addEventListener('submit', async (event) => {
+  event.preventDefault(); const form = event.currentTarget; const values = Object.fromEntries(new FormData(form)); const output = $('#galleryResult');
+  output.value = 'Applying the governed Drive operation…';
+  try { await galleryAction(values.eventId, values.action, values); $('#galleryDialog').close(); }
+  catch (error) { output.value = error.message.replaceAll('_', ' '); }
 });
 $('#newEvent').addEventListener('click', async () => {
   if (!state.creationQualification) {

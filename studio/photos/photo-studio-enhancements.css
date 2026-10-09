@@ -11,6 +11,8 @@ dialog {
 dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(5px); }
 .wizard { padding: 1.4rem; }
 .wizard > p { color: var(--muted); }
+.wizard > label { display:grid;gap:.4rem;margin:1rem 0;color:#c6d1ca; }
+.wizard > label input { width:100%;background:#050806;color:white;border:1px solid #34483b;border-radius:8px;padding:.8rem;font:inherit; }
 .wizard-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.3rem 0; }
 .wizard-fields label { display: grid; gap: .35rem; color: #c6d1ca; }
 .wizard-fields .wide { grid-column: 1 / -1; }

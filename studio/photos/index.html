@@ -88,6 +88,17 @@
       <div class="wizard-actions"><button type="button" data-close-wizard>Cancel</button><button id="submitEventCreation" class="primary" type="submit">Validate event draft</button></div>
     </form>
   </dialog>
+  <dialog id="galleryDialog" aria-labelledby="galleryDialogTitle">
+    <form id="galleryForm" class="wizard">
+      <div class="panel-head"><div><p class="eyebrow">GALLERY MANAGEMENT</p><h2 id="galleryDialogTitle">Create gallery</h2></div><button type="button" data-close-gallery-dialog>Close</button></div>
+      <input type="hidden" name="eventId"><input type="hidden" name="action"><input type="hidden" name="galleryFolderId">
+      <label id="galleryNameField">Public gallery name<input name="galleryName" maxlength="120" autocomplete="off"></label>
+      <label id="coverFileField" hidden>Google Drive photograph file ID<input name="coverFileId" autocomplete="off"></label>
+      <p class="form-note">Names are public-facing. Empty galleries remain private until valid photos are reconciled.</p>
+      <output id="galleryResult" aria-live="polite"></output>
+      <div class="wizard-actions"><button type="button" data-close-gallery-dialog>Cancel</button><button class="primary" type="submit">Confirm</button></div>
+    </form>
+  </dialog>
   <script type="module" src="photo-studio-uap04a4.js"></script>
 </body>
 </html>
