@@ -49,8 +49,8 @@ export async function onRequest({ request, env }) {
     }
   }
   const eventMatch = path.match(/^events\/([^/]+)$/);
-  const creationMatch = path.match(/^event-drafts\/([^/]+)\/retry$/);
-  const creationRoute = path === 'event-drafts' || path === 'creation-capabilities' || Boolean(creationMatch);
+  const creationMatch = path.match(/^setup\/([^/]+)\/retry$/);
+  const creationRoute = path === 'setup' || path === 'creation-capabilities' || Boolean(creationMatch);
   const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview'].includes(path);
   const permission = creationRoute ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
   let auth;
@@ -82,10 +82,10 @@ export async function onRequest({ request, env }) {
     if (request.method === 'GET' && path === 'activity') return json({ activity: await photos.activity() });
     if (request.method === 'GET' && path === 'media-assets') return json({ collections: await photos.mediaAssets() });
     if (request.method === 'GET' && path === 'creation-capabilities') return json({ qualification: creationQualification(env) });
-    if (request.method === 'GET' && path === 'event-drafts') return json({ operations: await creations.list(actor), qualification: creations.qualification });
+    if (request.method === 'GET' && path === 'setup') return json({ operations: await creations.list(actor), qualification: creations.qualification });
 
     const body = await request.json();
-    if (request.method === 'POST' && path === 'event-drafts') {
+    if (request.method === 'POST' && path === 'setup') {
       const result = await creations.request(actor, body, request.headers.get('idempotency-key'));
       await photos.audit(actor, 'event.creation.request', 'event_creation_operation', result.operation.id, 'SUCCEEDED', { state: result.operation.operation_state, eventType: result.operation.event_type, enabled: result.qualification.enabled });
       return json(result, 202);

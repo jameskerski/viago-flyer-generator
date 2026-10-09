@@ -43,7 +43,7 @@ function renderCreationOperations() {
 }
 async function loadCreationOperations() {
   if (!state.actor?.canCreateEvent) return;
-  const result = await api('event-drafts');
+  const result = await api('setup');
   state.creationOperations = result.operations || [];
   state.creationQualification = result.qualification;
   renderCreationOperations();
@@ -136,7 +136,7 @@ document.addEventListener('click', async (event) => {
   }
   const retry = event.target.closest('[data-retry-operation]'); if (retry) {
     retry.disabled = true;
-    try { await api(`event-drafts/${encodeURIComponent(retry.dataset.retryOperation)}/retry`, { method: 'POST', body: '{}' }); await loadCreationOperations(); }
+    try { await api(`setup/${encodeURIComponent(retry.dataset.retryOperation)}/retry`, { method: 'POST', body: '{}' }); await loadCreationOperations(); }
     catch (error) { $('#creationResult').value = error.message; }
     finally { retry.disabled = false; }
   }
@@ -155,7 +155,7 @@ $('#eventCreationForm').addEventListener('submit', async (event) => {
   const idempotencyKey = crypto.randomUUID();
   submit.disabled = true; output.value = 'Validating and recording the recoverable operation…';
   try {
-    const result = await api('event-drafts', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify(input) });
+    const result = await api('setup', { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify(input) });
     state.creationQualification = result.qualification;
     output.value = result.qualification.enabled ? `Event workflow started: ${creationLabels[result.operation.operation_state]}.` : 'Draft validated and recorded. External provisioning remains safely paused.';
     event.currentTarget.reset(); await loadCreationOperations(); renderQualification();
