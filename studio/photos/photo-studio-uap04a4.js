@@ -214,4 +214,14 @@ $('#inviteForm').addEventListener('submit', async (event) => {
   try { const { invitation } = await api('invitations', { method: 'POST', body: JSON.stringify(data) }); output.value = `Invitation ready for ${invitation.email}. Access is granted when that Google account signs in.`; event.currentTarget.reset(); await loadActivity(); }
   catch (error) { output.value = error.message; }
 });
+$('#auditDriveAccess').addEventListener('click', async (event) => {
+  const button = event.currentTarget; const output = $('#driveAuditResult'); button.disabled = true; output.value = 'Auditing authoritative event roots…';
+  try {
+    const { audit } = await api('drive-access/audit'); const roots = audit.roots || [];
+    const shared = roots.filter((root) => root.storageAuthority === 'SHARED_DRIVE').length;
+    const manageable = roots.filter((root) => root.canShare).length;
+    output.value = `${roots.length} roots audited · ${shared} Shared Drive · ${manageable} manageable by automation`;
+  } catch (error) { output.value = error.message.replaceAll('_', ' '); }
+  finally { button.disabled = false; }
+});
 boot();

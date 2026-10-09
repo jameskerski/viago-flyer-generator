@@ -50,7 +50,7 @@
       </section>
 
       <section class="view admin-only" data-view-panel="photographers" hidden>
-        <div class="section-head"><div><p class="eyebrow">ACCESS CONTROL</p><h2>Photographers</h2></div><p>Invite-only Google accounts with event-scoped access.</p></div>
+        <div class="section-head"><div><p class="eyebrow">ACCESS CONTROL</p><h2>Photographers</h2></div><div><p>Invite-only Google accounts with event-scoped access.</p><button id="auditDriveAccess" type="button">Audit Drive access</button><output id="driveAuditResult" aria-live="polite"></output></div></div>
         <div class="split photographers-layout">
           <form id="inviteForm" class="panel form-panel"><h3>Invite photographer</h3><label>Google email<input required name="email" type="email" autocomplete="email" placeholder="photographer@example.com"></label><div class="notice"><strong>Assigned Photographer</strong><p>New photographers begin with zero event assignments. Assign events or explicitly change the preset after they accept.</p></div><button class="primary" type="submit">Create invitation</button><p class="form-note">The invitation grants Photo Studio only. It never grants Template Studio access.</p><output id="inviteResult" aria-live="polite"></output></form>
           <section class="panel"><div class="panel-head"><h3>Approved photographers</h3></div><div id="photographerList" class="people-list"></div></section>
