@@ -111,7 +111,14 @@ async function boot() {
       $('#metrics').innerHTML = metric(overview.events, 'Registered events') + metric(overview.photographers, 'Active photographers') + metric(overview.galleries, 'Confirmed galleries') + metric(overview.photos, 'Confirmed photos');
       const select = $('#inviteForm select'); events.forEach((event) => select.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(event.id)}">${escapeHtml(event.public_name)} ${escapeHtml(event.event_year)}</option>`));
     } else $('#metrics').innerHTML = metric(events.length, 'Assigned events') + metric(events.reduce((n,e)=>n+e.gallery_count,0), 'Available galleries') + metric(events.reduce((n,e)=>n+e.photo_count,0), 'Confirmed photos');
-    if (actor.canCreateEvent) await loadCreationOperations();
+    if (actor.canCreateEvent) {
+      renderCreationOperations();
+      try { await loadCreationOperations(); }
+      catch (error) {
+        state.creationQualification = { enabled: false, blockers: ['The operation ledger could not be loaded. Refresh before validating an event draft.'] };
+        $('#creationSummary').innerHTML = `<section class="operation-group"><h3>Failed / needs attention</h3><article class="operation-card"><b>Operation status unavailable</b><p>${escapeHtml(error.message)}</p></article></section>`;
+      }
+    }
     const requested = new URL(location.href).searchParams.get('view'); showView(requested && $(`[data-view-panel="${requested}"]`) ? requested : 'overview');
   } catch (error) {
     $('#loading').hidden = true; $('#denied').hidden = false;
