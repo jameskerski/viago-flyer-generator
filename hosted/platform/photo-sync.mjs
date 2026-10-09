@@ -97,6 +97,10 @@ export async function reconcilePhotoReadModel(database, payload) {
   }
   statements.push(database.prepare(`INSERT INTO audit_records (id, actor_email, module_key, operation, target_type, target_id, event_id, authorization_outcome, operation_outcome, correlation_id, idempotency_key, safe_metadata_json) VALUES (?, 'SYSTEM:WIX_PHOTO_AUTOMATION', 'PHOTO_STUDIO', 'sync.reconcile', 'photo_event', ?, ?, 'ALLOWED', 'SUCCEEDED', ?, ?, ?)`)
     .bind(`audit-${crypto.randomUUID()}`, eventId, eventId, crypto.randomUUID(), idempotencyKey, JSON.stringify({ fingerprint: payload.fingerprint, galleryCount: payload.galleryCount, photoCount: payload.photoCount })));
+  for (const gallery of payload.galleries) {
+    statements.push(database.prepare(`UPDATE photo_gallery_cover_selections SET selection_state=CASE WHEN selected_file_id=? THEN 'CONFIRMED' ELSE 'INVALID_FALLBACK' END,confirmed_at=CASE WHEN selected_file_id=? THEN CURRENT_TIMESTAMP ELSE NULL END,last_error_code=CASE WHEN selected_file_id=? THEN NULL ELSE 'SELECTED_FILE_NOT_RESOLVED' END,updated_at=CURRENT_TIMESTAMP WHERE gallery_folder_id=?`)
+      .bind(gallery.coverFileId || '', gallery.coverFileId || '', gallery.coverFileId || '', gallery.folderId));
+  }
   await database.batch(statements);
   return { changed: existingEvent?.source_fingerprint !== payload.fingerprint, idempotent: false, eventId, galleryCount: payload.galleryCount, photoCount: payload.photoCount };
 }

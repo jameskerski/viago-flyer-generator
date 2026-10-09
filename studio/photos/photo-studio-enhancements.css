@@ -22,11 +22,20 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(5px); }
 .wizard output { display: block; min-height: 1.5rem; color: var(--lime2); overflow-wrap: anywhere; }
 .assignment-control { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
 .assignment-control select { max-width: 210px; background: #050806; color: white; border: 1px solid #34483b; border-radius: 7px; padding: .45rem; }
+.cover-browser { margin: 1rem 0; }
+.cover-photo-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;max-height:min(56vh,620px);overflow:auto;padding:.2rem; }
+.cover-photo { position:relative;display:grid;grid-template-rows:auto 1fr;min-width:0;padding:0;border:1px solid #294032;border-radius:10px;overflow:hidden;background:#0b120e;color:white;text-align:left;cursor:pointer; }
+.cover-photo img { width:100%;aspect-ratio:4/3;object-fit:cover;background:#111; }
+.cover-photo span { padding:.55rem;font-size:.72rem;overflow-wrap:anywhere; }
+.cover-photo.selected { border-color:var(--lime);box-shadow:0 0 0 2px rgba(140,255,0,.22),0 10px 28px rgba(0,0,0,.35); }
+.cover-photo .cover-badge { position:absolute;top:.4rem;left:.4rem;padding:.2rem .38rem;border-radius:999px;background:#091109;color:var(--lime);font-size:.58rem;letter-spacing:.08em; }
+#loadMoreCoverPhotos { margin-top:.8rem;border:1px solid #36503f;background:#101b14;color:white;border-radius:8px;padding:.65rem .9rem;cursor:pointer; }
 .person-main { min-width: 0; }
 .person-main small { overflow-wrap: anywhere; }
 @media (max-width: 560px) {
   .wizard-fields { grid-template-columns: 1fr; }
   .wizard-fields .wide { grid-column: auto; }
+  .cover-photo-grid { grid-template-columns:repeat(2,minmax(0,1fr));max-height:55vh; }
 }
 
 .event-art { position: relative; overflow: hidden; }

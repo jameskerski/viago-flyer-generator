@@ -1,6 +1,6 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const state = { actor: null, events: [], overview: null, creationQualification: null, creationOperations: [] };
+const state = { actor: null, events: [], overview: null, creationQualification: null, creationOperations: [], coverBrowser: null };
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 
 async function api(path, options = {}) {
@@ -78,7 +78,35 @@ function openGalleryDialog({ eventId, action, galleryFolderId = '', galleryName 
   $('#galleryDialogTitle').textContent = action === 'CREATE' ? 'Create gallery' : action === 'RENAME' ? 'Rename gallery' : 'Set gallery cover';
   $('#galleryNameField').hidden = action === 'SET_COVER'; $('#coverFileField').hidden = action !== 'SET_COVER';
   form.elements.galleryName.required = action !== 'SET_COVER'; form.elements.coverFileId.required = action === 'SET_COVER'; $('#galleryResult').value = '';
+  $('#gallerySubmit').textContent = action === 'SET_COVER' ? 'Confirm cover' : 'Confirm';
   $('#galleryDialog').showModal();
+  if (action === 'SET_COVER') loadCoverPhotos({ eventId, galleryFolderId, reset: true });
+}
+
+function renderCoverPhotos() {
+  const browser = state.coverBrowser;
+  if (!browser) return;
+  $('#coverBrowserStatus').textContent = browser.loading ? 'Loading gallery photographs…' : `${browser.total.toLocaleString()} photographs · choose one cover`;
+  $('#coverPhotoGrid').innerHTML = browser.photos.map((photo) => `<button type="button" class="cover-photo ${photo.fileId === browser.selectedId ? 'selected' : ''}" data-cover-choice="${escapeHtml(photo.fileId)}" role="option" aria-selected="${photo.fileId === browser.selectedId}" title="${escapeHtml(photo.relativePath)}"><img src="${escapeHtml(photo.thumbnailUrl)}" alt="" loading="lazy">${photo.currentCover ? '<i class="cover-badge">CURRENT COVER</i>' : ''}<span>${escapeHtml(photo.filename)}</span></button>`).join('');
+  $('#loadMoreCoverPhotos').hidden = !browser.nextCursor || browser.loading;
+  $('#gallerySubmit').disabled = !browser.selectedId || browser.loading;
+}
+
+async function loadCoverPhotos({ eventId, galleryFolderId, reset = false }) {
+  if (reset) state.coverBrowser = { eventId, galleryFolderId, photos: [], nextCursor: '', total: 0, selectedId: '', loading: true };
+  const browser = state.coverBrowser;
+  if (!browser || browser.loading && !reset) return;
+  browser.loading = true; renderCoverPhotos();
+  try {
+    const cursor = reset ? '' : browser.nextCursor;
+    const result = await api(`events/${encodeURIComponent(eventId)}/galleries/${encodeURIComponent(galleryFolderId)}/photos${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
+    browser.photos = reset ? result.photos : [...browser.photos, ...result.photos];
+    browser.nextCursor = result.nextCursor || ''; browser.total = Number(result.total || browser.photos.length);
+    const current = browser.photos.find((photo) => photo.currentCover || photo.fileId === result.gallery?.coverFileId);
+    if (!browser.selectedId && current) browser.selectedId = current.fileId;
+    if (browser.selectedId) $('#galleryForm').elements.coverFileId.value = browser.selectedId;
+  } catch (error) { $('#coverBrowserStatus').textContent = error.message.replaceAll('_', ' '); }
+  finally { browser.loading = false; renderCoverPhotos(); }
 }
 
 async function openEvent(id) {
@@ -94,7 +122,7 @@ async function openEvent(id) {
   const canCreate = event.capabilities.includes('GALLERY_CREATE'); const canRename = event.capabilities.includes('GALLERY_RENAME'); const canCover = event.capabilities.includes('GALLERY_COVER_SELECT');
   const cards = [...known.values()];
   const canOpenUpload = state.actor.role === 'PHOTO_ADMIN' || uploadAccess.authorized;
-  const galleries = cards.length ? `<div class="gallery-grid">${cards.map((g) => `<article class="gallery-card"><span class="gallery-cover">${g.cover_url ? `<img src="${escapeHtml(g.cover_url)}" alt="" loading="lazy">` : '<span class="empty-cover">EMPTY GALLERY</span>'}</span><span class="gallery-copy"><b>${escapeHtml(g.public_name)}</b><small>${Number(g.photo_count).toLocaleString()} photos · ${escapeHtml(String(g.sync_status || 'SYNC_PENDING').replaceAll('_',' '))}</small></span><div class="gallery-actions">${canOpenUpload && g.destination_url ? `<a href="${escapeHtml(g.destination_url)}" target="_blank" rel="noopener">Open upload folder</a>` : '<span>Drive upload access pending</span>'}${canRename ? `<button data-gallery-rename="${escapeHtml(g.drive_folder_id)}" data-gallery-name="${escapeHtml(g.public_name)}" data-gallery-event="${escapeHtml(event.id)}">Rename</button>` : ''}${canCover ? `<button data-gallery-cover="${escapeHtml(g.drive_folder_id)}" data-gallery-event="${escapeHtml(event.id)}" ${Number(g.photo_count) ? '' : 'disabled'}>Set cover</button>` : ''}</div></article>`).join('')}</div>` : `<div class="gallery-empty">No galleries exist for this event yet.</div>`;
+  const galleries = cards.length ? `<div class="gallery-grid">${cards.map((g) => `<article class="gallery-card"><span class="gallery-cover">${g.cover_url ? `<img src="${escapeHtml(g.cover_url)}" alt="" loading="lazy">` : '<span class="empty-cover">EMPTY GALLERY</span>'}</span><span class="gallery-copy"><b>${escapeHtml(g.public_name)}</b><small>${Number(g.photo_count).toLocaleString()} photos · ${escapeHtml(String(g.cover_selection_state || g.sync_status || 'SYNC_PENDING').replaceAll('_',' '))}</small></span><div class="gallery-actions">${canOpenUpload && g.destination_url ? `<a href="${escapeHtml(g.destination_url)}" target="_blank" rel="noopener">Open upload folder</a>` : '<span>Drive upload access pending</span>'}${canRename ? `<button data-gallery-rename="${escapeHtml(g.drive_folder_id)}" data-gallery-name="${escapeHtml(g.public_name)}" data-gallery-event="${escapeHtml(event.id)}">Rename</button>` : ''}${canCover ? `<button data-gallery-cover="${escapeHtml(g.drive_folder_id)}" data-gallery-event="${escapeHtml(event.id)}" ${Number(g.photo_count) ? '' : 'disabled'}>Set cover photo</button>` : ''}</div></article>`).join('')}</div>` : `<div class="gallery-empty">No galleries exist for this event yet.</div>`;
   detail.innerHTML = `<div class="section-head"><div><p class="eyebrow">${escapeHtml(event.series)} · ${escapeHtml(event.region)}</p><h2>${escapeHtml(event.public_name)}</h2></div><div class="event-management"><p>${escapeHtml(event.event_year)} · ${escapeHtml(event.sync_status.replaceAll('_', ' '))}</p>${canCreate ? `<button class="primary" data-gallery-create="${escapeHtml(event.id)}" ${galleryManagementQualified ? '' : 'disabled'}>Create gallery</button>` : ''}</div></div>${galleries}`;
   detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -161,6 +189,11 @@ document.addEventListener('click', async (event) => {
   const cover = event.target.closest('[data-gallery-cover]'); if (cover) {
     openGalleryDialog({ eventId: cover.dataset.galleryEvent, action: 'SET_COVER', galleryFolderId: cover.dataset.galleryCover });
   }
+  const coverChoice = event.target.closest('[data-cover-choice]'); if (coverChoice && state.coverBrowser) {
+    state.coverBrowser.selectedId = coverChoice.dataset.coverChoice;
+    $('#galleryForm').elements.coverFileId.value = state.coverBrowser.selectedId;
+    renderCoverPhotos();
+  }
   const status = event.target.closest('[data-status]'); if (status) { await api('photographers/status', { method: 'POST', body: JSON.stringify({ userId: status.dataset.status, status: status.dataset.next }) }); await loadPhotographers(); }
   const assignment = event.target.closest('[data-assignment]'); if (assignment) {
     const select = $(`[data-assignment-select="${CSS.escape(assignment.dataset.assignment)}"]`);
@@ -184,9 +217,17 @@ document.addEventListener('click', async (event) => {
 });
 $('#galleryForm').addEventListener('submit', async (event) => {
   event.preventDefault(); const form = event.currentTarget; const values = Object.fromEntries(new FormData(form)); const output = $('#galleryResult');
+  if (values.action === 'SET_COVER') {
+    const selected = state.coverBrowser?.photos.find((photo) => photo.fileId === values.coverFileId);
+    if (!selected || !confirm(`Use “${selected.filename}” as this gallery's cover? The website will update after reconciliation confirms it.`)) return;
+  }
   output.value = 'Applying the governed Drive operation…';
   try { await galleryAction(values.eventId, values.action, values); $('#galleryDialog').close(); }
   catch (error) { output.value = error.message.replaceAll('_', ' '); }
+});
+$('#loadMoreCoverPhotos').addEventListener('click', () => {
+  const browser = state.coverBrowser;
+  if (browser?.nextCursor) loadCoverPhotos({ eventId: browser.eventId, galleryFolderId: browser.galleryFolderId });
 });
 $('#newEvent').addEventListener('click', async () => {
   if (!state.creationQualification) {

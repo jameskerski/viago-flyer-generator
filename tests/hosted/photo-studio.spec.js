@@ -18,7 +18,8 @@ async function mockPhotoApi(page, role = 'PHOTO_ADMIN') {
     else if (path === 'activity') body = { activity: [] };
     else if (path === 'setup') body = { operations: [], qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
     else if (path === 'creation-capabilities') body = { qualification: { enabled: false, blockers: ['Authorized Drive event-root provisioning is not configured.'] } };
-    else if (path.startsWith('events/')) body = { event: { ...events.find(({ id }) => id === path.slice(7)), capabilities: ['GALLERY_UPLOAD'], galleries: [sampleGallery] }, uploadAccess: { authorized: role === 'PHOTO_ADMIN' || role === 'PHOTOGRAPHER', source: role === 'PHOTO_ADMIN' ? 'ADMIN' : 'STUDIO_MANAGED', state: 'VERIFIED' }, galleryOperations: [], galleryManagementQualified: true };
+    else if (path.includes('/galleries/drive-gallery-1/photos')) body = { gallery: { driveFolderId: 'drive-gallery-1', publicName: 'Stage & Speakers', coverFileId: 'photo-1' }, total: 2, nextCursor: '', photos: [{ fileId: 'photo-1', filename: 'stage-keynote.jpg', relativePath: 'Stage & Speakers/stage-keynote.jpg', thumbnailUrl: '/tests/fixtures/landscape.svg', currentCover: true }, { fileId: 'photo-2', filename: 'awards.jpg', relativePath: 'Stage & Speakers/awards.jpg', thumbnailUrl: '/tests/fixtures/portrait.svg', currentCover: false }] };
+    else if (path.startsWith('events/')) body = { event: { ...events.find(({ id }) => id === path.slice(7)), capabilities: ['GALLERY_UPLOAD', 'GALLERY_COVER_SELECT'], galleries: [sampleGallery] }, uploadAccess: { authorized: role === 'PHOTO_ADMIN' || role === 'PHOTOGRAPHER', source: role === 'PHOTO_ADMIN' ? 'ADMIN' : 'STUDIO_MANAGED', state: 'VERIFIED' }, galleryOperations: [], galleryManagementQualified: true };
     else body = { ok: true };
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
   });
@@ -50,6 +51,12 @@ test('photographer sees only assigned events and no administrator navigation', a
   const upload = page.getByRole('link', { name: 'Open upload folder' });
   await expect(upload).toBeVisible();
   await expect(upload).toHaveAttribute('href', 'https://drive.google.com/drive/folders/drive-gallery-1');
+  await page.getByRole('button', { name: 'Set cover photo' }).click();
+  await expect(page.getByRole('dialog')).toContainText('2 photographs');
+  await expect(page.getByRole('option')).toHaveCount(2);
+  await expect(page.getByRole('option', { name: /stage-keynote/ })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('option', { name: /awards/ }).click();
+  await expect(page.getByRole('option', { name: /awards/ })).toHaveAttribute('aria-selected', 'true');
 });
 
 for (const width of [375, 390, 430, 1280, 1440]) {

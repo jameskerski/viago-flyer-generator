@@ -90,7 +90,7 @@ export function createPhotoRegistry(database) {
       if (!(await eventAllowed(actor, eventId))) return null;
       const event = await database.prepare(`SELECT * FROM photo_events WHERE id = ? AND active = 1`).bind(eventId).first();
       if (!event) return null;
-      const galleries = await database.prepare(`SELECT * FROM photo_galleries WHERE event_id = ? AND active = 1 ORDER BY display_order, public_name`).bind(eventId).all();
+      const galleries = await database.prepare(`SELECT g.*,c.selection_state AS cover_selection_state,c.selected_file_id AS pending_cover_file_id FROM photo_galleries g LEFT JOIN photo_gallery_cover_selections c ON c.gallery_folder_id=g.drive_folder_id WHERE g.event_id = ? AND g.active = 1 ORDER BY g.display_order, g.public_name`).bind(eventId).all();
       const profile = actor.role === ROLES.PHOTO_ADMIN ? { capabilities: ['GALLERY_CREATE','GALLERY_RENAME','GALLERY_COVER_SELECT'] } : await photographerProfile(actor.id);
       return { ...event, galleries: galleries.results || [], capabilities: profile.capabilities || [] };
     },

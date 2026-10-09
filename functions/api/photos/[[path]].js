@@ -53,6 +53,7 @@ export async function onRequest({ request, env }) {
   const eventMatch = path.match(/^events\/([^/]+)$/);
   const creationMatch = path.match(/^setup\/([^/]+)\/retry$/);
   const galleryMatch = path.match(/^events\/([^/]+)\/galleries(?:\/operations)?$/);
+  const galleryPhotosMatch = path.match(/^events\/([^/]+)\/galleries\/([^/]+)\/photos$/);
   const creationRoute = path === 'setup' || path === 'creation-capabilities' || Boolean(creationMatch);
   const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview', 'drive-access/audit'].includes(path);
   const permission = creationRoute || galleryMatch ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
@@ -82,6 +83,15 @@ export async function onRequest({ request, env }) {
       if (!event) return json({ error: 'event_not_found' }, 404);
       const manager = createGalleryManagement(env.PLATFORM_DB, env, photos);
       return json({ event, uploadAccess: await driveAccess.accessFor(actor, event.id), galleryOperations: await manager.list(event.id), galleryManagementQualified: manager.endpointReady });
+    }
+    if (request.method === 'GET' && galleryPhotosMatch) {
+      const event = await photos.event(actor, galleryPhotosMatch[1]);
+      if (!event) return json({ error: 'event_not_found' }, 404);
+      const gallery = event.galleries.find((item) => item.drive_folder_id === galleryPhotosMatch[2]);
+      if (!gallery) return json({ error: 'gallery_not_found' }, 404);
+      if (!event.capabilities.includes('GALLERY_COVER_SELECT')) return json({ error: 'gallery_permission_required' }, 403);
+      const manager = createGalleryManagement(env.PLATFORM_DB, env, photos);
+      return json({ gallery: { driveFolderId: gallery.drive_folder_id, publicName: gallery.public_name, coverFileId: gallery.cover_file_id || '' }, ...(await manager.browse(event, gallery.drive_folder_id, url.searchParams.get('cursor') || '')) });
     }
     if (request.method === 'GET' && path === 'overview') return json({ overview: await photos.overview() });
     if (request.method === 'GET' && path === 'photographers') return json({ photographers: await photos.listPhotographers() });

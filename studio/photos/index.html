@@ -93,10 +93,15 @@
       <div class="panel-head"><div><p class="eyebrow">GALLERY MANAGEMENT</p><h2 id="galleryDialogTitle">Create gallery</h2></div><button type="button" data-close-gallery-dialog>Close</button></div>
       <input type="hidden" name="eventId"><input type="hidden" name="action"><input type="hidden" name="galleryFolderId">
       <label id="galleryNameField">Public gallery name<input name="galleryName" maxlength="120" autocomplete="off"></label>
-      <label id="coverFileField" hidden>Google Drive photograph file ID<input name="coverFileId" autocomplete="off"></label>
+      <section id="coverFileField" class="cover-browser" hidden aria-label="Gallery photographs">
+        <input type="hidden" name="coverFileId">
+        <p id="coverBrowserStatus" class="form-note" aria-live="polite">Loading gallery photographs…</p>
+        <div id="coverPhotoGrid" class="cover-photo-grid" role="listbox" aria-label="Choose a cover photograph"></div>
+        <button id="loadMoreCoverPhotos" type="button" hidden>Load more photographs</button>
+      </section>
       <p class="form-note">Names are public-facing. Empty galleries remain private until valid photos are reconciled.</p>
       <output id="galleryResult" aria-live="polite"></output>
-      <div class="wizard-actions"><button type="button" data-close-gallery-dialog>Cancel</button><button class="primary" type="submit">Confirm</button></div>
+      <div class="wizard-actions"><button type="button" data-close-gallery-dialog>Cancel</button><button id="gallerySubmit" class="primary" type="submit">Confirm</button></div>
     </form>
   </dialog>
   <script type="module" src="photo-studio-uap04a4.js"></script>
