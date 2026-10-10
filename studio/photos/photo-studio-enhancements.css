@@ -69,3 +69,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(5px); }
 @media (max-width: 900px) { .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1100px) { .creation-summary { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 560px) { .gallery-grid,.creation-summary { grid-template-columns: 1fr; } .wizard-actions { flex-direction: column-reverse; } .wizard-actions button { width: 100%; } }
+.identity button { margin-top:.35rem; border:0; background:transparent; color:#a8b4ad; padding:0; text-decoration:underline; cursor:pointer; }
+.danger { border-color:#8d3943 !important; color:#ffb8c0 !important; background:#1c090d !important; }
+.cover-photo-shell { display:grid; gap:.45rem; min-width:0; }
+.cover-photo-shell .danger { width:100%; }

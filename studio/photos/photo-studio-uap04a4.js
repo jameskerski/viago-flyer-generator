@@ -87,7 +87,7 @@ function renderCoverPhotos() {
   const browser = state.coverBrowser;
   if (!browser) return;
   $('#coverBrowserStatus').textContent = browser.loading ? 'Loading gallery photographs…' : `${browser.total.toLocaleString()} photographs · choose one cover`;
-  $('#coverPhotoGrid').innerHTML = browser.photos.map((photo) => `<button type="button" class="cover-photo ${photo.fileId === browser.selectedId ? 'selected' : ''}" data-cover-choice="${escapeHtml(photo.fileId)}" role="option" aria-selected="${photo.fileId === browser.selectedId}" title="${escapeHtml(photo.relativePath)}"><img src="${escapeHtml(photo.thumbnailUrl)}" alt="" loading="lazy">${photo.currentCover ? '<i class="cover-badge">CURRENT COVER</i>' : ''}<span>${escapeHtml(photo.filename)}</span></button>`).join('');
+  $('#coverPhotoGrid').innerHTML = browser.photos.map((photo) => `<div class="cover-photo-shell"><button type="button" class="cover-photo ${photo.fileId === browser.selectedId ? 'selected' : ''}" data-cover-choice="${escapeHtml(photo.fileId)}" role="option" aria-selected="${photo.fileId === browser.selectedId}" title="${escapeHtml(photo.relativePath)}"><img src="${escapeHtml(photo.thumbnailUrl)}" alt="" loading="lazy">${photo.currentCover ? '<i class="cover-badge">CURRENT COVER</i>' : ''}<span>${escapeHtml(photo.filename)}</span></button><button type="button" class="danger" data-photo-remove="${escapeHtml(photo.fileId)}" data-photo-source="${escapeHtml(photo.sourceItemId)}" data-photo-name="${escapeHtml(photo.filename)}">Remove</button></div>`).join('');
   $('#loadMoreCoverPhotos').hidden = !browser.nextCursor || browser.loading;
   $('#gallerySubmit').disabled = !browser.selectedId || browser.loading;
 }
@@ -116,13 +116,13 @@ async function openEvent(id) {
   const known = new Map(event.galleries.map((g) => [g.drive_folder_id, g]));
   [...galleryOperations].reverse().filter((o) => o.gallery_folder_id).forEach((o) => {
     const current = known.get(o.gallery_folder_id);
-    if (o.operation_type === 'CREATE' && !current) known.set(o.gallery_folder_id, { drive_folder_id: o.gallery_folder_id, public_name: o.requested_name, photo_count: 0, sync_status: o.operation_state, destination_url: o.drive_folder_url, cover_url: '' });
+    if (o.operation_type === 'CREATE' && !current) known.set(o.gallery_folder_id, { drive_folder_id: o.gallery_folder_id, public_name: o.requested_name, photo_count: 0, sync_status: o.operation_state, destination_url: o.drive_folder_url, cover_url: '', can_delete: state.actor.role === 'PHOTO_ADMIN' || o.requested_by_user_id === state.actor.id });
     if (o.operation_type === 'RENAME' && known.has(o.gallery_folder_id)) known.set(o.gallery_folder_id, { ...known.get(o.gallery_folder_id), public_name: o.requested_name, sync_status: o.operation_state });
   });
-  const canCreate = event.capabilities.includes('GALLERY_CREATE'); const canRename = event.capabilities.includes('GALLERY_RENAME'); const canCover = event.capabilities.includes('GALLERY_COVER_SELECT');
+  const canCreate = event.capabilities.includes('GALLERY_CREATE'); const canRename = event.capabilities.includes('GALLERY_RENAME'); const canCover = event.capabilities.includes('GALLERY_COVER_SELECT'); const canDelete = event.capabilities.includes('GALLERY_DELETE_ANY') || event.capabilities.includes('GALLERY_DELETE_OWN');
   const cards = [...known.values()];
   const canOpenUpload = state.actor.role === 'PHOTO_ADMIN' || uploadAccess.authorized;
-  const galleries = cards.length ? `<div class="gallery-grid">${cards.map((g) => `<article class="gallery-card"><span class="gallery-cover">${g.cover_url ? `<img src="${escapeHtml(g.cover_url)}" alt="" loading="lazy">` : '<span class="empty-cover">EMPTY GALLERY</span>'}</span><span class="gallery-copy"><b>${escapeHtml(g.public_name)}</b><small>${Number(g.photo_count).toLocaleString()} photos · ${escapeHtml(String(g.cover_selection_state || g.sync_status || 'SYNC_PENDING').replaceAll('_',' '))}</small></span><div class="gallery-actions">${canOpenUpload && g.destination_url ? `<a href="${escapeHtml(g.destination_url)}" target="_blank" rel="noopener">Open upload folder</a>` : '<span>Drive upload access pending</span>'}${canRename ? `<button data-gallery-rename="${escapeHtml(g.drive_folder_id)}" data-gallery-name="${escapeHtml(g.public_name)}" data-gallery-event="${escapeHtml(event.id)}">Rename</button>` : ''}${canCover ? `<button data-gallery-cover="${escapeHtml(g.drive_folder_id)}" data-gallery-event="${escapeHtml(event.id)}" ${Number(g.photo_count) ? '' : 'disabled'}>Set cover photo</button>` : ''}</div></article>`).join('')}</div>` : `<div class="gallery-empty">No galleries exist for this event yet.</div>`;
+  const galleries = cards.length ? `<div class="gallery-grid">${cards.map((g) => `<article class="gallery-card"><span class="gallery-cover">${g.cover_url ? `<img src="${escapeHtml(g.cover_url)}" alt="" loading="lazy">` : '<span class="empty-cover">EMPTY GALLERY</span>'}</span><span class="gallery-copy"><b>${escapeHtml(g.public_name)}</b><small>${Number(g.photo_count).toLocaleString()} photos · ${escapeHtml(String(g.cover_selection_state || g.sync_status || 'SYNC_PENDING').replaceAll('_',' '))}</small></span><div class="gallery-actions">${canOpenUpload && g.destination_url ? `<a href="${escapeHtml(g.destination_url)}" target="_blank" rel="noopener">Open upload folder</a>` : '<span>Drive upload access pending</span>'}${canRename ? `<button data-gallery-rename="${escapeHtml(g.drive_folder_id)}" data-gallery-name="${escapeHtml(g.public_name)}" data-gallery-event="${escapeHtml(event.id)}">Rename</button>` : ''}${canCover ? `<button data-gallery-cover="${escapeHtml(g.drive_folder_id)}" data-gallery-event="${escapeHtml(event.id)}" ${Number(g.photo_count) ? '' : 'disabled'}>Manage photos / cover</button>` : ''}${canDelete && g.can_delete ? `<button class="danger" data-gallery-delete="${escapeHtml(g.drive_folder_id)}" data-gallery-name="${escapeHtml(g.public_name)}" data-gallery-count="${Number(g.photo_count)}" data-gallery-event="${escapeHtml(event.id)}">Delete gallery</button>` : ''}</div></article>`).join('')}</div>` : `<div class="gallery-empty">No galleries exist for this event yet.</div>`;
   detail.innerHTML = `<div class="section-head"><div><p class="eyebrow">${escapeHtml(event.series)} · ${escapeHtml(event.region)}</p><h2>${escapeHtml(event.public_name)}</h2></div><div class="event-management"><p>${escapeHtml(event.event_year)} · ${escapeHtml(event.sync_status.replaceAll('_', ' '))}</p>${canCreate ? `<button class="primary" data-gallery-create="${escapeHtml(event.id)}" ${galleryManagementQualified ? '' : 'disabled'}>Create gallery</button>` : ''}</div></div>${galleries}`;
   detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -152,6 +152,7 @@ async function boot() {
     $$('.creator-only').forEach((item) => { item.hidden = !actor.canCreateEvent; });
     $('#actorName').textContent = actor.displayName;
     $('#actorRole').textContent = isAdmin ? 'Administrator' : 'Photographer';
+    $('#signOut').hidden = false;
     $('#nav').hidden = false; $('#loading').hidden = true; $('#app').hidden = false;
     $('#heroCopy').textContent = isAdmin ? 'Manage event photography, people and publication readiness.' : 'Your assigned events and approved photo operations.';
     $('#eventsTitle').textContent = isAdmin ? 'All events' : 'Your assigned events';
@@ -193,6 +194,25 @@ document.addEventListener('click', async (event) => {
     state.coverBrowser.selectedId = coverChoice.dataset.coverChoice;
     $('#galleryForm').elements.coverFileId.value = state.coverBrowser.selectedId;
     renderCoverPhotos();
+  }
+  const removePhoto = event.target.closest('[data-photo-remove]'); if (removePhoto && state.coverBrowser) {
+    const browser = state.coverBrowser;
+    if (!confirm(`Remove “${removePhoto.dataset.photoName}” from this gallery? It will be moved to Google Drive Trash and can be restored there.`)) return;
+    removePhoto.disabled = true;
+    try {
+      await api(`events/${encodeURIComponent(browser.eventId)}/galleries/${encodeURIComponent(browser.galleryFolderId)}/photos/${encodeURIComponent(removePhoto.dataset.photoRemove)}`, { method: 'DELETE', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ fileId: removePhoto.dataset.photoRemove, sourceItemId: removePhoto.dataset.photoSource, filename: removePhoto.dataset.photoName }) });
+      await loadCoverPhotos({ eventId: browser.eventId, galleryFolderId: browser.galleryFolderId, reset: true });
+    } catch (error) { $('#coverBrowserStatus').textContent = error.message.replaceAll('_', ' '); }
+  }
+  const deleteGallery = event.target.closest('[data-gallery-delete]'); if (deleteGallery) {
+    const count = Number(deleteGallery.dataset.galleryCount || 0);
+    const explanation = count ? ` It currently contains ${count.toLocaleString()} photos.` : ' It is currently empty.';
+    if (!confirm(`Delete gallery “${deleteGallery.dataset.galleryName}”?${explanation} The entire folder will be moved to Google Drive Trash and can be restored there.`)) return;
+    deleteGallery.disabled = true;
+    try {
+      await api(`events/${encodeURIComponent(deleteGallery.dataset.galleryEvent)}/galleries/${encodeURIComponent(deleteGallery.dataset.galleryDelete)}`, { method: 'DELETE', headers: { 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ photoCount: count }) });
+      await openEvent(deleteGallery.dataset.galleryEvent);
+    } catch (error) { alert(error.message.replaceAll('_', ' ')); deleteGallery.disabled = false; }
   }
   const status = event.target.closest('[data-status]'); if (status) { await api('photographers/status', { method: 'POST', body: JSON.stringify({ userId: status.dataset.status, status: status.dataset.next }) }); await loadPhotographers(); }
   const assignment = event.target.closest('[data-assignment]'); if (assignment) {
@@ -264,5 +284,10 @@ $('#auditDriveAccess').addEventListener('click', async (event) => {
     output.value = `${roots.length} roots audited · ${shared} Shared Drive · ${manageable} manageable by automation`;
   } catch (error) { output.value = error.message.replaceAll('_', ' '); }
   finally { button.disabled = false; }
+});
+$('#signOut').addEventListener('click', () => {
+  state.actor = null; state.events = []; state.overview = null; state.coverBrowser = null;
+  const returnTo = `${location.origin}/photos/`;
+  location.assign(`/cdn-cgi/access/logout?returnTo=${encodeURIComponent(returnTo)}`);
 });
 boot();

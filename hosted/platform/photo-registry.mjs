@@ -8,9 +8,9 @@ const stableId = async (prefix, value) => {
 };
 
 export const PHOTO_PRESETS = Object.freeze({
-  ASSIGNED: Object.freeze({ scope: 'ASSIGNED_ONLY', capabilities: ['EVENT_VIEW_ASSIGNED', 'GALLERY_UPLOAD', 'GALLERY_COVER_SELECT'] }),
-  GENERAL: Object.freeze({ scope: 'ALL_CURRENT', capabilities: ['EVENT_VIEW_ASSIGNED', 'EVENT_VIEW_ALL', 'GALLERY_UPLOAD', 'GALLERY_CREATE', 'GALLERY_COVER_SELECT'] }),
-  LEAD: Object.freeze({ scope: 'ALL_CURRENT_FUTURE', capabilities: ['EVENT_VIEW_ASSIGNED', 'EVENT_VIEW_ALL', 'GALLERY_UPLOAD', 'GALLERY_CREATE', 'GALLERY_RENAME', 'GALLERY_COVER_SELECT', 'EVENT_CREATE'] })
+  ASSIGNED: Object.freeze({ scope: 'ASSIGNED_ONLY', capabilities: ['EVENT_VIEW_ASSIGNED', 'GALLERY_UPLOAD', 'GALLERY_COVER_SELECT', 'PHOTO_REMOVE', 'GALLERY_DELETE_OWN'] }),
+  GENERAL: Object.freeze({ scope: 'ALL_CURRENT', capabilities: ['EVENT_VIEW_ASSIGNED', 'EVENT_VIEW_ALL', 'GALLERY_UPLOAD', 'GALLERY_CREATE', 'GALLERY_COVER_SELECT', 'PHOTO_REMOVE', 'GALLERY_DELETE_OWN'] }),
+  LEAD: Object.freeze({ scope: 'ALL_CURRENT_FUTURE', capabilities: ['EVENT_VIEW_ASSIGNED', 'EVENT_VIEW_ALL', 'GALLERY_UPLOAD', 'GALLERY_CREATE', 'GALLERY_RENAME', 'GALLERY_COVER_SELECT', 'PHOTO_REMOVE', 'GALLERY_DELETE_OWN', 'EVENT_CREATE'] })
 });
 const profileFor = (key = 'ASSIGNED') => ({ preset: key, eventScope: PHOTO_PRESETS[key].scope, capabilities: [...PHOTO_PRESETS[key].capabilities] });
 
@@ -27,7 +27,9 @@ export function createPhotoRegistry(database) {
   async function photographerProfile(userId) {
     const row = await database.prepare(`SELECT preset_key, event_scope, capabilities_json FROM photo_permission_profiles WHERE user_id = ?`).bind(userId).first();
     if (!row) return profileFor('ASSIGNED');
-    return { preset: row.preset_key, eventScope: row.event_scope, capabilities: JSON.parse(row.capabilities_json || '[]') };
+    const capabilities = new Set(JSON.parse(row.capabilities_json || '[]'));
+    capabilities.add('PHOTO_REMOVE'); capabilities.add('GALLERY_DELETE_OWN');
+    return { preset: row.preset_key, eventScope: row.event_scope, capabilities: [...capabilities] };
   }
 
   async function eventAllowed(actor, eventId) {
@@ -90,9 +92,11 @@ export function createPhotoRegistry(database) {
       if (!(await eventAllowed(actor, eventId))) return null;
       const event = await database.prepare(`SELECT * FROM photo_events WHERE id = ? AND active = 1`).bind(eventId).first();
       if (!event) return null;
-      const galleries = await database.prepare(`SELECT g.*,c.selection_state AS cover_selection_state,c.selected_file_id AS pending_cover_file_id FROM photo_galleries g LEFT JOIN photo_gallery_cover_selections c ON c.gallery_folder_id=g.drive_folder_id WHERE g.event_id = ? AND g.active = 1 ORDER BY g.display_order, g.public_name`).bind(eventId).all();
-      const profile = actor.role === ROLES.PHOTO_ADMIN ? { capabilities: ['GALLERY_CREATE','GALLERY_RENAME','GALLERY_COVER_SELECT'] } : await photographerProfile(actor.id);
-      return { ...event, galleries: galleries.results || [], capabilities: profile.capabilities || [] };
+      const galleries = await database.prepare(`SELECT g.*,c.selection_state AS cover_selection_state,c.selected_file_id AS pending_cover_file_id,
+        (SELECT o.requested_by_user_id FROM photo_gallery_operations o WHERE o.event_id=g.event_id AND o.gallery_folder_id=g.drive_folder_id AND o.operation_type='CREATE' AND o.operation_state!='FAILED_NEEDS_ATTENTION' ORDER BY o.created_at LIMIT 1) AS creator_user_id
+        FROM photo_galleries g LEFT JOIN photo_gallery_cover_selections c ON c.gallery_folder_id=g.drive_folder_id WHERE g.event_id = ? AND g.active = 1 ORDER BY g.display_order, g.public_name`).bind(eventId).all();
+      const profile = actor.role === ROLES.PHOTO_ADMIN ? { capabilities: ['GALLERY_CREATE','GALLERY_RENAME','GALLERY_COVER_SELECT','PHOTO_REMOVE','GALLERY_DELETE_ANY'] } : await photographerProfile(actor.id);
+      return { ...event, galleries: (galleries.results || []).map((gallery) => ({ ...gallery, can_delete: actor.role === ROLES.PHOTO_ADMIN || gallery.creator_user_id === actor.id })), capabilities: profile.capabilities || [] };
     },
 
     async overview() {

@@ -54,9 +54,11 @@ export async function onRequest({ request, env }) {
   const creationMatch = path.match(/^setup\/([^/]+)\/retry$/);
   const galleryMatch = path.match(/^events\/([^/]+)\/galleries(?:\/operations)?$/);
   const galleryPhotosMatch = path.match(/^events\/([^/]+)\/galleries\/([^/]+)\/photos$/);
+  const galleryDeleteMatch = path.match(/^events\/([^/]+)\/galleries\/([^/]+)$/);
+  const photoDeleteMatch = path.match(/^events\/([^/]+)\/galleries\/([^/]+)\/photos\/([^/]+)$/);
   const creationRoute = path === 'setup' || path === 'creation-capabilities' || Boolean(creationMatch);
   const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview', 'drive-access/audit'].includes(path);
-  const permission = creationRoute || galleryMatch ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
+  const permission = creationRoute || galleryMatch || galleryDeleteMatch || photoDeleteMatch ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
   let auth;
   try {
     // Event-scope authorization is resolved from the explicit Photo Studio
@@ -92,6 +94,27 @@ export async function onRequest({ request, env }) {
       if (!event.capabilities.includes('GALLERY_COVER_SELECT')) return json({ error: 'gallery_permission_required' }, 403);
       const manager = createGalleryManagement(env.PLATFORM_DB, env, photos);
       return json({ gallery: { driveFolderId: gallery.drive_folder_id, publicName: gallery.public_name, coverFileId: gallery.cover_file_id || '' }, ...(await manager.browse(event, gallery.drive_folder_id, url.searchParams.get('cursor') || '')) });
+    }
+    if (request.method === 'DELETE' && photoDeleteMatch) {
+      const event = await photos.event(actor, photoDeleteMatch[1]);
+      if (!event) return json({ error: 'event_not_found' }, 404);
+      if (!event.capabilities.includes('PHOTO_REMOVE')) return json({ error: 'photo_remove_permission_required' }, 403);
+      const gallery = event.galleries.find((item) => item.drive_folder_id === photoDeleteMatch[2]);
+      if (!gallery) return json({ error: 'gallery_not_found' }, 404);
+      const body = await request.json();
+      if (body.fileId !== photoDeleteMatch[3]) return json({ error: 'photo_identity_mismatch' }, 400);
+      return json(await createGalleryManagement(env.PLATFORM_DB, env, photos).destructive(actor, event, 'REMOVE_PHOTO', { ...body, galleryFolderId: gallery.drive_folder_id }, request.headers.get('idempotency-key')), 202);
+    }
+    if (request.method === 'DELETE' && galleryDeleteMatch) {
+      const event = await photos.event(actor, galleryDeleteMatch[1]);
+      if (!event) return json({ error: 'event_not_found' }, 404);
+      const gallery = event.galleries.find((item) => item.drive_folder_id === galleryDeleteMatch[2]);
+      if (!gallery) return json({ error: 'gallery_not_found' }, 404);
+      const allowed = event.capabilities.includes('GALLERY_DELETE_ANY') || event.capabilities.includes('GALLERY_DELETE_OWN');
+      if (!allowed) return json({ error: 'gallery_delete_permission_required' }, 403);
+      const body = await request.json();
+      if (Number(body.photoCount) !== Number(gallery.photo_count)) return json({ error: 'gallery_photo_count_changed' }, 409);
+      return json(await createGalleryManagement(env.PLATFORM_DB, env, photos).destructive(actor, event, 'DELETE_GALLERY', { galleryFolderId: gallery.drive_folder_id, galleryName: gallery.public_name, photoCount: gallery.photo_count }, request.headers.get('idempotency-key')), 202);
     }
     if (request.method === 'GET' && path === 'overview') return json({ overview: await photos.overview() });
     if (request.method === 'GET' && path === 'photographers') return json({ photographers: await photos.listPhotographers() });
