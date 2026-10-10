@@ -80,7 +80,12 @@ export async function reconcilePhotoReadModel(database, payload) {
   const eventId = existingEvent?.id || `wix-${payload.wixItemId}`;
   const idempotencyKey = `wix:${payload.wixItemId}:${payload.fingerprint}`;
   const existingReceipt = await database.prepare(`SELECT operation_outcome FROM source_sync_receipts WHERE idempotency_key = ?`).bind(idempotencyKey).first();
-  if (existingReceipt?.operation_outcome === 'SUCCEEDED') return { changed: false, idempotent: true, eventId, galleryCount: payload.galleryCount, photoCount: payload.photoCount };
+  if (existingReceipt?.operation_outcome === 'SUCCEEDED') {
+    const coverConfirmations = payload.galleries.map((gallery) => database.prepare(`UPDATE photo_gallery_cover_selections SET selection_state=CASE WHEN selected_file_id=? THEN 'CONFIRMED' ELSE 'INVALID_FALLBACK' END,confirmed_at=CASE WHEN selected_file_id=? THEN CURRENT_TIMESTAMP ELSE NULL END,last_error_code=CASE WHEN selected_file_id=? THEN NULL ELSE 'SELECTED_FILE_NOT_RESOLVED' END,updated_at=CURRENT_TIMESTAMP WHERE gallery_folder_id=?`)
+      .bind(gallery.coverFileId || '', gallery.coverFileId || '', gallery.coverFileId || '', gallery.folderId));
+    if (coverConfirmations.length) await database.batch(coverConfirmations);
+    return { changed: false, idempotent: true, eventId, galleryCount: payload.galleryCount, photoCount: payload.photoCount };
+  }
   const statements = [
     database.prepare(`INSERT OR REPLACE INTO source_sync_receipts (idempotency_key, source_system, source_event_id, source_fingerprint, operation_outcome, gallery_count, photo_count, completed_at) VALUES (?, 'WIX_PHOTO_EVENT_YEARS', ?, ?, 'SUCCEEDED', ?, ?, CURRENT_TIMESTAMP)`).bind(idempotencyKey, payload.wixItemId, payload.fingerprint, payload.galleryCount, payload.photoCount),
     database.prepare(`INSERT INTO photo_events (id, wix_item_id, public_name, series, region, event_year, artwork_url, gallery_count, photo_count, sync_status, source_fingerprint, active, last_reconciled_at, source_reconciled_at, all_photos_url, sync_error)
