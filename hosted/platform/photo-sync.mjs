@@ -81,9 +81,13 @@ export async function reconcilePhotoReadModel(database, payload) {
   const idempotencyKey = `wix:${payload.wixItemId}:${payload.fingerprint}`;
   const existingReceipt = await database.prepare(`SELECT operation_outcome FROM source_sync_receipts WHERE idempotency_key = ?`).bind(idempotencyKey).first();
   if (existingReceipt?.operation_outcome === 'SUCCEEDED') {
-    const coverConfirmations = payload.galleries.map((gallery) => database.prepare(`UPDATE photo_gallery_cover_selections SET selection_state=CASE WHEN selected_file_id=? THEN 'CONFIRMED' ELSE 'INVALID_FALLBACK' END,confirmed_at=CASE WHEN selected_file_id=? THEN CURRENT_TIMESTAMP ELSE NULL END,last_error_code=CASE WHEN selected_file_id=? THEN NULL ELSE 'SELECTED_FILE_NOT_RESOLVED' END,updated_at=CURRENT_TIMESTAMP WHERE gallery_folder_id=?`)
-      .bind(gallery.coverFileId || '', gallery.coverFileId || '', gallery.coverFileId || '', gallery.folderId));
-    if (coverConfirmations.length) await database.batch(coverConfirmations);
+    const coverRefreshes = payload.galleries.flatMap((gallery) => [
+      database.prepare(`UPDATE photo_galleries SET cover_url=?,cover_file_id=?,cover_source=?,last_reconciled_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE drive_folder_id=?`)
+        .bind(gallery.coverUrl || null, gallery.coverFileId || null, gallery.coverSource || null, gallery.folderId),
+      database.prepare(`UPDATE photo_gallery_cover_selections SET selection_state=CASE WHEN selected_file_id=? THEN 'CONFIRMED' ELSE 'INVALID_FALLBACK' END,confirmed_at=CASE WHEN selected_file_id=? THEN CURRENT_TIMESTAMP ELSE NULL END,last_error_code=CASE WHEN selected_file_id=? THEN NULL ELSE 'SELECTED_FILE_NOT_RESOLVED' END,updated_at=CURRENT_TIMESTAMP WHERE gallery_folder_id=?`)
+        .bind(gallery.coverFileId || '', gallery.coverFileId || '', gallery.coverFileId || '', gallery.folderId)
+    ]);
+    if (coverRefreshes.length) await database.batch(coverRefreshes);
     return { changed: false, idempotent: true, eventId, galleryCount: payload.galleryCount, photoCount: payload.photoCount };
   }
   const statements = [
