@@ -80,36 +80,32 @@ export async function reconcilePhotoReadModel(database, payload) {
   const eventId = existingEvent?.id || `wix-${payload.wixItemId}`;
   const idempotencyKey = `wix:${payload.wixItemId}:${payload.fingerprint}`;
   const existingReceipt = await database.prepare(`SELECT operation_outcome FROM source_sync_receipts WHERE idempotency_key = ?`).bind(idempotencyKey).first();
-  if (existingReceipt?.operation_outcome === 'SUCCEEDED') {
-    const coverRefreshes = payload.galleries.flatMap((gallery) => [
-      database.prepare(`UPDATE photo_galleries SET cover_url=?,cover_file_id=?,cover_source=?,last_reconciled_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE drive_folder_id=?`)
-        .bind(gallery.coverUrl || null, gallery.coverFileId || null, gallery.coverSource || null, gallery.folderId),
-      database.prepare(`UPDATE photo_gallery_cover_selections SET selection_state=CASE WHEN selected_file_id=? THEN 'CONFIRMED' ELSE 'INVALID_FALLBACK' END,confirmed_at=CASE WHEN selected_file_id=? THEN CURRENT_TIMESTAMP ELSE NULL END,last_error_code=CASE WHEN selected_file_id=? THEN NULL ELSE 'SELECTED_FILE_NOT_RESOLVED' END,updated_at=CURRENT_TIMESTAMP WHERE gallery_folder_id=?`)
-        .bind(gallery.coverFileId || '', gallery.coverFileId || '', gallery.coverFileId || '', gallery.folderId)
-    ]);
-    if (coverRefreshes.length) await database.batch(coverRefreshes);
-    return { changed: false, idempotent: true, eventId, galleryCount: payload.galleryCount, photoCount: payload.photoCount };
-  }
+  const idempotent = existingReceipt?.operation_outcome === 'SUCCEEDED';
   const statements = [
-    database.prepare(`INSERT OR REPLACE INTO source_sync_receipts (idempotency_key, source_system, source_event_id, source_fingerprint, operation_outcome, gallery_count, photo_count, completed_at) VALUES (?, 'WIX_PHOTO_EVENT_YEARS', ?, ?, 'SUCCEEDED', ?, ?, CURRENT_TIMESTAMP)`).bind(idempotencyKey, payload.wixItemId, payload.fingerprint, payload.galleryCount, payload.photoCount),
     database.prepare(`INSERT INTO photo_events (id, wix_item_id, public_name, series, region, event_year, artwork_url, gallery_count, photo_count, sync_status, source_fingerprint, active, last_reconciled_at, source_reconciled_at, all_photos_url, sync_error)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?, 1, CURRENT_TIMESTAMP, ?, ?, NULL)
       ON CONFLICT(wix_item_id) DO UPDATE SET public_name=excluded.public_name, series=excluded.series, region=excluded.region, event_year=excluded.event_year, artwork_url=excluded.artwork_url, gallery_count=excluded.gallery_count, photo_count=excluded.photo_count, sync_status='CONFIRMED', source_fingerprint=excluded.source_fingerprint, active=1, last_reconciled_at=CURRENT_TIMESTAMP, source_reconciled_at=excluded.source_reconciled_at, all_photos_url=excluded.all_photos_url, sync_error=NULL, updated_at=CURRENT_TIMESTAMP`)
       .bind(eventId, payload.wixItemId, payload.publicName, payload.series, payload.region, payload.year, payload.artworkUrl || null, payload.galleryCount, payload.photoCount, payload.fingerprint, payload.reconciledAt, payload.allPhotosUrl || null),
-    database.prepare(`UPDATE photo_galleries SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE event_id = ?`).bind(eventId)
+    database.prepare(`UPDATE photo_galleries SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE event_id = ?`).bind(eventId),
+    database.prepare(`UPDATE photo_gallery_cover_selections SET selection_state='INVALID_FALLBACK',confirmed_at=NULL,last_error_code='SELECTED_FILE_NOT_RESOLVED',updated_at=CURRENT_TIMESTAMP WHERE event_id=?`).bind(eventId)
   ];
+  if (!idempotent) {
+    statements.unshift(database.prepare(`INSERT OR REPLACE INTO source_sync_receipts (idempotency_key, source_system, source_event_id, source_fingerprint, operation_outcome, gallery_count, photo_count, completed_at) VALUES (?, 'WIX_PHOTO_EVENT_YEARS', ?, ?, 'SUCCEEDED', ?, ?, CURRENT_TIMESTAMP)`).bind(idempotencyKey, payload.wixItemId, payload.fingerprint, payload.galleryCount, payload.photoCount));
+  }
   for (const gallery of payload.galleries) {
     statements.push(database.prepare(`INSERT INTO photo_galleries (id, event_id, drive_folder_id, public_name, cover_url, photo_count, sync_status, active, destination_url, cover_file_id, cover_source, source_folder_name, display_order, last_reconciled_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, 'CONFIRMED', 1, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       ON CONFLICT(drive_folder_id) DO UPDATE SET event_id=excluded.event_id, public_name=excluded.public_name, cover_url=excluded.cover_url, photo_count=excluded.photo_count, sync_status='CONFIRMED', active=1, destination_url=excluded.destination_url, cover_file_id=excluded.cover_file_id, cover_source=excluded.cover_source, source_folder_name=excluded.source_folder_name, display_order=excluded.display_order, last_reconciled_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP`)
       .bind(`drive-${gallery.folderId}`, eventId, gallery.folderId, gallery.title, gallery.coverUrl || null, gallery.photoCount, gallery.destinationUrl, gallery.coverFileId || null, gallery.coverSource || null, gallery.sourceFolderName, gallery.displayOrder));
   }
-  statements.push(database.prepare(`INSERT INTO audit_records (id, actor_email, module_key, operation, target_type, target_id, event_id, authorization_outcome, operation_outcome, correlation_id, idempotency_key, safe_metadata_json) VALUES (?, 'SYSTEM:WIX_PHOTO_AUTOMATION', 'PHOTO_STUDIO', 'sync.reconcile', 'photo_event', ?, ?, 'ALLOWED', 'SUCCEEDED', ?, ?, ?)`)
-    .bind(`audit-${crypto.randomUUID()}`, eventId, eventId, crypto.randomUUID(), idempotencyKey, JSON.stringify({ fingerprint: payload.fingerprint, galleryCount: payload.galleryCount, photoCount: payload.photoCount })));
+  if (!idempotent) {
+    statements.push(database.prepare(`INSERT INTO audit_records (id, actor_email, module_key, operation, target_type, target_id, event_id, authorization_outcome, operation_outcome, correlation_id, idempotency_key, safe_metadata_json) VALUES (?, 'SYSTEM:WIX_PHOTO_AUTOMATION', 'PHOTO_STUDIO', 'sync.reconcile', 'photo_event', ?, ?, 'ALLOWED', 'SUCCEEDED', ?, ?, ?)`)
+      .bind(`audit-${crypto.randomUUID()}`, eventId, eventId, crypto.randomUUID(), idempotencyKey, JSON.stringify({ fingerprint: payload.fingerprint, galleryCount: payload.galleryCount, photoCount: payload.photoCount })));
+  }
   for (const gallery of payload.galleries) {
     statements.push(database.prepare(`UPDATE photo_gallery_cover_selections SET selection_state=CASE WHEN selected_file_id=? THEN 'CONFIRMED' ELSE 'INVALID_FALLBACK' END,confirmed_at=CASE WHEN selected_file_id=? THEN CURRENT_TIMESTAMP ELSE NULL END,last_error_code=CASE WHEN selected_file_id=? THEN NULL ELSE 'SELECTED_FILE_NOT_RESOLVED' END,updated_at=CURRENT_TIMESTAMP WHERE gallery_folder_id=?`)
       .bind(gallery.coverFileId || '', gallery.coverFileId || '', gallery.coverFileId || '', gallery.folderId));
   }
   await database.batch(statements);
-  return { changed: existingEvent?.source_fingerprint !== payload.fingerprint, idempotent: false, eventId, galleryCount: payload.galleryCount, photoCount: payload.photoCount };
+  return { changed: existingEvent?.source_fingerprint !== payload.fingerprint, idempotent, eventId, galleryCount: payload.galleryCount, photoCount: payload.photoCount };
 }

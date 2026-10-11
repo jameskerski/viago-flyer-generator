@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { parseSyncPayload } from '../../hosted/platform/photo-sync.mjs';
+import { parseSyncPayload, reconcilePhotoReadModel } from '../../hosted/platform/photo-sync.mjs';
 
 const payload = (event = {}) => ({
   success: true,
@@ -64,4 +64,36 @@ test('continues to reject a missing canonical Wix event identity', async () => {
     body: JSON.stringify(payload({ wixItemId: '' }))
   });
   await assert.rejects(() => parseSyncPayload(request), /invalid_source_id/);
+});
+
+test('idempotent snapshots still reapply gallery membership and invalidate missing covers', async () => {
+  const executed = [];
+  const database = {
+    prepare(sql) {
+      return {
+        sql,
+        args: [],
+        bind(...args) { this.args = args; return this; },
+        async first() {
+          if (sql.includes('FROM photo_events')) return { id: 'wix-event', source_fingerprint: 'same-fingerprint' };
+          if (sql.includes('FROM source_sync_receipts')) return { operation_outcome: 'SUCCEEDED' };
+          return null;
+        }
+      };
+    },
+    async batch(statements) { executed.push(...statements); }
+  };
+  const result = await reconcilePhotoReadModel(database, {
+    wixItemId: 'event-item', publicName: 'Inactive test event', series: '', region: '', year: 2027,
+    artworkUrl: '', allPhotosUrl: 'https://drive.google.com/drive/folders/event-root',
+    fingerprint: 'same-fingerprint', reconciledAt: '2026-10-10T23:12:48.000Z',
+    galleries: [], galleryCount: 0, photoCount: 0
+  });
+
+  assert.equal(result.idempotent, true);
+  assert.equal(result.galleryCount, 0);
+  assert.ok(executed.some(({ sql }) => sql.includes('UPDATE photo_galleries SET active = 0')));
+  assert.ok(executed.some(({ sql }) => sql.includes("selection_state='INVALID_FALLBACK'")));
+  assert.ok(!executed.some(({ sql }) => sql.includes('INSERT OR REPLACE INTO source_sync_receipts')));
+  assert.ok(!executed.some(({ sql }) => sql.includes('INSERT INTO audit_records')));
 });
