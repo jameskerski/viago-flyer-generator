@@ -86,17 +86,21 @@ function openGalleryDialog({ eventId, action, galleryFolderId = '', galleryName 
 function renderCoverPhotos() {
   const browser = state.coverBrowser;
   if (!browser) return;
-  $('#coverBrowserStatus').textContent = browser.loading ? 'Loading gallery photographs…' : `${browser.total.toLocaleString()} photographs · choose one cover`;
+  $('#coverBrowserStatus').textContent = browser.loading
+    ? 'Loading gallery photographs…'
+    : browser.error
+      ? browser.error.replaceAll('_', ' ')
+      : `${browser.total.toLocaleString()} photographs · choose one cover`;
   $('#coverPhotoGrid').innerHTML = browser.photos.map((photo) => `<div class="cover-photo-shell"><button type="button" class="cover-photo ${photo.fileId === browser.selectedId ? 'selected' : ''}" data-cover-choice="${escapeHtml(photo.fileId)}" role="option" aria-selected="${photo.fileId === browser.selectedId}" title="${escapeHtml(photo.relativePath)}"><img src="${escapeHtml(photo.thumbnailUrl)}" alt="" loading="lazy">${photo.currentCover ? '<i class="cover-badge">CURRENT COVER</i>' : ''}<span>${escapeHtml(photo.filename)}</span></button><button type="button" class="danger" data-photo-remove="${escapeHtml(photo.fileId)}" data-photo-source="${escapeHtml(photo.sourceItemId)}" data-photo-name="${escapeHtml(photo.filename)}">Remove</button></div>`).join('');
   $('#loadMoreCoverPhotos').hidden = !browser.nextCursor || browser.loading;
   $('#gallerySubmit').disabled = !browser.selectedId || browser.loading;
 }
 
 async function loadCoverPhotos({ eventId, galleryFolderId, reset = false }) {
-  if (reset) state.coverBrowser = { eventId, galleryFolderId, photos: [], nextCursor: '', total: 0, selectedId: '', loading: true };
+  if (reset) state.coverBrowser = { eventId, galleryFolderId, photos: [], nextCursor: '', total: 0, selectedId: '', loading: true, error: '' };
   const browser = state.coverBrowser;
   if (!browser || browser.loading && !reset) return;
-  browser.loading = true; renderCoverPhotos();
+  browser.loading = true; browser.error = ''; renderCoverPhotos();
   try {
     const cursor = reset ? '' : browser.nextCursor;
     const result = await api(`events/${encodeURIComponent(eventId)}/galleries/${encodeURIComponent(galleryFolderId)}/photos${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
@@ -105,7 +109,7 @@ async function loadCoverPhotos({ eventId, galleryFolderId, reset = false }) {
     const current = browser.photos.find((photo) => photo.currentCover || photo.fileId === result.gallery?.coverFileId);
     if (!browser.selectedId && current) browser.selectedId = current.fileId;
     if (browser.selectedId) $('#galleryForm').elements.coverFileId.value = browser.selectedId;
-  } catch (error) { $('#coverBrowserStatus').textContent = error.message.replaceAll('_', ' '); }
+  } catch (error) { browser.error = error.message; }
   finally { browser.loading = false; renderCoverPhotos(); }
 }
 
