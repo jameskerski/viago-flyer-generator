@@ -28,7 +28,9 @@ test('Worker enforces headshot permissions and rejects unqualified writes server
   try {
     const denied=await onRequest({request:request(),env});expect(denied.status).toBe(403);expect(await denied.json()).toMatchObject({error:'headshot_view_permission_required'});
     db.exec(`INSERT INTO headshot_capability_grants(user_id,capability,status,granted_by_user_id) VALUES('external','HEADSHOT_VIEW','ACTIVE','external');`);
-    const allowed=await onRequest({request:request(),env});expect(allowed.status).toBe(200);expect((await allowed.json()).leaders).toHaveLength(23);
+    const unassigned=await onRequest({request:request(),env});expect((await unassigned.json()).leaders).toHaveLength(0);
+    db.exec(`INSERT INTO headshot_leader_assignments(user_id,wix_item_id,status,updated_by_user_id) VALUES('external','e5f7b56a-2b8f-4941-a563-98b7ec81aaeb','ACTIVE','external');`);
+    const allowed=await onRequest({request:request(),env});expect(allowed.status).toBe(200);expect((await allowed.json()).leaders).toHaveLength(1);
     // Administrator also cannot use an unqualified headshot write endpoint.
     db.exec(`UPDATE module_grants SET role_key='PHOTO_ADMIN' WHERE id='grant';`);
     const mutation=await onRequest({request:request('POST'),env});expect(mutation.status).toBe(403);expect(await mutation.json()).toMatchObject({error:'headshot_writes_not_qualified'});
@@ -121,6 +123,6 @@ for(const width of [375,390,430,1024,1280,1440]) {
     await expect(page.getByRole('heading',{name:'Leader Headshots'})).toBeVisible();
     await page.getByRole('button',{name:'Open Leader'}).click();
     await expect(page.getByRole('dialog')).toContainText('disabled until');
-    await expect(page.getByRole('button',{name:'Select primary headshot'})).toBeDisabled();
+    await expect(page.getByRole('button',{name:'Create leader folder'})).toBeDisabled();
   });
 }

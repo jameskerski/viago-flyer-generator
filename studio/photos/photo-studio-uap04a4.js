@@ -2,7 +2,7 @@ import { localTimestamp, utcDate, accountStatus, assignedIds } from './photo-adm
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const state = { actor: null, events: [], overview: null, creationQualification: null, creationOperations: [], coverBrowser: null, operationFilter: '', leaders: [], photographers: [] };
+const state = { actor: null, events: [], overview: null, creationQualification: null, creationOperations: [], coverBrowser: null, operationFilter: '', leaders: [], photographers: [], headshotProfile: null };
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 
 async function api(path, options = {}) {
@@ -157,14 +157,46 @@ function renderLeaders() {
   const query = ($('#leaderSearch').value || '').trim().toLocaleLowerCase();
   const leaders = state.leaders.filter((leader) => leader.leader_name.toLocaleLowerCase().includes(query)).sort((a,b) => a.leader_name.localeCompare(b.leader_name));
   $('#leaderCount').textContent = `${leaders.length} of ${state.leaders.length} leaders · Wix CMS directory`;
-  $('#mediaAssets').innerHTML = leaders.map((leader) => `<article class="leader-card"><div class="leader-image">${leader.primary_image_url ? `<img src="${escapeHtml(leader.primary_image_url)}" alt="${escapeHtml(leader.leader_name)}" loading="lazy">` : '<span>No primary headshot</span>'}</div><div><h3>${escapeHtml(leader.leader_name)}</h3><p>${leader.photo_count == null ? 'Photo count awaiting Drive verification' : `${leader.photo_count} photographs`}</p><small>${leader.mapping_state === 'VERIFIED' ? 'Folder verified' : 'Folder mapping awaiting qualification'}</small><button type="button" data-leader="${escapeHtml(leader.wix_item_id)}">Open Leader</button></div></article>`).join('') || '<p class="notice">No matching leaders.</p>';
+  $('#mediaAssets').innerHTML = leaders.map((leader) => `<article class="leader-card"><div class="leader-image">${leader.primary_image_url ? `<img src="${escapeHtml(leader.primary_image_url)}" alt="${escapeHtml(leader.leader_name)}" loading="lazy">` : '<span>No primary headshot</span>'}</div><div><h3>${escapeHtml(leader.leader_name)}</h3><p>${leader.photo_count == null ? 'Photo count awaiting Drive verification' : `${leader.photo_count} photographs`}</p><small>${leader.sync_status==='FAILED'?'Needs review':leader.mapping_state === 'VERIFIED' ? 'Folder verified' : 'Folder mapping awaiting qualification'}</small><button type="button" data-leader="${escapeHtml(leader.wix_item_id)}">Open Leader</button></div></article>`).join('') || '<p class="notice">No matching leaders.</p>';
 }
-function openLeader(id) {
+async function openLeader(id) {
   const leader = state.leaders.find((item) => item.wix_item_id === id);
   if (!leader) return;
+  state.headshotProfile={id,leader,photos:[],nextCursor:'',loading:true,writesEnabled:false,error:''};
   $('#leaderDialogTitle').textContent = leader.leader_name;
-  $('#leaderProfile').innerHTML = `${leader.primary_image_url ? `<img class="leader-primary" src="${escapeHtml(leader.primary_image_url)}" alt="${escapeHtml(leader.leader_name)}">` : ''}<p>Current Wix primary headshot · preserved</p><p class="notice">Folder creation, upload handoff, primary selection and removal remain disabled until this leader's Drive identity and publication contract are qualified.</p><p>Directory verified ${escapeHtml(localTimestamp(leader.indexed_at))}</p><div class="headshot-disabled-actions"><button disabled>Open upload folder</button><button disabled>Select primary headshot</button><button disabled>Remove photograph</button><button disabled>Manage folder</button></div><details class="diagnostics"><summary>Identity and source evidence</summary><p>Wix record: ${escapeHtml(leader.wix_item_id)}</p><p>CMS folder reference: ${escapeHtml(leader.candidate_drive_folder_id || 'None')}</p><p>Mapping: ${escapeHtml(leader.mapping_state)}</p></details>`;
   $('#leaderDialog').showModal();
+  renderHeadshotProfile();
+  try {
+    const result=await api(`headshots/${encodeURIComponent(id)}`);
+    if(state.headshotProfile?.id!==id) return;
+    if(result.leader?.wix_item_id!==id) throw new Error('leader_identity_mismatch');
+    if(state.actor.role==='PHOTO_ADMIN') { const people=await api('photographers');state.photographers=people.photographers||[]; }
+    state.headshotProfile={...state.headshotProfile,...result,photos:result.photos||[],loading:false};
+    const index=state.leaders.findIndex((item)=>item.wix_item_id===id);if(index>=0) state.leaders[index]=result.leader;
+  } catch(error) {if(state.headshotProfile?.id===id) Object.assign(state.headshotProfile,{loading:false,error:error.message});}
+  renderHeadshotProfile();
+}
+function renderHeadshotProfile() {
+  const profile=state.headshotProfile;if(!profile) return;
+  const leader=profile.leader,ready=profile.writesEnabled&&profile.canManage;
+  const access=state.actor.role==='PHOTO_ADMIN'?`<details class="headshot-access"><summary>Manage leader access</summary><p>Headshot permissions apply only to this leader and are separate from event access.</p><label>Photographer<select id="headshotPhotographer"><option value="">Select photographer</option>${state.photographers.filter((person)=>person.status==='ACTIVE'&&!person.invitation_id).map((person)=>`<option value="${escapeHtml(person.id)}">${escapeHtml(person.email)}</option>`).join('')}</select></label><label>Headshot permissions<select id="headshotPermissionPreset"><option value="VIEW">View</option><option value="UPLOAD">View &amp; Upload</option><option value="MANAGE">View, Upload &amp; Manage</option><option value="REVOKE">Revoke access</option></select></label><button type="button" data-headshot-access ${profile.writesEnabled?'':'disabled'}>Apply headshot access</button></details>`:'';
+  $('#leaderProfile').innerHTML=`${leader.primary_image_url?`<img class="leader-primary" src="${escapeHtml(leader.primary_image_url)}" alt="${escapeHtml(leader.leader_name)}">`:''}<p>Current Wix primary headshot</p><p class="notice" aria-live="polite">${profile.loading?'Loading verified leader photographs…':profile.error?escapeHtml(profile.error.replaceAll('_',' ')):leader.sync_error?escapeHtml(leader.sync_error.replaceAll('_',' ')):`${Number(profile.total||0)} photographs · ${escapeHtml(String(leader.sync_status||'AWAITING_DISCOVERY').replaceAll('_',' '))}`}</p>${!profile.writesEnabled?'<p class="form-note">Primary selection, removal and folder creation remain disabled until controlled qualification is complete.</p>':''}${profile.canUpload&&profile.uploadUrl?`<a class="headshot-upload" href="${escapeHtml(profile.uploadUrl)}" target="_blank" rel="noopener noreferrer">OPEN GOOGLE DRIVE UPLOAD FOLDER ↗</a>`:'<button disabled>Open upload folder</button>'}<div class="headshot-photo-grid">${profile.photos.map((photo)=>`<article><img src="${escapeHtml(photo.thumbnailUrl)}" alt="${escapeHtml(photo.filename)}" loading="lazy"><p>${escapeHtml(photo.filename)}</p>${photo.currentPrimary?'<strong>Current primary</strong>':''}<button type="button" data-headshot-primary="${escapeHtml(photo.fileId)}" data-headshot-source="${escapeHtml(photo.sourceItemId)}" ${ready&&!photo.currentPrimary?'':'disabled'}>Set Primary Headshot</button><button type="button" class="danger" data-headshot-remove="${escapeHtml(photo.fileId)}" data-headshot-source="${escapeHtml(photo.sourceItemId)}" ${ready&&!photo.currentPrimary&&leader.primary_drive_file_id?'':'disabled'}>Remove Photograph</button></article>`).join('')}</div>${profile.nextCursor?'<button type="button" data-headshot-more>Load more photographs</button>':''}<div class="headshot-disabled-actions"><button type="button" data-headshot-create ${profile.writesEnabled&&state.actor.role==='PHOTO_ADMIN'&&!leader.candidate_drive_folder_id?'':'disabled'}>Create leader folder</button><button disabled title="Leader creation requires a qualified inactive-record contract">Add leader</button></div>${access}<output id="headshotActionResult" aria-live="polite"></output><details class="diagnostics"><summary>Identity and source evidence</summary><p>Wix record: ${escapeHtml(leader.wix_item_id)}</p><p>CMS folder reference: ${escapeHtml(leader.candidate_drive_folder_id||'None')}</p><p>Mapping: ${escapeHtml(leader.mapping_state)}</p><p>Verified ${escapeHtml(localTimestamp(leader.indexed_at))}</p></details>`;
+  if(!profile.loading&&profile.discoveryEnabled===false&&!profile.error) $('#leaderProfile .notice').textContent='Photograph discovery awaits controlled verification. The current Wix primary image is preserved.';
+}
+async function headshotAction(action,fileId='',sourceItemId='') {
+  const profile=state.headshotProfile;if(!profile) return;
+  const photo=profile.photos.find((item)=>item.fileId===fileId&&item.sourceItemId===sourceItemId);
+  const message=action==='SET_PRIMARY'?`Use “${photo?.filename}” as ${profile.leader.leader_name}'s public primary headshot?`:
+    action==='REMOVE_PHOTO'?`Move “${photo?.filename}” to Google Drive Trash? The current primary must remain intact.`:`Create the canonical folder for ${profile.leader.leader_name}?`;
+  if(!confirm(message)) return;
+  const output=$('#headshotActionResult');output.textContent='Applying and verifying the operation…';
+  try {
+    const result=await api(`headshots/${encodeURIComponent(profile.id)}/operations`,{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({action,fileId,sourceItemId,confirmed:true})});
+    const refreshed=await api(`headshots/${encodeURIComponent(profile.id)}`);
+    if(state.headshotProfile?.id!==profile.id) return;
+    state.headshotProfile={id:profile.id,...refreshed,loading:false};renderHeadshotProfile();
+    $('#headshotActionResult').textContent=result.operation?.operation_state==='CONFIRMED'?'Operation confirmed. Wix and Drive state verified.':'Operation recorded; confirmation pending.';
+  } catch(error) {output.textContent=error.message.replaceAll('_',' ');}
 }
 async function loadActivity() {
   const { activity } = await api('activity');
@@ -213,7 +245,22 @@ async function boot() {
 document.addEventListener('click', async (event) => {
   const filter = event.target.closest('[data-operation-filter]'); if (filter) { state.operationFilter = state.operationFilter === filter.dataset.operationFilter ? '' : filter.dataset.operationFilter; renderCreationOperations(); }
   const leader = event.target.closest('[data-leader]'); if (leader) openLeader(leader.dataset.leader);
-  if (event.target.closest('[data-close-leader]')) $('#leaderDialog').close();
+  if (event.target.closest('[data-close-leader]')) {$('#leaderDialog').close();state.headshotProfile=null;}
+  const headshotPrimary=event.target.closest('[data-headshot-primary]');if(headshotPrimary) await headshotAction('SET_PRIMARY',headshotPrimary.dataset.headshotPrimary,headshotPrimary.dataset.headshotSource);
+  const headshotRemove=event.target.closest('[data-headshot-remove]');if(headshotRemove) await headshotAction('REMOVE_PHOTO',headshotRemove.dataset.headshotRemove,headshotRemove.dataset.headshotSource);
+  if(event.target.closest('[data-headshot-create]')) await headshotAction('CREATE_FOLDER');
+  if(event.target.closest('[data-headshot-access]')&&state.headshotProfile) {
+    const userId=$('#headshotPhotographer').value,preset=$('#headshotPermissionPreset').value;
+    if(!userId){$('#headshotPhotographer').focus();return;}
+    if(!confirm(`Apply ${preset.toLowerCase()} headshot access for this photographer to ${state.headshotProfile.leader.leader_name}?`)) return;
+    try {const result=await api(`headshots/${state.headshotProfile.id}/access`,{method:'POST',body:JSON.stringify({userId,preset})});$('#headshotActionResult').textContent=result.state.replaceAll('_',' ');}
+    catch(error){$('#headshotActionResult').textContent=error.message.replaceAll('_',' ');}
+  }
+  if(event.target.closest('[data-headshot-more]')&&state.headshotProfile?.nextCursor) {
+    const profile=state.headshotProfile;
+    try {const next=await api(`headshots/${encodeURIComponent(profile.id)}?cursor=${encodeURIComponent(profile.nextCursor)}`);if(state.headshotProfile?.id===profile.id){profile.photos.push(...next.photos);profile.nextCursor=next.nextCursor;renderHeadshotProfile();}}
+    catch(error){$('#headshotActionResult').textContent=error.message;}
+  }
   if (event.target.closest('[data-copy-studio]')) {
     try { await navigator.clipboard.writeText(`${location.origin}/photos/`); event.target.textContent = 'Link copied'; }
     catch { $('#inviteResult').textContent = `Share this link: ${location.origin}/photos/`; }

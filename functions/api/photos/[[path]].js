@@ -7,6 +7,8 @@ import { authorizedSync, parseSyncPayload, reconcilePhotoReadModel } from '../..
 import { createPhotoEventCreationRegistry, creationQualification } from '../../../hosted/platform/photo-event-creation.mjs';
 import { createGalleryManagement } from '../../../hosted/platform/photo-gallery-management.mjs';
 import { createPhotoDriveAccess } from '../../../hosted/platform/photo-drive-access.mjs';
+import { createHeadshotManagement } from '../../../hosted/platform/headshot-management.mjs';
+import { reconcileHeadshotSnapshot } from '../../../hosted/platform/headshot-sync.mjs';
 
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
@@ -44,6 +46,9 @@ export async function onRequest({ request, env }) {
   if (request.method === 'POST' && path === 'sync') {
     if (!(await authorizedSync(request, env))) return json({ error: 'unauthorized_sync' }, 401);
     try {
+      if(Number(request.headers.get('content-length')||0)>2000000) return json({error:'payload_too_large'},413);
+      const headshotCandidate=await request.clone().json();
+      if(headshotCandidate.kind==='headshots') return json({success:true,...await reconcileHeadshotSnapshot(env.PLATFORM_DB,headshotCandidate)});
       const payload = await parseSyncPayload(request);
       return json({ success: true, ...(await reconcilePhotoReadModel(env.PLATFORM_DB, payload)) });
     } catch (error) {
@@ -58,7 +63,8 @@ export async function onRequest({ request, env }) {
   const photoDeleteMatch = path.match(/^events\/([^/]+)\/galleries\/([^/]+)\/photos\/([^/]+)$/);
   const creationRoute = path === 'setup' || path === 'creation-capabilities' || Boolean(creationMatch);
   const manage = request.method !== 'GET' || ['photographers', 'activity', 'overview', 'drive-access/audit'].includes(path);
-  const permission = creationRoute || galleryMatch || galleryDeleteMatch || photoDeleteMatch ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
+  const headshotRoute = path==='media-assets'||path.startsWith('headshots');
+  const permission = creationRoute || galleryMatch || galleryDeleteMatch || photoDeleteMatch || headshotRoute ? PERMISSIONS.PHOTO_READ : manage ? PERMISSIONS.PHOTO_MANAGE : PERMISSIONS.PHOTO_READ;
   let auth;
   try {
     // Event-scope authorization is resolved from the explicit Photo Studio
@@ -122,8 +128,19 @@ export async function onRequest({ request, env }) {
     if (path === 'media-assets' || path.startsWith('headshots')) {
       const capabilities = await photos.headshotCapabilities(actor);
       if (!capabilities.includes('HEADSHOT_VIEW')) return json({ error: 'headshot_view_permission_required' }, 403);
+      const headshots = createHeadshotManagement(env.PLATFORM_DB,env,photos);
+      const match = path.match(/^headshots\/([a-f0-9-]{36})(?:\/(operations|photos|access))?$/i);
+      if (request.method === 'GET' && !match && (path==='media-assets'||path==='headshots')) return json({ collections: await photos.mediaAssets(), leaders: await headshots.directory(actor), capabilities, writesEnabled: headshots.enabled });
+      if (request.method === 'GET' && match) return json(await headshots.browse(actor,match[1],url.searchParams.get('cursor')||''));
+      if (request.method === 'POST' && match && match[2]==='operations') {
+        if(!(await headshots.allowed(actor,match[1],'HEADSHOT_MANAGE'))) return json({error:'headshot_manage_permission_required'},403);
+        const input=await request.json();return json(await headshots.perform(actor,match[1],String(input.action||''),input,request.headers.get('idempotency-key')),202);
+      }
+      if (request.method === 'POST' && match && match[2]==='access') {
+        const input=await request.json();return json(await headshots.setAccess(actor,match[1],String(input.userId||''),String(input.preset||'')));
+      }
       if (request.method !== 'GET') return json({ error: 'headshot_writes_not_qualified' }, 403);
-      return json({ collections: await photos.mediaAssets(), leaders: await photos.headshotLeaders(), capabilities, writesEnabled: false });
+      return json({error:'not_found'},404);
     }
     if (request.method === 'GET' && path === 'creation-capabilities') return json({ qualification: creationQualification(env) });
     if (request.method === 'GET' && path === 'drive-access/audit') return json({ audit: await driveAccess.audit(actor) });
@@ -157,6 +174,11 @@ export async function onRequest({ request, env }) {
     if (request.method === 'POST' && path === 'photographers/status') {
       driveAccess.assertQualified();
       await photos.setUserStatus(actor, body.userId, body.status);
+      if(body.status!=='ACTIVE') {
+        const grants=await env.PLATFORM_DB.prepare(`SELECT wix_item_id FROM headshot_drive_access_grants WHERE user_id=? AND operation_state!='REVOKED'`).bind(body.userId).all();
+        const headshots=createHeadshotManagement(env.PLATFORM_DB,env,photos);
+        for(const grant of grants.results||[]) await headshots.setAccess(actor,grant.wix_item_id,body.userId,'REVOKE');
+      }
       return json({ ok: true, driveAccess: await driveAccess.reconcileUser(actor, body.userId) });
     }
     if (request.method === 'POST' && path === 'photographers/permissions') {
