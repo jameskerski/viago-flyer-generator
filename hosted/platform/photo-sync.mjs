@@ -106,6 +106,33 @@ export async function reconcilePhotoReadModel(database, payload) {
     statements.push(database.prepare(`UPDATE photo_gallery_cover_selections SET selection_state=CASE WHEN selected_file_id=? THEN 'CONFIRMED' ELSE 'INVALID_FALLBACK' END,confirmed_at=CASE WHEN selected_file_id=? THEN CURRENT_TIMESTAMP ELSE NULL END,last_error_code=CASE WHEN selected_file_id=? THEN NULL ELSE 'SELECTED_FILE_NOT_RESOLVED' END,updated_at=CURRENT_TIMESTAMP WHERE gallery_folder_id=?`)
       .bind(gallery.coverFileId || '', gallery.coverFileId || '', gallery.coverFileId || '', gallery.folderId));
   }
+  // A successful Wix-originated snapshot is the confirmation boundary for
+  // recoverable Drive Trash operations.  The Drive mutation itself records a
+  // SYNC_PENDING operation; only a later authoritative snapshot may advance
+  // it.  Photo removals are confirmed when the affected gallery is still in
+  // the snapshot (or has subsequently been removed).  Gallery deletions are
+  // confirmed only when that canonical folder is absent from the snapshot.
+  const activeGalleryIds = payload.galleries.map((gallery) => gallery.folderId);
+  statements.push(database.prepare(`UPDATE photo_removal_operations
+    SET operation_state='DRIVE_TRASHED', updated_at=CURRENT_TIMESTAMP
+    WHERE event_id=? AND operation_state='SYNC_PENDING'
+      AND datetime(?) >= datetime(created_at)`)
+    .bind(eventId, payload.reconciledAt));
+  if (activeGalleryIds.length) {
+    const placeholders = activeGalleryIds.map(() => '?').join(',');
+    statements.push(database.prepare(`UPDATE photo_gallery_deletion_operations
+      SET operation_state='DRIVE_TRASHED', updated_at=CURRENT_TIMESTAMP
+      WHERE event_id=? AND operation_state='SYNC_PENDING'
+        AND datetime(?) >= datetime(created_at)
+        AND gallery_folder_id NOT IN (${placeholders})`)
+      .bind(eventId, payload.reconciledAt, ...activeGalleryIds));
+  } else {
+    statements.push(database.prepare(`UPDATE photo_gallery_deletion_operations
+      SET operation_state='DRIVE_TRASHED', updated_at=CURRENT_TIMESTAMP
+      WHERE event_id=? AND operation_state='SYNC_PENDING'
+        AND datetime(?) >= datetime(created_at)`)
+      .bind(eventId, payload.reconciledAt));
+  }
   await database.batch(statements);
   return { changed: existingEvent?.source_fingerprint !== payload.fingerprint, idempotent, eventId, galleryCount: payload.galleryCount, photoCount: payload.photoCount };
 }

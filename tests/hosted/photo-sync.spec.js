@@ -94,6 +94,33 @@ test('idempotent snapshots still reapply gallery membership and invalidate missi
   assert.equal(result.galleryCount, 0);
   assert.ok(executed.some(({ sql }) => sql.includes('UPDATE photo_galleries SET active = 0')));
   assert.ok(executed.some(({ sql }) => sql.includes("selection_state='INVALID_FALLBACK'")));
+  assert.ok(executed.some(({ sql }) => sql.includes("UPDATE photo_removal_operations")));
+  assert.ok(executed.some(({ sql }) => sql.includes("UPDATE photo_gallery_deletion_operations")));
   assert.ok(!executed.some(({ sql }) => sql.includes('INSERT OR REPLACE INTO source_sync_receipts')));
   assert.ok(!executed.some(({ sql }) => sql.includes('INSERT INTO audit_records')));
+});
+
+test('reconciliation confirms only gallery deletions absent from the Wix snapshot', async () => {
+  const executed = [];
+  const database = {
+    prepare(sql) {
+      return {
+        sql,
+        args: [],
+        bind(...args) { this.args = args; return this; },
+        async first() { return null; }
+      };
+    },
+    async batch(statements) { executed.push(...statements); }
+  };
+  await reconcilePhotoReadModel(database, {
+    wixItemId: 'event-item', publicName: 'Qualification event', series: 'Test', region: 'Test', year: 2027,
+    artworkUrl: '', allPhotosUrl: 'https://drive.google.com/drive/folders/event-root',
+    fingerprint: 'changed-fingerprint', reconciledAt: '2026-10-12T16:00:00.000Z',
+    galleries: [{ folderId: 'remaining-gallery', title: 'Remaining', sourceFolderName: 'Remaining', photoCount: 2, coverUrl: '', coverFileId: '', coverSource: '', destinationUrl: 'https://drive.google.com/drive/folders/remaining-gallery', displayOrder: 1 }],
+    galleryCount: 1, photoCount: 2
+  });
+  const deletionConfirmation = executed.find(({ sql }) => sql.includes('UPDATE photo_gallery_deletion_operations'));
+  assert.ok(deletionConfirmation.sql.includes('gallery_folder_id NOT IN (?)'));
+  assert.deepEqual(deletionConfirmation.args.slice(-1), ['remaining-gallery']);
 });

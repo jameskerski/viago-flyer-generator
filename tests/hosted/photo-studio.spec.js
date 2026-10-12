@@ -52,7 +52,7 @@ test('photographer sees only assigned events and no administrator navigation', a
   const upload = page.getByRole('link', { name: 'Open upload folder' });
   await expect(upload).toBeVisible();
   await expect(upload).toHaveAttribute('href', 'https://drive.google.com/drive/folders/drive-gallery-1');
-  await page.getByRole('button', { name: 'Set cover photo' }).click();
+  await page.getByRole('button', { name: 'Manage photos / cover' }).click();
   await expect(page.getByRole('dialog')).toContainText('2 photographs');
   await expect(page.getByRole('option')).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Remove' })).toHaveCount(2);
