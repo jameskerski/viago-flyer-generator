@@ -77,7 +77,7 @@ export async function onRequest({ request, env }) {
     const creations = creationRoute ? createPhotoEventCreationRegistry(env.PLATFORM_DB, env) : null;
     if (request.method === 'GET' && path === 'session') {
       const profile = actor.role === 'PHOTOGRAPHER' ? await photos.photographerProfile(actor.id) : null;
-      return json({ actor: { ...actor, profile, canCreateEvent: await photos.canCreateEvent(actor) } });
+      return json({ actor: { ...actor, profile, headshotCapabilities: await photos.headshotCapabilities(actor), canCreateEvent: await photos.canCreateEvent(actor) } });
     }
     if (request.method === 'GET' && path === 'events') return json({ events: await photos.listEvents(actor) });
     if (request.method === 'GET' && eventMatch) {
@@ -119,7 +119,12 @@ export async function onRequest({ request, env }) {
     if (request.method === 'GET' && path === 'overview') return json({ overview: await photos.overview() });
     if (request.method === 'GET' && path === 'photographers') return json({ photographers: await photos.listPhotographers() });
     if (request.method === 'GET' && path === 'activity') return json({ activity: await photos.activity() });
-    if (request.method === 'GET' && path === 'media-assets') return json({ collections: await photos.mediaAssets() });
+    if (path === 'media-assets' || path.startsWith('headshots')) {
+      const capabilities = await photos.headshotCapabilities(actor);
+      if (!capabilities.includes('HEADSHOT_VIEW')) return json({ error: 'headshot_view_permission_required' }, 403);
+      if (request.method !== 'GET') return json({ error: 'headshot_writes_not_qualified' }, 403);
+      return json({ collections: await photos.mediaAssets(), leaders: await photos.headshotLeaders(), capabilities, writesEnabled: false });
+    }
     if (request.method === 'GET' && path === 'creation-capabilities') return json({ qualification: creationQualification(env) });
     if (request.method === 'GET' && path === 'drive-access/audit') return json({ audit: await driveAccess.audit(actor) });
     if (request.method === 'GET' && path === 'setup') return json({ operations: await creations.list(actor), qualification: creations.qualification });
@@ -148,6 +153,7 @@ export async function onRequest({ request, env }) {
       return json(result, 202);
     }
     if (request.method === 'POST' && path === 'invitations') return json({ invitation: await photos.invite(actor, body) }, 201);
+    if (request.method === 'POST' && path === 'invitations/revoke') return json({ invitation: await photos.revokeInvitation(actor, body.invitationId) });
     if (request.method === 'POST' && path === 'photographers/status') {
       driveAccess.assertQualified();
       await photos.setUserStatus(actor, body.userId, body.status);

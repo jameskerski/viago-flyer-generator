@@ -1,6 +1,8 @@
+import { localTimestamp, utcDate, accountStatus, assignedIds } from './photo-admin-format.js';
+
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const state = { actor: null, events: [], overview: null, creationQualification: null, creationOperations: [], coverBrowser: null };
+const state = { actor: null, events: [], overview: null, creationQualification: null, creationOperations: [], coverBrowser: null, operationFilter: '', leaders: [], photographers: [] };
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 
 async function api(path, options = {}) {
@@ -15,14 +17,14 @@ function eventRow(event) { return `<article class="event-row"><span><b>${escapeH
 function eventCard(event) {
   const letters = escapeHtml((event.series || event.public_name || 'GL').slice(0, 2).toUpperCase());
   const art = event.artwork_url ? `<img src="${escapeHtml(event.artwork_url)}" alt="" loading="lazy">` : `<b>${letters}</b>`;
-  const stale = event.sync_status !== 'CONFIRMED' || !event.last_reconciled_at || Date.now() - new Date(event.last_reconciled_at).getTime() > 26 * 60 * 60 * 1000;
+  const stale = event.sync_status !== 'CONFIRMED' || !utcDate(event.last_reconciled_at) || Date.now() - utcDate(event.last_reconciled_at).getTime() > 26 * 60 * 60 * 1000;
   return `<button class="event-card" data-event="${escapeHtml(event.id)}" aria-label="Open ${escapeHtml(event.public_name)}"><span class="event-art">${art}<i class="sync-state ${stale ? 'stale' : ''}">${stale ? 'STALE' : 'CURRENT'}</i></span><span class="event-body"><h3>${escapeHtml(event.public_name)}</h3><p>${escapeHtml(event.region)} · ${escapeHtml(event.event_year)}</p><span class="event-stats"><span>${escapeHtml(event.gallery_count)} galleries</span><span>${Number(event.photo_count).toLocaleString()} photos</span></span></span></button>`;
 }
 
 const creationLabels = {
   REQUESTED: 'Requested', VALIDATED: 'Validated', DRIVE_ROOT_CREATED: 'Drive root created',
   WIX_EVENT_REGISTERED: 'Wix event registered', VERIFIED: 'Verified',
-  READY_FOR_PUBLICATION: 'Ready for publication', FAILED_NEEDS_ATTENTION: 'Needs attention'
+  READY_FOR_PUBLICATION: 'Ready for Review — Publication Not Yet Enabled', FAILED_NEEDS_ATTENTION: 'Needs attention'
 };
 function operationCard(operation) {
   const retry = ['VALIDATED', 'FAILED_NEEDS_ATTENTION', 'DRIVE_ROOT_CREATED', 'WIX_EVENT_REGISTERED'].includes(operation.operation_state);
@@ -32,13 +34,13 @@ function renderCreationOperations() {
   const container = $('#creationSummary');
   if (!state.actor?.canCreateEvent) { container.hidden = true; return; }
   const groups = [
-    ['Draft events', ['VALIDATED']], ['Creation in progress', ['REQUESTED', 'DRIVE_ROOT_CREATED', 'WIX_EVENT_REGISTERED', 'VERIFIED']],
-    ['Ready for publication', ['READY_FOR_PUBLICATION']], ['Failed / needs attention', ['FAILED_NEEDS_ATTENTION']]
+    ['Drafts', ['VALIDATED']], ['In Progress', ['REQUESTED', 'DRIVE_ROOT_CREATED', 'WIX_EVENT_REGISTERED', 'VERIFIED']],
+    ['Ready for Review', ['READY_FOR_PUBLICATION']], ['Needs Attention', ['FAILED_NEEDS_ATTENTION']]
   ];
   container.innerHTML = groups.map(([label, states]) => {
     const rows = state.creationOperations.filter((item) => states.includes(item.operation_state));
-    return `<section class="operation-group"><h3>${label}</h3>${rows.length ? rows.map(operationCard).join('') : '<p class="operation-empty">None</p>'}</section>`;
-  }).join('');
+    return `<button type="button" class="operation-filter ${state.operationFilter === label ? 'selected' : ''} ${label === 'Needs Attention' && rows.length ? 'needs-attention' : ''}" data-operation-filter="${label}" aria-pressed="${state.operationFilter === label}">${label} <strong>${rows.length}</strong></button>`;
+  }).join('') + `<div class="operation-results">${state.creationOperations.filter((item) => state.operationFilter ? groups.find(([label]) => label === state.operationFilter)?.[1].includes(item.operation_state) : item.operation_state === 'FAILED_NEEDS_ATTENTION').map(operationCard).join('')}</div>`;
   container.hidden = false;
 }
 async function loadCreationOperations() {
@@ -59,6 +61,8 @@ function renderQualification() {
 }
 
 function showView(name) {
+  if (['photographers','activity'].includes(name) && state.actor?.role !== 'PHOTO_ADMIN') name = 'events';
+  if (name === 'media-assets' && !(state.actor?.headshotCapabilities || []).includes('HEADSHOT_VIEW')) name = 'events';
   $$('[data-view-panel]').forEach((panel) => { panel.hidden = panel.dataset.viewPanel !== name; });
   $$('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
   if (name === 'photographers') loadPhotographers();
@@ -133,16 +137,38 @@ async function openEvent(id) {
 
 async function loadPhotographers() {
   const { photographers } = await api('photographers');
+  state.photographers = photographers;
   const options = state.events.map((event) => `<option value="${escapeHtml(event.id)}">${escapeHtml(event.public_name)} ${escapeHtml(event.event_year)}</option>`).join('');
-  $('#photographerList').innerHTML = photographers.length ? photographers.map((person) => `<article class="person"><span class="person-main"><b>${escapeHtml(person.display_name)}</b><small>${escapeHtml(person.email || 'Invitation pending')} · ${escapeHtml(person.event_ids || 'No assignments')}</small><small>${escapeHtml(person.event_scope)} · ${(person.capabilities || []).map(escapeHtml).join(', ')}</small></span><span class="person-actions"><span class="assignment-control"><select data-preset-select="${escapeHtml(person.id)}" aria-label="Permission preset for ${escapeHtml(person.display_name)}"><option value="ASSIGNED" ${person.preset_key === 'ASSIGNED' ? 'selected' : ''}>Assigned</option><option value="GENERAL" ${person.preset_key === 'GENERAL' ? 'selected' : ''}>General</option><option value="LEAD" ${person.preset_key === 'LEAD' ? 'selected' : ''}>Lead</option></select><button data-permissions="${escapeHtml(person.id)}">Apply preset</button></span><span class="assignment-control"><select data-assignment-select="${escapeHtml(person.id)}" aria-label="Event assignment for ${escapeHtml(person.display_name)}"><option value="">Select event</option>${options}</select><button data-assignment="${escapeHtml(person.id)}" data-active="true">Assign</button><button data-assignment="${escapeHtml(person.id)}" data-active="false">Revoke event</button></span><button data-status="${escapeHtml(person.id)}" data-next="${person.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">${person.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</button><button data-status="${escapeHtml(person.id)}" data-next="REVOKED">Revoke account</button></span></article>`).join('') : '<div class="gallery-empty">No photographers have accepted an invitation yet.</div>';
+  $('#photographerList').innerHTML = photographers.length ? photographers.map((person) => {
+    const count = assignedIds(person.event_ids).length;
+    const pending = Boolean(person.invitation_id);
+    const invitationOpen = pending && person.status === 'PENDING';
+    return `<article class="person" id="person-${escapeHtml(person.id)}"><div class="person-main"><h3>${escapeHtml(person.email || person.display_name)}</h3><p>${escapeHtml(accountStatus(person.status))} · ${escapeHtml(person.preset_key || 'ASSIGNED').toLowerCase().replace(/^./, (c) => c.toUpperCase())} Photographer</p><small>${count} Assigned ${count === 1 ? 'Event' : 'Events'}${invitationOpen ? ` · ${person.expired ? 'Invitation expired' : 'Awaiting acceptance'}` : ''}</small></div><details class="person-management"><summary>${pending ? 'Manage Invitation' : 'Manage Access'}</summary><div class="person-actions">${pending ? `<p>${invitationOpen ? 'No invitation email was sent. Share the Photo Studio link to complete email verification.' : 'This invitation no longer permits acceptance. Create a new invitation only when access is approved again.'}</p><small>Created ${escapeHtml(localTimestamp(person.created_at))} · Expires ${escapeHtml(localTimestamp(person.expires_at))}</small>${invitationOpen ? `<button type="button" data-copy-studio>Copy Photo Studio Link</button><button data-invitation-revoke="${escapeHtml(person.invitation_id)}">Revoke invitation</button>` : ''}` : `<label>Access preset<select data-preset-select="${escapeHtml(person.id)}" aria-label="Permission preset for ${escapeHtml(person.email)}"><option value="ASSIGNED" ${person.preset_key === 'ASSIGNED' ? 'selected' : ''}>Assigned</option><option value="GENERAL" ${person.preset_key === 'GENERAL' ? 'selected' : ''}>General</option><option value="LEAD" ${person.preset_key === 'LEAD' ? 'selected' : ''}>Lead</option></select></label><button data-permissions="${escapeHtml(person.id)}">Apply preset</button><label>Event assignment<select data-assignment-select="${escapeHtml(person.id)}" aria-label="Event assignment for ${escapeHtml(person.email)}"><option value="">Select event</option>${options}</select></label><button data-assignment="${escapeHtml(person.id)}" data-active="true">Assign</button><button data-assignment="${escapeHtml(person.id)}" data-active="false">Revoke event</button><p class="assigned-event-names">${assignedIds(person.event_ids).map((id) => escapeHtml(state.events.find((event) => event.id === id)?.public_name || 'Assigned event')).join(' · ') || 'No event assignments'}</p><button data-status="${escapeHtml(person.id)}" data-next="${person.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}">${person.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</button><button data-status="${escapeHtml(person.id)}" data-next="REVOKED">Revoke account</button><details class="diagnostics"><summary>Technical details</summary><small>${escapeHtml(person.id)}</small><small>${(person.capabilities || []).map(escapeHtml).join(', ')}</small></details>`}</div></details></article>`;
+  }).join('') : '<div class="gallery-empty">No photographers or pending invitations.</div>';
 }
 async function loadMediaAssets() {
-  const { collections } = await api('media-assets');
-  $('#mediaAssets').innerHTML = collections.map((item) => `<a class="event-card media-card" href="${escapeHtml(item.public_destination || '#')}" target="_blank" rel="noopener"><span class="event-art"><b>LH</b></span><span class="event-body"><h3>${escapeHtml(item.public_name)}</h3><p>${escapeHtml(item.source_system)} · ${escapeHtml(item.sync_status.replaceAll('_', ' '))}</p><span class="event-stats"><span>${Number(item.item_count).toLocaleString()} indexed assets</span></span></span></a>`).join('');
+  try {
+    const { leaders = [] } = await api('media-assets');
+    state.leaders = leaders;
+    renderLeaders();
+  } catch (error) { $('#mediaAssets').innerHTML = `<p class="notice">${escapeHtml(error.message)}</p>`; }
+}
+function renderLeaders() {
+  const query = ($('#leaderSearch').value || '').trim().toLocaleLowerCase();
+  const leaders = state.leaders.filter((leader) => leader.leader_name.toLocaleLowerCase().includes(query)).sort((a,b) => a.leader_name.localeCompare(b.leader_name));
+  $('#leaderCount').textContent = `${leaders.length} of ${state.leaders.length} leaders · Wix CMS directory`;
+  $('#mediaAssets').innerHTML = leaders.map((leader) => `<article class="leader-card"><div class="leader-image">${leader.primary_image_url ? `<img src="${escapeHtml(leader.primary_image_url)}" alt="${escapeHtml(leader.leader_name)}" loading="lazy">` : '<span>No primary headshot</span>'}</div><div><h3>${escapeHtml(leader.leader_name)}</h3><p>${leader.photo_count == null ? 'Photo count awaiting Drive verification' : `${leader.photo_count} photographs`}</p><small>${leader.mapping_state === 'VERIFIED' ? 'Folder verified' : 'Folder mapping awaiting qualification'}</small><button type="button" data-leader="${escapeHtml(leader.wix_item_id)}">Open Leader</button></div></article>`).join('') || '<p class="notice">No matching leaders.</p>';
+}
+function openLeader(id) {
+  const leader = state.leaders.find((item) => item.wix_item_id === id);
+  if (!leader) return;
+  $('#leaderDialogTitle').textContent = leader.leader_name;
+  $('#leaderProfile').innerHTML = `${leader.primary_image_url ? `<img class="leader-primary" src="${escapeHtml(leader.primary_image_url)}" alt="${escapeHtml(leader.leader_name)}">` : ''}<p>Current Wix primary headshot · preserved</p><p class="notice">Folder creation, upload handoff, primary selection and removal remain disabled until this leader's Drive identity and publication contract are qualified.</p><p>Directory verified ${escapeHtml(localTimestamp(leader.indexed_at))}</p><div class="headshot-disabled-actions"><button disabled>Open upload folder</button><button disabled>Select primary headshot</button><button disabled>Remove photograph</button><button disabled>Manage folder</button></div><details class="diagnostics"><summary>Identity and source evidence</summary><p>Wix record: ${escapeHtml(leader.wix_item_id)}</p><p>CMS folder reference: ${escapeHtml(leader.candidate_drive_folder_id || 'None')}</p><p>Mapping: ${escapeHtml(leader.mapping_state)}</p></details>`;
+  $('#leaderDialog').showModal();
 }
 async function loadActivity() {
   const { activity } = await api('activity');
-  $('#activityList').innerHTML = activity.length ? activity.map((item) => `<article class="activity-row"><small>${escapeHtml(new Date(item.occurred_at).toLocaleString())}</small><span><b>${escapeHtml(item.operation)}</b><small>${escapeHtml(item.actor_email || 'System')} · ${escapeHtml(item.target_type || '')}</small></span><span>${escapeHtml(item.operation_outcome)}</span></article>`).join('') : '<div class="gallery-empty">No Photo Studio administrative actions have occurred.</div>';
+  $('#activityList').innerHTML = activity.length ? activity.map((item) => `<article class="activity-row"><time datetime="${escapeHtml(utcDate(item.occurred_at)?.toISOString() || '')}">${escapeHtml(localTimestamp(item.occurred_at))}</time><span><b>${escapeHtml(item.operation)}</b><small>${escapeHtml(item.actor_email || 'System')} · ${escapeHtml(item.target_type || '')}</small></span><span>${escapeHtml(item.operation_outcome)}</span></article>`).join('') : '<div class="gallery-empty">No Photo Studio administrative actions have occurred.</div>';
 }
 
 async function boot() {
@@ -153,6 +179,8 @@ async function boot() {
     const isAdmin = actor.role === 'PHOTO_ADMIN';
     document.body.classList.toggle('is-admin', isAdmin);
     $$('.admin-only').forEach((item) => { item.hidden = !isAdmin; });
+    $('[data-view="media-assets"]').hidden = !(actor.headshotCapabilities || (isAdmin ? ['HEADSHOT_VIEW'] : [])).includes('HEADSHOT_VIEW');
+    if (isAdmin && !actor.headshotCapabilities) actor.headshotCapabilities = ['HEADSHOT_VIEW','HEADSHOT_UPLOAD','HEADSHOT_MANAGE'];
     $$('.creator-only').forEach((item) => { item.hidden = !actor.canCreateEvent; });
     $('#actorName').textContent = actor.displayName;
     $('#actorRole').textContent = isAdmin ? 'Administrator' : 'Photographer';
@@ -183,6 +211,21 @@ async function boot() {
 }
 
 document.addEventListener('click', async (event) => {
+  const filter = event.target.closest('[data-operation-filter]'); if (filter) { state.operationFilter = state.operationFilter === filter.dataset.operationFilter ? '' : filter.dataset.operationFilter; renderCreationOperations(); }
+  const leader = event.target.closest('[data-leader]'); if (leader) openLeader(leader.dataset.leader);
+  if (event.target.closest('[data-close-leader]')) $('#leaderDialog').close();
+  if (event.target.closest('[data-copy-studio]')) {
+    try { await navigator.clipboard.writeText(`${location.origin}/photos/`); event.target.textContent = 'Link copied'; }
+    catch { $('#inviteResult').textContent = `Share this link: ${location.origin}/photos/`; }
+  }
+  const manageInvite = event.target.closest('[data-manage-invitation]'); if (manageInvite) {
+    const details = $(`#person-${CSS.escape(manageInvite.dataset.manageInvitation)} .person-management`);
+    if (details) { details.open = true; details.scrollIntoView({ block: 'nearest' }); details.querySelector('summary').focus(); }
+  }
+  const revokeInvite = event.target.closest('[data-invitation-revoke]'); if (revokeInvite) {
+    try { await api('invitations/revoke', { method: 'POST', body: JSON.stringify({ invitationId: revokeInvite.dataset.invitationRevoke }) }); await loadPhotographers(); $('#inviteResult').textContent = 'Invitation revoked. Sign-in can no longer accept it.'; }
+    catch (error) { $('#inviteResult').textContent = error.message; }
+  }
   const view = event.target.closest('[data-view]'); if (view) showView(view.dataset.view);
   const card = event.target.closest('[data-event]'); if (card) await openEvent(card.dataset.event);
   const create = event.target.closest('[data-gallery-create]'); if (create) {
@@ -276,9 +319,16 @@ $('#eventCreationForm').addEventListener('submit', async (event) => {
 });
 $('#inviteForm').addEventListener('submit', async (event) => {
   event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); const output = $('#inviteResult'); output.value = 'Creating invitation…';
-  try { const { invitation } = await api('invitations', { method: 'POST', body: JSON.stringify(data) }); output.value = `Invitation ready for ${invitation.email}. Access is granted when that account signs in.`; form.reset(); await loadActivity(); }
-  catch (error) { output.value = error.message; }
+  try {
+    const { invitation } = await api('invitations', { method: 'POST', body: JSON.stringify(data) });
+    // Reset first: HTML form reset also restores <output> to its default value.
+    form.reset();
+    output.innerHTML = `<strong>${invitation.existing ? 'Photographer access already exists' : 'Photographer invitation created'}</strong><span>${escapeHtml(invitation.email)}</span><span>Status: ${invitation.status === 'PENDING' ? 'Awaiting acceptance' : escapeHtml(accountStatus(invitation.status))}</span><p>No invitation email was sent. Access has been prepared. Share the Photo Studio link with this photographer to complete sign-in.</p><button type="button" data-copy-studio>Copy Photo Studio Link</button><button type="button" data-manage-invitation="${escapeHtml(invitation.id)}">${invitation.status === 'PENDING' ? 'Manage Invitation' : 'Manage Access'}</button>`;
+    await loadPhotographers(); await loadActivity();
+  }
+  catch (error) { output.textContent = error.message; }
 });
+$('#leaderSearch').addEventListener('input', renderLeaders);
 $('#auditDriveAccess').addEventListener('click', async (event) => {
   const button = event.currentTarget; const output = $('#driveAuditResult'); button.disabled = true; output.value = 'Auditing authoritative event roots…';
   try {

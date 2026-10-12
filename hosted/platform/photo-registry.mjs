@@ -112,7 +112,9 @@ export function createPhotoRegistry(database) {
         LEFT JOIN event_assignments a ON a.user_id = u.id AND a.status = 'ACTIVE'
         LEFT JOIN photo_permission_profiles p ON p.user_id = u.id
         WHERE g.module_key = 'PHOTO_STUDIO' AND g.role_key = 'PHOTOGRAPHER' GROUP BY u.id ORDER BY u.display_name`).all();
-      return (result.results || []).map((row) => ({ ...row, preset_key: row.preset_key || 'ASSIGNED', event_scope: row.event_scope || 'ASSIGNED_ONLY', capabilities: JSON.parse(row.capabilities_json || JSON.stringify(PHOTO_PRESETS.ASSIGNED.capabilities)) }));
+      const people = (result.results || []).map((row) => ({ ...row, preset_key: row.preset_key || 'ASSIGNED', event_scope: row.event_scope || 'ASSIGNED_ONLY', capabilities: JSON.parse(row.capabilities_json || JSON.stringify(PHOTO_PRESETS.ASSIGNED.capabilities)) }));
+      const pending = await database.prepare(`SELECT i.id, i.normalized_email AS email, i.status, i.created_at, i.expires_at FROM invitations i WHERE i.module_key='PHOTO_STUDIO' AND i.status!='CLAIMED' AND i.id=(SELECT j.id FROM invitations j WHERE j.module_key=i.module_key AND j.normalized_email=i.normalized_email ORDER BY j.created_at DESC,j.id DESC LIMIT 1) ORDER BY i.created_at DESC`).all();
+      return [...people, ...(pending.results || []).filter((invite) => !people.some((person) => normalizedEmail(person.email) === invite.email)).map((invite) => ({ ...invite, invitation_id: invite.id, display_name: invite.email, preset_key: 'ASSIGNED', event_ids: '', capabilities: [], expired: new Date(`${invite.expires_at.replace(' ', 'T')}Z`).getTime() <= Date.now() }))];
     },
 
     async futureAccessUserIds() {
@@ -122,11 +124,36 @@ export function createPhotoRegistry(database) {
 
     async invite(actor, { email }) {
       const normalized = normalizedEmail(email);
-      if (!/^\S+@\S+\.\S+$/.test(normalized)) throw new Error('A valid Google account email is required');
+      if (!/^\S+@\S+\.\S+$/.test(normalized)) throw new Error('A valid email address is required');
+      const existing = await database.prepare(`SELECT u.id,u.status FROM platform_users u JOIN identity_bindings i ON i.user_id=u.id JOIN module_grants g ON g.user_id=u.id WHERE i.verified_email=? AND g.module_key='PHOTO_STUDIO' LIMIT 1`).bind(normalized).first();
+      if (existing) return { id: existing.id, email: normalized, status: existing.status, existing: true, emailSent: false };
+      const pending = await database.prepare(`SELECT id,expires_at FROM invitations WHERE normalized_email=? AND module_key='PHOTO_STUDIO' AND status='PENDING' LIMIT 1`).bind(normalized).first();
+      if (pending && new Date(`${pending.expires_at.replace(' ', 'T')}Z`).getTime() > Date.now()) return { id: pending.id, email: normalized, status: 'PENDING', existing: true, emailSent: false };
+      if (pending) await database.prepare(`UPDATE invitations SET status='EXPIRED' WHERE id=?`).bind(pending.id).run();
       const invitationId = id('invite');
-      await database.prepare(`INSERT INTO invitations (id, normalized_email, module_key, role_key, event_id, status, expires_at) VALUES (?, ?, 'PHOTO_STUDIO', 'PHOTOGRAPHER', NULL, 'PENDING', datetime('now', '+14 days'))`).bind(invitationId, normalized).run();
-      await audit(actor, 'photographer.invite', 'invitation', invitationId, 'SUCCEEDED', { email: normalized, preset: 'ASSIGNED', assignmentCount: 0 });
-      return { id: invitationId, email: normalized, preset: 'ASSIGNED', eventIds: [], status: 'PENDING' };
+      await database.prepare(`INSERT OR IGNORE INTO invitations (id, normalized_email, module_key, role_key, event_id, status, expires_at) VALUES (?, ?, 'PHOTO_STUDIO', 'PHOTOGRAPHER', NULL, 'PENDING', datetime('now', '+14 days'))`).bind(invitationId, normalized).run();
+      const saved = await database.prepare(`SELECT id FROM invitations WHERE normalized_email=? AND module_key='PHOTO_STUDIO' AND status='PENDING'`).bind(normalized).first();
+      await audit(actor, 'photographer.invite', 'invitation', saved.id, 'SUCCEEDED', { email: normalized, preset: 'ASSIGNED', assignmentCount: 0 });
+      return { id: saved.id, email: normalized, preset: 'ASSIGNED', eventIds: [], status: 'PENDING', emailSent: false };
+    },
+
+    async revokeInvitation(actor, invitationId) {
+      const invite = await database.prepare(`SELECT id FROM invitations WHERE id=? AND module_key='PHOTO_STUDIO' AND status='PENDING'`).bind(invitationId).first();
+      if (!invite) throw new Error('Pending invitation not found');
+      await database.prepare(`UPDATE invitations SET status='REVOKED' WHERE id=? AND status='PENDING'`).bind(invitationId).run();
+      await audit(actor, 'photographer.invitation.revoke', 'invitation', invitationId);
+      return { id: invitationId, status: 'REVOKED' };
+    },
+
+    async headshotCapabilities(actor) {
+      if (actor.role === ROLES.PHOTO_ADMIN) return ['HEADSHOT_VIEW','HEADSHOT_UPLOAD','HEADSHOT_MANAGE'];
+      const result = await database.prepare(`SELECT capability FROM headshot_capability_grants WHERE user_id=? AND status='ACTIVE'`).bind(actor.id).all();
+      return (result.results || []).map((row) => row.capability);
+    },
+
+    async headshotLeaders() {
+      const result = await database.prepare(`SELECT * FROM headshot_leaders ORDER BY leader_name COLLATE NOCASE,wix_item_id`).all();
+      return result.results || [];
     },
 
     async setPermissionProfile(actor, userId, presetKey) {
@@ -142,12 +169,14 @@ export function createPhotoRegistry(database) {
 
     async setUserStatus(actor, userId, status) {
       if (!['ACTIVE', 'INACTIVE', 'REVOKED'].includes(status)) throw new Error('Invalid account status');
+      if (!(await database.prepare(`SELECT 1 FROM module_grants WHERE user_id=? AND module_key='PHOTO_STUDIO' AND role_key='PHOTOGRAPHER'`).bind(userId).first())) throw new Error('Photographer not found');
       await database.prepare(`UPDATE platform_users SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).bind(status, userId).run();
       await audit(actor, 'photographer.status', 'user', userId, 'SUCCEEDED', { status });
       return { userId, status };
     },
 
     async setAssignment(actor, userId, eventId, active) {
+      if (!(await database.prepare(`SELECT 1 FROM module_grants WHERE user_id=? AND module_key='PHOTO_STUDIO' AND role_key='PHOTOGRAPHER'`).bind(userId).first())) throw new Error('Photographer not found');
       if (!(await database.prepare(`SELECT id FROM photo_events WHERE id = ? AND active = 1`).bind(eventId).first())) throw new Error('Event not found');
       if (active) await database.prepare(`INSERT OR REPLACE INTO event_assignments (id, user_id, event_id, permission_key, status) VALUES (COALESCE((SELECT id FROM event_assignments WHERE user_id = ? AND event_id = ? AND permission_key = 'PHOTO_UPLOAD'), ?), ?, ?, 'PHOTO_UPLOAD', 'ACTIVE')`).bind(userId, eventId, id('assignment'), userId, eventId).run();
       else await database.prepare(`UPDATE event_assignments SET status = 'REVOKED', updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND event_id = ?`).bind(userId, eventId).run();
