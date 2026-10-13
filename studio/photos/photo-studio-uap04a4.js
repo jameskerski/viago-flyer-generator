@@ -221,6 +221,11 @@ function renderHeadshotProfile() {
       label.textContent=(photo.sources||[]).map(source=>`${source.label}${source.shared?' · Shared':''}`).join(' / ');
       card.querySelector('p').after(label);
       if(photo.shared&&state.actor.role!=='PHOTO_ADMIN') {const button=card.querySelector('[data-headshot-remove]');button.disabled=true;button.title='Shared photographs can be removed only by an administrator';}
+      if(profile.canPublish&&state.actor.role==='PHOTO_ADMIN') {
+        const button=document.createElement('button');button.type='button';button.dataset.publicHeadshot=photo.fileId;
+        button.textContent=photo.publicApproved?'Revoke Public Display':'Approve Public Display';
+        card.append(button);
+      }
     });
   }
   if(!profile.loading&&profile.discoveryEnabled===false&&!profile.error) $('#leaderProfile .notice').textContent='Photograph discovery awaits controlled verification. The current Wix primary image is preserved.';
@@ -290,6 +295,15 @@ document.addEventListener('click', async (event) => {
   if (event.target.closest('[data-close-leader]')) {$('#leaderDialog').close();state.headshotProfile=null;}
   const headshotPrimary=event.target.closest('[data-headshot-primary]');if(headshotPrimary) await headshotAction('SET_PRIMARY',headshotPrimary.dataset.headshotPrimary,headshotPrimary.dataset.headshotSource);
   const headshotRemove=event.target.closest('[data-headshot-remove]');if(headshotRemove) await headshotAction('REMOVE_PHOTO',headshotRemove.dataset.headshotRemove,headshotRemove.dataset.headshotSource);
+  const publication=event.target.closest('[data-public-headshot]');if(publication&&state.headshotProfile) {
+    const profile=state.headshotProfile,photo=profile.photos.find(p=>p.fileId===publication.dataset.publicHeadshot);
+    if(!photo || !confirm(photo.publicApproved?'Remove this photograph from this leader’s public Headshots V2 collection?':'Approve this photograph for anonymous public display and derivative download on Headshots V2? Drive permissions will not change.')) return;
+    try {
+      await api(`headshots/${encodeURIComponent(profile.id)}/publication`,{method:'POST',body:JSON.stringify({fileId:photo.fileId,approved:!photo.publicApproved,confirmed:true})});
+      const refreshed=await api(`headshots/${encodeURIComponent(profile.id)}`);
+      if(state.headshotProfile?.id===profile.id) {state.headshotProfile={id:profile.id,...refreshed,loading:false};renderHeadshotProfile();$('#headshotActionResult').textContent='Public approval updated. New derivatives are prepared by governed reconciliation.';}
+    } catch(error) {$('#headshotActionResult').textContent=error.message.replaceAll('_',' ');}
+  }
   if(event.target.closest('[data-headshot-create]')) await headshotAction('CREATE_FOLDER');
   if(event.target.closest('[data-headshot-access]')&&state.headshotProfile) {
     const userId=$('#headshotPhotographer').value,preset=$('#headshotPermissionPreset').value;

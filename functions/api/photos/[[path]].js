@@ -10,6 +10,7 @@ import { createPhotoDriveAccess } from '../../../hosted/platform/photo-drive-acc
 import { createHeadshotManagement } from '../../../hosted/platform/headshot-management.mjs';
 import { reconcileHeadshotSnapshot } from '../../../hosted/platform/headshot-sync.mjs';
 import { leaderSourcePlan } from '../../../hosted/platform/headshot-sources.mjs';
+import { claimPublicMediaJob, setPublicMediaSourceVersion, confirmPublicMedia, failPublicMediaJob } from '../../../hosted/platform/headshot-publication.mjs';
 
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
@@ -49,6 +50,10 @@ export async function onRequest({ request, env }) {
     try {
       if(Number(request.headers.get('content-length')||0)>2000000) return json({error:'payload_too_large'},413);
       const headshotCandidate=await request.clone().json();
+      if(headshotCandidate.kind==='headshot-public-job') return json({success:true,job:await claimPublicMediaJob(env.PLATFORM_DB)});
+      if(headshotCandidate.kind==='headshot-public-source-version') return json(await setPublicMediaSourceVersion(env.PLATFORM_DB,headshotCandidate));
+      if(headshotCandidate.kind==='headshot-public-media') return json({success:true,...await confirmPublicMedia(env.PLATFORM_DB,headshotCandidate)});
+      if(headshotCandidate.kind==='headshot-public-failed') return json(await failPublicMediaJob(env.PLATFORM_DB,headshotCandidate));
       if(headshotCandidate.kind==='headshot-source-plan') {
         const sources=await leaderSourcePlan(env.PLATFORM_DB,String(headshotCandidate.wixItemId||''));
         return json({success:true,sources:sources.map(s=>({folderId:s.folder_id,label:s.display_label,shared:s.shared,linkedLeaderIds:s.linkedLeaderIds,verificationState:s.verification_state}))});
@@ -134,7 +139,7 @@ export async function onRequest({ request, env }) {
       const capabilities = await photos.headshotCapabilities(actor);
       if (!capabilities.includes('HEADSHOT_VIEW')) return json({ error: 'headshot_view_permission_required' }, 403);
       const headshots = createHeadshotManagement(env.PLATFORM_DB,env,photos);
-      const match = path.match(/^headshots\/([a-f0-9-]{36})(?:\/(operations|photos|access))?$/i);
+      const match = path.match(/^headshots\/([a-f0-9-]{36})(?:\/(operations|photos|access|publication))?$/i);
       if (request.method === 'GET' && !match && (path==='media-assets'||path==='headshots')) return json({ collections: await photos.mediaAssets(), leaders: await headshots.directory(actor), capabilities, writesEnabled: headshots.enabled });
       if (request.method === 'GET' && match) return json(await headshots.browse(actor,match[1],url.searchParams.get('cursor')||''));
       if (request.method === 'POST' && match && match[2]==='operations') {
@@ -143,6 +148,10 @@ export async function onRequest({ request, env }) {
       }
       if (request.method === 'POST' && match && match[2]==='access') {
         const input=await request.json();return json(await headshots.setAccess(actor,match[1],String(input.userId||''),String(input.preset||'')));
+      }
+      if (request.method === 'POST' && match && match[2]==='publication') {
+        if(actor.role!=='PHOTO_ADMIN') return json({error:'public_photo_approval_administrator_required'},403);
+        return json(await headshots.publication(actor,match[1],await request.json()));
       }
       if (request.method !== 'GET') return json({ error: 'headshot_writes_not_qualified' }, 403);
       return json({error:'not_found'},404);

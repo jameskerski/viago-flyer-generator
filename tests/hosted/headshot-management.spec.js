@@ -2,6 +2,7 @@ import { test,expect } from '@playwright/test';
 import { readFileSync,readdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import vm from 'node:vm';
+import { createHash } from 'node:crypto';
 import { createHeadshotManagement } from '../../hosted/platform/headshot-management.mjs';
 import { createPhotoRegistry } from '../../hosted/platform/photo-registry.mjs';
 import { reconcileHeadshotSnapshot } from '../../hosted/platform/headshot-sync.mjs';
@@ -91,7 +92,7 @@ test('governed operations replay durably without repeating a Drive/Wix write',as
 
 function scriptFixture() {
   const properties=new Map(),operations=new Map();
-  const file=(id,name,shortcut='')=>({getId:()=>id,getName:()=>name,getMimeType:()=>shortcut?'application/vnd.google-apps.shortcut':'image/png',getTargetId:()=>shortcut,getTargetMimeType:()=>shortcut?'image/png':null,isTrashed:()=>trashed.has(id),getParents:()=>iterator([folder]),setTrashed:(value)=>{if(value)trashed.add(id);},getBlob:()=>({getBytes:()=>[1,2,3]})});
+  const file=(id,name,shortcut='')=>({getId:()=>id,getName:()=>name,getMimeType:()=>shortcut?'application/vnd.google-apps.shortcut':'image/png',getTargetId:()=>shortcut,getTargetMimeType:()=>shortcut?'image/png':null,isTrashed:()=>trashed.has(id),getParents:()=>iterator([folder]),getLastUpdated:()=>new Date('2026-06-18T12:00:00Z'),getSize:()=>24,setTrashed:(value)=>{if(value)trashed.add(id);},getBlob:()=>({getBytes:()=>[1,2,3]})});
   const iterator=(rows)=>{let i=0;return {hasNext:()=>i<rows.length,next:()=>rows[i++]};};
   const trashed=new Set();const files=[file('canonical-file-0001','one.png'),file('canonical-file-0002','two.png'),file('shortcut-source-0001','shortcut.png','canonical-file-0002')];
   const root={getId:()=> '1HJl9ujtRr0_wF09g2BNsGWvkTf7z3ASh'};
@@ -104,6 +105,12 @@ function scriptFixture() {
     return {getResponseCode:()=>200,getContentText:()=>JSON.stringify(result)};
   }}};
   sandbox.drivePermissionInventory_=(id)=>({folderId:id,canShare:true,permissions:[]});
+  sandbox.Utilities={DigestAlgorithm:{SHA_256:'sha256'},computeDigest:(_,value)=>Array.from(createHash('sha256').update(value).digest())};
+  sandbox.driveApi_=(path)=>{
+    const metadata=files.map(file=>({id:file.getId(),mimeType:file.getMimeType(),modifiedTime:'2026-06-18T12:00:00.000Z',md5Checksum:createHash('md5').update(file.getId()).digest('hex'),size:24}));
+    if(path.startsWith('files?')) return {files:metadata};
+    return metadata.find(file=>path.startsWith('files/'+file.id+'?'));
+  };
   vm.createContext(sandbox);vm.runInContext(readFileSync('../my-site-1/automation/headshot-management.gs','utf8'),sandbox);
   return {sandbox,row,properties,operations,trashed,get uploads(){return uploads;}};
 }

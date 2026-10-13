@@ -1,0 +1,39 @@
+import { publicLeaderPhotos, publicPrimaryDirectory } from './headshot-publication.mjs';
+import { reconcileSharedHeadshotSnapshot } from './headshot-sources.mjs';
+
+async function verifyPublicSource(database,env,id) {
+  const row=await database.prepare(`SELECT l.active,p.file_id FROM headshot_leaders l JOIN headshot_public_photos p ON p.wix_item_id=l.wix_item_id WHERE l.wix_item_id=? AND l.active=1 AND p.approval_state='APPROVED' LIMIT 1`).bind(id).first();
+  if(!row) throw new Error('not_public');
+  const check=await database.prepare('SELECT * FROM headshot_public_checks WHERE wix_item_id=?').bind(id).first();
+  if(check?.check_state==='AVAILABLE' && Date.parse(check.checked_at.replace(' ','T')+'Z')>Date.now()-300000) return;
+  if(check?.check_state==='UNAVAILABLE' && Date.parse(check.checked_at.replace(' ','T')+'Z')>Date.now()-60000) throw new Error('source_unavailable');
+  const claim=await database.prepare(`INSERT INTO headshot_public_checks(wix_item_id,check_state,lease_until) VALUES(?,'CHECKING',datetime('now','+1 minute')) ON CONFLICT(wix_item_id) DO UPDATE SET check_state='CHECKING',lease_until=excluded.lease_until WHERE lease_until IS NULL OR lease_until<CURRENT_TIMESTAMP`).bind(id).run();
+  if(!(claim.meta?.changes||claim.changes)) throw new Error('source_check_in_progress');
+  try {
+    if(!env.PHOTO_EVENT_PROVISION_ENDPOINT||!env.PHOTO_STUDIO_SYNC_SECRET) throw new Error('source_configuration_missing');
+    const response=await fetch(env.PHOTO_EVENT_PROVISION_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'HEADSHOT_VERIFY_SOURCES',operationId:'headshot-'+crypto.randomUUID(),wixItemId:id,token:env.PHOTO_STUDIO_SYNC_SECRET}),signal:AbortSignal.timeout(15000)});
+    if(!response.ok) throw new Error('source_unavailable');
+    const snapshot=await response.json();
+    if(snapshot.success!==true || snapshot.wixItemId!==id || snapshot.active!==true || snapshot.sourceContractVersion!==3) throw new Error('source_unavailable');
+    await reconcileSharedHeadshotSnapshot(database,snapshot);
+    await database.prepare(`UPDATE headshot_public_checks SET check_state='AVAILABLE',checked_at=CURRENT_TIMESTAMP,lease_until=NULL WHERE wix_item_id=?`).bind(id).run();
+  } catch(error) {
+    await database.prepare(`UPDATE headshot_public_checks SET check_state='UNAVAILABLE',checked_at=CURRENT_TIMESTAMP,lease_until=NULL WHERE wix_item_id=?`).bind(id).run();
+    throw error;
+  }
+}
+
+export async function publicHeadshotApi(request,env) {
+  const headers={'Cache-Control':'no-store','Access-Control-Allow-Origin':'https://www.goodlifetrainings.com','X-Content-Type-Options':'nosniff'};
+  if(request.method!=='GET') return Response.json({error:'method_not_allowed'},{status:405,headers});
+  if(env.PHOTO_PUBLIC_HEADSHOTS_ENABLED!=='true') return Response.json({error:'not_available'},{status:404,headers});
+  const url=new URL(request.url);
+  if(url.pathname==='/public/headshots/directory' && !url.search) return Response.json({leaders:await publicPrimaryDirectory(env.PLATFORM_DB)},{headers});
+  const match=url.pathname.match(/^\/public\/headshots\/([a-f0-9-]{36})$/i);
+  if(!match || [...url.searchParams.keys()].some(key=>key!=='offset')) return Response.json({error:'not_found'},{status:404,headers});
+  try {
+    await verifyPublicSource(env.PLATFORM_DB,env,match[1]);
+    const result=await publicLeaderPhotos(env.PLATFORM_DB,match[1],Number(url.searchParams.get('offset')||0));
+    return Response.json(result,{headers});
+  } catch (_) { return Response.json({error:'not_found'},{status:404,headers}); }
+}

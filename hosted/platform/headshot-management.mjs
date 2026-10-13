@@ -1,5 +1,6 @@
 import { applyHeadshotMappingAudit } from './headshot-mapping.mjs';
 import { leaderSourcePlan, reconcileSharedHeadshotSnapshot, assertSourcePhotoOperation } from './headshot-sources.mjs';
+import { approvePublicPhoto } from './headshot-publication.mjs';
 
 const identity = (value) => {
   const id = String(value || '').trim();
@@ -67,6 +68,7 @@ export function createHeadshotManagement(database,env,registry) {
     if(snapshot.wixItemId!==previous.wix_item_id) throw new Error('leader_identity_mismatch');
     if(snapshot.sourceContractVersion===3) {
       const outcome=await reconcileSharedHeadshotSnapshot(database,snapshot);
+      if(env.PHOTO_PUBLIC_HEADSHOTS_ENABLED==='true'&&snapshot.active===true) await database.prepare(`INSERT INTO headshot_public_checks(wix_item_id,check_state,checked_at) VALUES(?,'AVAILABLE',CURRENT_TIMESTAMP) ON CONFLICT(wix_item_id) DO UPDATE SET check_state='AVAILABLE',checked_at=CURRENT_TIMESTAMP,lease_until=NULL`).bind(id).run();
       return {...await leader(actor,id),photos:JSON.parse((await leader(actor,id)).photo_inventory_json),changed:outcome.changed,writesEnabled:enabled};
     }
     const mapping=await applyHeadshotMappingAudit(database,previous,snapshot);
@@ -109,7 +111,12 @@ export function createHeadshotManagement(database,env,registry) {
     }
     const view={...row,management_enabled:managementEnabled};
     const visibleRow=isAdmin(actor)?view:{...view,mapping_evidence_json:'{}'};
-    return {leader:visibleRow,collections:sourceViews,photos:all.slice(offset,offset+48),total:all.length,nextCursor:offset+48<all.length?String(offset+48):'',discoveryEnabled,writesEnabled:managementEnabled,canManage:await allowed(actor,id,'HEADSHOT_MANAGE'),canUpload:canUpload&&mappingReady&&managementEnabled,uploadUrl:canUpload&&mappingReady&&managementEnabled?`https://drive.google.com/drive/folders/${row.verified_drive_folder_id}`:'',capabilities:caps,operationHistory:history};
+    const canPublish=isAdmin(actor)&&env.PHOTO_PUBLIC_HEADSHOTS_ENABLED==='true'&&row.active===1&&managementEnabled;
+    if(canPublish) {
+      const approvals=(await database.prepare('SELECT * FROM headshot_public_photos WHERE wix_item_id=?').bind(id).all()).results||[];
+      for(const photo of all) {const approval=approvals.find(a=>a.file_id===photo.fileId);photo.publicApproved=approval?.approval_state==='APPROVED'&&Boolean(photo.modifiedTime)&&Date.parse(photo.modifiedTime)<=Date.parse(approval.approved_at);}
+    }
+    return {leader:visibleRow,collections:sourceViews,photos:all.slice(offset,offset+48),total:all.length,nextCursor:offset+48<all.length?String(offset+48):'',discoveryEnabled,writesEnabled:managementEnabled,canPublish,canManage:await allowed(actor,id,'HEADSHOT_MANAGE'),canUpload:canUpload&&mappingReady&&managementEnabled,uploadUrl:canUpload&&mappingReady&&managementEnabled?`https://drive.google.com/drive/folders/${row.verified_drive_folder_id}`:'',capabilities:caps,operationHistory:history};
   }
   async function perform(actor,id,type,input,key) {
     if(!enabled) throw new Error('headshot_writes_pending_controlled_qualification');
@@ -244,5 +251,14 @@ export function createHeadshotManagement(database,env,registry) {
       throw error;
     }
   }
-  return {enabled,available,allowed,leader,directory,browse,refresh,perform,apps,setAccess};
+  async function publication(actor,id,input) {
+    if(!isAdmin(actor)||env.PHOTO_PUBLIC_HEADSHOTS_ENABLED!=='true'||!enabled||!qualifiedLeaders.has(id)||input.confirmed!==true) throw new Error('public_photo_publication_not_authorized');
+    const fileId=driveId(input.fileId);
+    const proof=await apps('HEADSHOT_PUBLIC_PROOF',identity(id),{fileId});
+    await reconcileSharedHeadshotSnapshot(database,proof.snapshot);
+    const result=await approvePublicPhoto(database,actor,id,fileId,input.approved);
+    await registry.audit(actor,input.approved?'headshot.public.approve':'headshot.public.revoke','leader',id,'SUCCEEDED',{fileId,changed:result.changed});
+    return result;
+  }
+  return {enabled,available,allowed,leader,directory,browse,refresh,perform,apps,setAccess,publication};
 }
