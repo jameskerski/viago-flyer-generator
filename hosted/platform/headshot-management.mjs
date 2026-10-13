@@ -51,7 +51,7 @@ export function createHeadshotManagement(database,env,registry) {
     return photos.map((photo)=>{
       const sourceItemId=driveId(photo.sourceItemId||photo.fileId),fileId=driveId(photo.fileId);
       if(ids.has(fileId)||!['image/jpeg','image/png'].includes(photo.mimeType)) throw new Error('duplicate_or_invalid_headshot_source');ids.add(fileId);
-      return {fileId,sourceItemId,filename:String(photo.filename||'').slice(0,300),mimeType:photo.mimeType,shortcut:photo.shortcut===true,currentPrimary:photo.currentPrimary===true,thumbnailUrl:`https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w480`};
+      return {fileId,sourceItemId,parentFolderId:photo.parentFolderId?driveId(photo.parentFolderId):'',filename:String(photo.filename||'').slice(0,300),mimeType:photo.mimeType,shortcut:photo.shortcut===true,currentPrimary:photo.currentPrimary===true,thumbnailUrl:`https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w480`};
     });
   }
   async function refresh(actor,id) {

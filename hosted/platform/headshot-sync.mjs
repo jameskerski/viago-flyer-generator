@@ -14,7 +14,8 @@ export async function reconcileHeadshotSnapshot(database,payload) {
   const photos=input.photos.map((photo)=>{
     if(!/^[A-Za-z0-9_-]{10,160}$/.test(photo.fileId)||!/^[A-Za-z0-9_-]{10,160}$/.test(photo.sourceItemId)||seen.has(photo.fileId)||!['image/jpeg','image/png'].includes(photo.mimeType)) throw new Error('invalid_headshot_photo');
     seen.add(photo.fileId);
-    return {fileId:photo.fileId,sourceItemId:photo.sourceItemId,filename:String(photo.filename||'').slice(0,300),mimeType:photo.mimeType,shortcut:photo.shortcut===true,currentPrimary:photo.fileId===input.primaryFileId,thumbnailUrl:`https://drive.google.com/thumbnail?id=${photo.fileId}&sz=w480`};
+    if(photo.parentFolderId&&!/^[A-Za-z0-9_-]{10,160}$/.test(photo.parentFolderId)) throw new Error('invalid_headshot_photo_parent');
+    return {fileId:photo.fileId,sourceItemId:photo.sourceItemId,parentFolderId:photo.parentFolderId||'',filename:String(photo.filename||'').slice(0,300),mimeType:photo.mimeType,shortcut:photo.shortcut===true,currentPrimary:photo.fileId===input.primaryFileId,thumbnailUrl:`https://drive.google.com/thumbnail?id=${photo.fileId}&sz=w480`};
   });
   const reference=input.imageReference||null;
   if(reference && (reference.fileId!==input.primaryFileId || reference.sourceFolderId!==input.folderId || !photos.some(photo=>photo.fileId===reference.fileId) || !/^https:\/\/drive\.google\.com\/thumbnail\?id=/.test(reference.displayUrl||''))) throw new Error('invalid_confirmed_image_reference');
