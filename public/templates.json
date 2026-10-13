@@ -231,6 +231,63 @@
       }
     },
     {
+      "id": "upgrade-ultra",
+      "label": "Upgraded to Ultra",
+      "category": "General",
+      "accent": "#8dfa00",
+      "art": "art/upgrade-ultra.jpg",
+      "w": 1545,
+      "h": 1999,
+      "photo": {
+        "shape": "rect",
+        "x": 0.0858,
+        "y": 0.25957,
+        "w": 0.45518,
+        "h": 0.40343
+      },
+      "name": {
+        "x": 0.49637,
+        "y": 0.73333,
+        "maxWidth": 0.7,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#0d0c0c",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      },
+      "text2": {
+        "enabled": false,
+        "label": "Text 2",
+        "x": 0.1,
+        "y": 0.78,
+        "w": 0.8,
+        "h": 0.08,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center"
+      },
+      "text3": {
+        "enabled": false,
+        "label": "Text 3",
+        "x": 0.78,
+        "y": 0.08,
+        "w": 0.12,
+        "h": 0.08,
+        "size": 0.05,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center"
+      }
+    },
+    {
       "id": "club-4",
       "label": "Club 4",
       "category": "Ranks",
@@ -619,33 +676,6 @@
         "x": 0.50062,
         "y": 0.79722,
         "maxWidth": 0.28263,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
-    },
-    {
-      "id": "kenya",
-      "label": "Kenya",
-      "category": "Events",
-      "accent": "#8dfa00",
-      "art": "art/kenya.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "circle",
-        "x": 0.27875,
-        "y": 0.41852,
-        "w": 0.4275,
-        "h": 0.31667
-      },
-      "name": {
-        "x": 0.50062,
-        "y": 0.80093,
-        "maxWidth": 0.66263,
         "size": 0.0425,
         "font": "Josefin Sans",
         "weight": 700,
