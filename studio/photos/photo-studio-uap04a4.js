@@ -160,9 +160,9 @@ function leaderMappingLabel(leader) {
   return leader.mapping_status==='VERIFIED'&&leader.mapping_state==='VERIFIED'&&leader.management_enabled!==false&&leader.sync_status!=='FAILED' ? 'READY TO MANAGE' : 'MAPPING NEEDS REVIEW';
 }
 async function verifyLeaderMappings() {
-  if(state.actor?.role!=='PHOTO_ADMIN') return;
+  if(state.actor?.role!=='PHOTO_ADMIN'||!state.leaders.length||state.mappingVerificationActive) return;
   const button=$('#verifyLeaderMappings'),output=$('#leaderMappingProgress');
-  button.disabled=true;let completed=0,failed=0;
+  state.mappingVerificationActive=true;button.disabled=true;let completed=0,failed=0;
   const targets=state.leaders.slice();
   try {
     for(const target of targets) {
@@ -176,9 +176,10 @@ async function verifyLeaderMappings() {
       completed++;renderLeaders();
     }
     output.textContent=`Verification complete: ${completed} records checked${failed?`; ${failed} requests need attention`:''}. No photographs or CMS records were modified.`;
-  }finally{button.disabled=false;}
+  }finally{state.mappingVerificationActive=false;button.disabled=false;}
 }
 function renderLeaders() {
+  $('#verifyLeaderMappings').disabled=!state.leaders.length||state.mappingVerificationActive;
   const query = ($('#leaderSearch').value || '').trim().toLocaleLowerCase();
   const leaders = state.leaders.filter((leader) => leader.leader_name.toLocaleLowerCase().includes(query)).sort((a,b) => a.leader_name.localeCompare(b.leader_name));
   $('#leaderCount').textContent = `${leaders.length} of ${state.leaders.length} leaders · Wix CMS directory`;
