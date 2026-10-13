@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { approvedPublicInventory, publicWixImageUrl } from '../../hosted/platform/headshot-publication.mjs';
+import { approvedPublicInventory, publicWixImageUrl, failPublicMediaJob } from '../../hosted/platform/headshot-publication.mjs';
 import { createHeadshotManagement } from '../../hosted/platform/headshot-management.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync,readdirSync } from 'node:fs';
@@ -7,6 +7,17 @@ import { readFileSync,readdirSync } from 'node:fs';
 const leaderId = '02a9ab6c-42a6-4568-8b14-f46e0ca08dc2';
 const fileId = 'approved-canonical-file-001';
 const folderId = 'verified-source-folder-001';
+test('budget checkpoint releases only its reserved job without consuming retry allowance',async()=>{
+  const db=new DatabaseSync(':memory:');
+  for(const name of readdirSync('migrations').filter(n=>n.endsWith('.sql')).sort()) db.exec(readFileSync(`migrations/${name}`,'utf8'));
+  const adapter={prepare(sql){let params=[];return {bind(...p){params=p;return this;},async run(){return db.prepare(sql).run(...params);}};}};
+  db.prepare(`INSERT INTO headshot_public_media(file_id,media_state,request_id,failure_count) VALUES(?,'PROCESSING','reserved',1)`).run(fileId);
+  await failPublicMediaJob(adapter,{fileId,requestId:'wrong',checkpoint:true});
+  expect(db.prepare('SELECT media_state FROM headshot_public_media WHERE file_id=?').get(fileId).media_state).toBe('PROCESSING');
+  await failPublicMediaJob(adapter,{fileId,requestId:'reserved',checkpoint:true});
+  expect(db.prepare('SELECT media_state,failure_count FROM headshot_public_media WHERE file_id=?').get(fileId)).toEqual({media_state:'PENDING',failure_count:1});
+  db.close();
+});
 const photo = { fileId, filename: 'Portrait.png', mimeType:'image/png', modifiedTime:'2026-06-18T00:00:00.000Z',sourceVersion:'verified-version',sources: [{ folderId, label: 'Both', shared: true }] };
 const input = () => ({
   leader: { wix_item_id: leaderId, active: 1, mapping_status: 'VERIFIED', photo_inventory_json: JSON.stringify([photo,photo,{...photo,fileId:'new-upload-file-002'}]) },

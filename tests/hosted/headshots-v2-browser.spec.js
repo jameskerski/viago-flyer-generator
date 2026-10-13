@@ -41,10 +41,13 @@ test('selected collection has no management controls and preserves shared labels
   await load(page,{selectedLeader:leaders.find(l=>l.name==='Janie Braun'),collectionStatus:'ready',total:1,nextOffset:null,photos:[{fileId:'approved-photo-01',filename:'Portrait.png',displayUrl:leaders[0].primaryImage,sources:[{label:'Both',shared:true}],originalUrl:'https://drive.google.com/file/d/approved-photo-01/view'}]});
   await expect(page.getByText('Both · Shared',{exact:true})).toBeVisible();
   await expect(page.getByRole('link',{name:'DOWNLOAD',exact:true})).toBeVisible();
+  await expect(page.getByRole('link',{name:'DOWNLOAD',exact:true})).toHaveAttribute('href',leaders[0].primaryImage+'?download=1');
+  await expect(page.getByRole('link',{name:/Open Drive original/i})).toHaveCount(0);
   await expect(page.getByRole('button',{name:/Primary|Remove|Upload/})).toHaveCount(0);
   await expect(page.getByRole('link',{name:'← BACK TO DIRECTORY'})).toHaveAttribute('href','/blank-14-1');
   await page.getByRole('link',{name:'VIEW',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'Leader photograph viewer'})).toBeVisible();
+  await expect(page.getByRole('link',{name:'DOWNLOAD DISPLAY IMAGE'})).toHaveAttribute('href',leaders[0].primaryImage+'?download=1');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await expect(page.getByRole('link',{name:'VIEW',exact:true})).toBeFocused();

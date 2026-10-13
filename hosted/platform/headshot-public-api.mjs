@@ -45,7 +45,7 @@ export async function publicHeadshotApi(request,env) {
       if(download) {
         // Fetch only the bounded derivative already admitted by the ingestion
         // contract, never an original or a caller-supplied address.
-        const source=await fetch(photo.displayUrl,{redirect:'error',signal:AbortSignal.timeout(15000)});
+        const source=await fetch(photo.displayUrl,{redirect:'manual',signal:AbortSignal.timeout(15000)});
         const type=(source.headers.get('content-type')||'').split(';')[0];
         if(!source.ok || !['image/png','image/jpeg'].includes(type) || Number(source.headers.get('content-length'))>MAX_PUBLIC_IMAGE_BYTES) throw new Error('download_unavailable');
         const reader=source.body.getReader();let length=0;const chunks=[];

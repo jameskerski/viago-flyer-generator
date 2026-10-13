@@ -102,6 +102,10 @@ export async function setPublicMediaSourceVersion(database, job) {
 }
 
 export async function failPublicMediaJob(database,job) {
+  if(job.checkpoint===true) {
+    await database.prepare(`UPDATE headshot_public_media SET media_state='PENDING',updated_at=CURRENT_TIMESTAMP WHERE file_id=? AND request_id=? AND media_state='PROCESSING'`).bind(job.fileId,job.requestId).run();
+    return {success:true};
+  }
   await database.prepare(`UPDATE headshot_public_media SET media_state='FAILED',failure_count=failure_count+1,next_retry_at=datetime('now','+15 minutes'),updated_at=CURRENT_TIMESTAMP WHERE file_id=? AND request_id=? AND media_state='PROCESSING'`).bind(job.fileId,job.requestId).run();
   return {success:true};
 }
