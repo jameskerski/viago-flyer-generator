@@ -25,6 +25,13 @@ test('stable image route gates identity, relationship approval, source, version 
     expect(response.headers.get('cache-control')).toBe('no-store');
     for(const url of [base+'?variant=999',base+'?variant=480&variant=960',base+'?url=https://drive.google.com',base.replace(file,'arbitrary-private-file-001'),base.replace(leader,'ffffffff-ffff-ffff-ffff-ffffffffffff')]) expect((await publicHeadshotApi(new Request(url),env)).status).toBe(404);
     expect(requests).toBe(0);
+    globalThis.fetch=async url=>{requests++;expect(String(url)).toBe('https://static.wixstatic.com/media/known-media~mv2.png');return new Response(new Uint8Array(32).fill(7),{headers:{'Content-Type':'image/png'}});};
+    const download=await publicHeadshotApi(new Request(base+'?download=1'),env);
+    expect(download.status).toBe(200);
+    expect(download.headers.get('content-disposition')).toBe('attachment; filename="Portrait.png"');
+    expect(download.headers.get('content-type')).toBe('image/png');
+    expect((await download.arrayBuffer()).byteLength).toBe(32);
+    expect(requests).toBe(1);requests=0;
     expect((await publicHeadshotApi(new Request(base,{method:'POST'}),env)).status).toBe(405);
     for(const change of [{trashed:true},{mimeType:'application/pdf'},{sourceVersion:'b'.repeat(64)},{sources:[]}]) {
       db.prepare('UPDATE headshot_leaders SET photo_inventory_json=? WHERE wix_item_id=?').run(JSON.stringify([{...photo,...change}]),leader);

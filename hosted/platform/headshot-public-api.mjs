@@ -1,4 +1,4 @@
-import { publicLeaderPhotos, publicPrimaryDirectory, publicLeaderImage } from './headshot-publication.mjs';
+import { publicLeaderPhotos, publicPrimaryDirectory, publicLeaderImage, MAX_PUBLIC_IMAGE_BYTES } from './headshot-publication.mjs';
 import { reconcileSharedHeadshotSnapshot } from './headshot-sources.mjs';
 
 async function verifyPublicSource(database,env,id) {
@@ -37,10 +37,25 @@ export async function publicHeadshotApi(request,env) {
   const imageMatch=url.pathname.match(/^\/public\/headshots\/([a-f0-9-]{36})\/([A-Za-z0-9_-]{10,160})$/i);
   if(imageMatch) {
     const variant=url.searchParams.get('variant')||'960';
-    if([...url.searchParams.keys()].some(key=>key!=='variant') || url.searchParams.getAll('variant').length>1 || !['240','480','960','1280'].includes(variant)) return Response.json({error:'not_found'},{status:404,headers});
+    const download=url.searchParams.get('download')==='1';
+    if([...url.searchParams.keys()].some(key=>key!=='variant'&&key!=='download') || url.searchParams.getAll('variant').length>1 || url.searchParams.getAll('download').length>1 || (url.searchParams.has('download')&&!download) || (download&&url.searchParams.has('variant')) || !['240','480','960','1280'].includes(variant)) return Response.json({error:'not_found'},{status:404,headers});
     try {
       await verifyPublicSource(env.PLATFORM_DB,env,imageMatch[1]);
       const photo=await publicLeaderImage(env.PLATFORM_DB,imageMatch[1],imageMatch[2]);
+      if(download) {
+        // Fetch only the bounded derivative already admitted by the ingestion
+        // contract, never an original or a caller-supplied address.
+        const source=await fetch(photo.displayUrl,{redirect:'error',signal:AbortSignal.timeout(15000)});
+        const type=(source.headers.get('content-type')||'').split(';')[0];
+        if(!source.ok || !['image/png','image/jpeg'].includes(type) || Number(source.headers.get('content-length'))>MAX_PUBLIC_IMAGE_BYTES) throw new Error('download_unavailable');
+        const reader=source.body.getReader();let length=0;const chunks=[];
+        try { for(;;) { const part=await reader.read();if(part.done) break;length+=part.value.byteLength;if(length>MAX_PUBLIC_IMAGE_BYTES) throw new Error('download_exceeds_bound');chunks.push(part.value); } }
+        finally { await reader.cancel(); }
+        if(length<24) throw new Error('download_empty');
+        const bytes=new Uint8Array(length);let position=0;for(const chunk of chunks){bytes.set(chunk,position);position+=chunk.length;}
+        const filename=String(photo.downloadFilename||'headshot.jpg').replace(/[^a-zA-Z0-9_. -]/g,'_').slice(0,160);
+        return new Response(bytes,{headers:{...headers,'Content-Type':type,'Content-Length':String(length),'Content-Disposition':`attachment; filename="${filename}"`}});
+      }
       const mediaName=photo.displayUrl.split('/').pop();
       // The stable, no-store gateway rechecks publication on every request.
       // Only the already bounded, approved, versioned Wix derivative is exposed;
