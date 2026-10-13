@@ -164,6 +164,10 @@ test('Apps Script grants only the leader folder and preserves inherited access o
   const revoked=f.sandbox.routeHeadshotManagement_({...body,action:'HEADSHOT_REVOKE_ACCESS',permissionId:'permission-0001',studioManaged:true});
   expect(revoked.revoked).toBe(true);expect(revoked.remainingAccess).toBe(true);expect(permissions).toHaveLength(1);
   expect(()=>f.sandbox.routeHeadshotManagement_({...body,action:'HEADSHOT_REVOKE_ACCESS',permissionId:'inherited-0001',studioManaged:true})).toThrow('refusing_inherited');
+  permissions.splice(0,permissions.length,{permissionId:'public-reader',type:'anyone',role:'reader',inherited:true});
+  const publicAccess=f.sandbox.routeHeadshotManagement_({...body,action:'HEADSHOT_REVOKE_ACCESS',permissionId:'already-removed',studioManaged:true});
+  expect(publicAccess.revoked).toBe(true);expect(publicAccess.remainingAccess).toBe(true);
+  expect(publicAccess.effectiveAccess).toBe('EXTERNAL_ACCESS_REMAINS');
 });
 
 test('leader folder creation reuses an existing authoritative destination',()=>{

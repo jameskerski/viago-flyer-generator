@@ -160,7 +160,7 @@ export function createHeadshotManagement(database,env,registry) {
         }
       } else if(old && old.operation_state!=='REVOKED') {
         if(old.grant_origin!=='STUDIO_MANAGED') {state='EXTERNAL_ACCESS_REMAINS';result={...old,permissionId:old.permission_id};}
-        else {result=await apps('HEADSHOT_REVOKE_ACCESS',id,{email:target.email,permissionId:old.permission_id,studioManaged:true});state=result.remainingAccess?'EXTERNAL_ACCESS_REMAINS':'REVOKED';}
+        else {result=await apps('HEADSHOT_REVOKE_ACCESS',id,{email:target.email,permissionId:old.permission_id,studioManaged:true});state=result.effectiveAccess==='EXTERNAL_ACCESS_UNVERIFIED'?'EXTERNAL_ACCESS_UNVERIFIED':result.remainingAccess?'EXTERNAL_ACCESS_REMAINS':'REVOKED';}
       }
       if(result) await database.prepare(`INSERT INTO headshot_drive_access_grants(user_id,wix_item_id,drive_folder_id,permission_id,access_role,verified_email,grant_origin,operation_state) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(user_id,wix_item_id) DO UPDATE SET permission_id=excluded.permission_id,access_role=excluded.access_role,grant_origin=excluded.grant_origin,operation_state=excluded.operation_state,safe_error=NULL,updated_at=CURRENT_TIMESTAMP`).bind(userId,id,row.verified_drive_folder_id,result.permissionId||old?.permission_id||null,result.role||old?.access_role||null,target.email,result.studioManaged?'STUDIO_MANAGED':result.inherited?'INHERITED':old?.grant_origin||'PRE_EXISTING',state).run();
       await registry.audit(actor,'headshot.access','leader',id,'SUCCEEDED',{userId,preset,state});
