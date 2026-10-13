@@ -683,33 +683,6 @@
         "align": "center",
         "case": "upper"
       }
-    },
-    {
-      "id": "kenya",
-      "label": "Kenya",
-      "category": "Events",
-      "accent": "#8dfa00",
-      "art": "art/kenya.jpg",
-      "w": 800,
-      "h": 1080,
-      "photo": {
-        "shape": "circle",
-        "x": 0.27875,
-        "y": 0.41852,
-        "w": 0.4275,
-        "h": 0.31667
-      },
-      "name": {
-        "x": 0.50062,
-        "y": 0.80093,
-        "maxWidth": 0.66263,
-        "size": 0.0425,
-        "font": "Josefin Sans",
-        "weight": 700,
-        "color": "#ffffff",
-        "align": "center",
-        "case": "upper"
-      }
     }
   ]
 }
