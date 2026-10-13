@@ -9,6 +9,9 @@
     "run_worker_first": ["/api/studio/*"]
   },
   "vars": {
+    "PHOTO_HEADSHOT_WRITES_ENABLED": "true",
+    "PHOTO_HEADSHOT_DISCOVERY_ENABLED": "true",
+    "PHOTO_HEADSHOT_QUALIFIED_LEADER_IDS": "fda8d9d9-35f6-4edc-b177-6a3ee68e4544",
     "PHOTO_DRIVE_ACCESS_ENABLED": "true",
     "CF_ACCESS_AUD": "26cfba579cd198e792f7c9ebeb4ef533209bd3a2d94452636bf39dd43cd10a3e",
     "PHOTO_CF_ACCESS_AUD": "f093afacc6bc29e191a7e0256d3fc24b2fbe8811c7d03219263a9fdc461cff32",
