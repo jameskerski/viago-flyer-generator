@@ -69,7 +69,7 @@ function scriptFixture() {
   let uploads=0;
   const sandbox={Date,JSON,Object,String,Number,encodeURIComponent,DriveApp:{getFolderById:()=>folder,getFileById:(id)=>files.find((f)=>f.getId()===id)},WIX_BASE_URL:'https://qualified.example',photoAutomationSecret_:()=> 'fixture',PropertiesService:{getScriptProperties:()=>({getProperty:(key)=>properties.get(key)||null,setProperty:(key,value)=>properties.set(key,value),deleteProperty:(key)=>properties.delete(key)})},photoEventStoredOperation_:(key)=>operations.get(key)||null,photoEventStoreOperation_:(key,value)=>operations.set(key,structuredClone(value)),driveFolderId_:(url)=>url.match(/\/folders\/([^?]+)/)?.[1]||'',isReservedName_:(name)=>name.startsWith('_'),supportedPhotoEvidence_:(f)=>({id:f.getTargetId()||f.getId(),sourceItemId:f.getId(),name:f.getName(),mimeType:'image/png',shortcut:!!f.getTargetId()}),parseJsonResponse_:(response)=>JSON.parse(response.getContentText()),UrlFetchApp:{fetch:(url,options)=>{
     let result;if(url.startsWith('https://upload.wixmp.com')){uploads++;result=[{file_name:'new.png',original_file_name:'one.png',width:20,height:30}];}
-    else {const body=JSON.parse(options.payload);if(body.action==='READ')result={success:true,leaders:[row]};if(body.action==='PREPARE_PRIMARY')result={success:true,uploadUrl:'https://upload.wixmp.com/image'};if(body.action==='CONFIRM_PRIMARY'){row.primaryImage=body.uploadedImage;result={success:true};}}
+    else {const body=JSON.parse(options.payload);if(body.action==='READ')result={success:true,leaders:[row]};if(body.action==='CONFIRM_PRIMARY'){row.imageReference={...body.imageReference,displayUrl:`https://drive.google.com/thumbnail?id=${body.fileId}&sz=w1600`,sourceFingerprint:`${folderId}:${body.fileId}:image/png`};result={success:true};}}
     return {getResponseCode:()=>200,getContentText:()=>JSON.stringify(result)};
   }}};
   vm.createContext(sandbox);vm.runInContext(readFileSync('../my-site-1/automation/headshot-management.gs','utf8'),sandbox);
@@ -83,8 +83,8 @@ test('Apps Script protects legacy/current primary images, scoped source identity
   const body={wixItemId:leaderId,operationId:'headshot-00000000-0000-4000-8000-000000000001',fileId:'canonical-file-0001',sourceItemId:'canonical-file-0001',expectedPrimaryImage:f.row.primaryImage};
   f.properties.set('PHOTO_HEADSHOT_WRITES_ENABLED','true');f.properties.set('PHOTO_HEADSHOT_QUALIFIED_LEADER_IDS',leaderId);
   const selected=f.sandbox.routeHeadshotManagement_({...body,action:'HEADSHOT_SET_PRIMARY'});
-  expect(selected.confirmed).toBe(true);expect(f.row.primaryImage).toContain('new.png');expect(selected.previousImage).toContain('old.png');
-  expect(f.sandbox.routeHeadshotManagement_({...body,action:'HEADSHOT_SET_PRIMARY'}).confirmed).toBe(true);expect(f.uploads).toBe(1);
+  expect(selected.confirmed).toBe(true);expect(f.row.primaryImage).toContain('old.png');expect(f.row.imageReference.fileId).toBe(body.fileId);expect(selected.previousImage).toContain('old.png');
+  expect(f.sandbox.routeHeadshotManagement_({...body,action:'HEADSHOT_SET_PRIMARY'}).confirmed).toBe(true);expect(f.uploads).toBe(0);
   expect(()=>f.sandbox.routeHeadshotManagement_({...body,action:'HEADSHOT_REMOVE_PHOTO',operationId:'headshot-00000000-0000-4000-8000-000000000002'})).toThrow('primary_removal_requires_replacement');
   const removed=f.sandbox.routeHeadshotManagement_({...body,action:'HEADSHOT_REMOVE_PHOTO',fileId:'canonical-file-0002',sourceItemId:'canonical-file-0002',operationId:'headshot-00000000-0000-4000-8000-000000000003'});
   expect(removed.trashed).toBe(true);expect(f.trashed.has('canonical-file-0002')).toBe(true);expect(f.trashed.has('canonical-file-0001')).toBe(false);

@@ -60,9 +60,11 @@ export function createHeadshotManagement(database,env,registry) {
     if(folder!==previous.candidate_drive_folder_id && folder!==previous.verified_drive_folder_id) throw new Error('leader_folder_changed_requires_review');
     const photos=safePhotos(snapshot.photos);
     const leaderName=String(snapshot.leaderName||previous.leader_name),active=typeof snapshot.active==='boolean'?snapshot.active:previous.active===1;
-    const fingerprint=await digest({folder,photos,primaryImage:snapshot.primaryImage,primaryFileId:snapshot.primaryFileId||'',leaderName,active});
+    const fingerprint=await digest({folder,photos,primaryImage:snapshot.primaryImage,primaryFileId:snapshot.primaryFileId||'',leaderName,active,imageReference:snapshot.imageReference||null});
     if(fingerprint===previous.source_fingerprint) return {...previous,photos,changed:false,writesEnabled:enabled};
-    await database.prepare(`UPDATE headshot_leaders SET verified_drive_folder_id=?,mapping_state='VERIFIED',photo_count=?,photo_inventory_json=?,source_fingerprint=?,primary_image_source=?,primary_image_url=?,primary_drive_file_id=?,leader_name=?,active=?,source_updated_at=COALESCE(?,source_updated_at),sync_status='CONFIRMED',sync_error=NULL,indexed_at=CURRENT_TIMESTAMP WHERE wix_item_id=?`).bind(folder,photos.length,JSON.stringify(photos),fingerprint,String(snapshot.primaryImage||''),imageUrl(snapshot.primaryImage),snapshot.primaryFileId||null,leaderName,active?1:0,snapshot.sourceUpdatedAt||null,id).run();
+    const reference=snapshot.imageReference;
+    if(reference && (reference.fileId!==snapshot.primaryFileId || reference.sourceFolderId!==folder || !photos.some(photo=>photo.fileId===reference.fileId) || !/^https:\/\/drive\.google\.com\/thumbnail\?id=/.test(reference.displayUrl||''))) throw new Error('invalid_confirmed_image_reference');
+    await database.prepare(`UPDATE headshot_leaders SET verified_drive_folder_id=?,mapping_state='VERIFIED',photo_count=?,photo_inventory_json=?,source_fingerprint=?,primary_image_source=?,primary_image_url=?,primary_drive_file_id=?,leader_name=?,active=?,source_updated_at=COALESCE(?,source_updated_at),sync_status='CONFIRMED',sync_error=NULL,indexed_at=CURRENT_TIMESTAMP WHERE wix_item_id=?`).bind(folder,photos.length,JSON.stringify(photos),fingerprint,String(snapshot.primaryImage||''),reference?.displayUrl||imageUrl(snapshot.primaryImage),snapshot.primaryFileId||null,leaderName,active?1:0,snapshot.sourceUpdatedAt||null,id).run();
     return {...await leader(actor,id),photos,changed:true,writesEnabled:enabled};
   }
   async function browse(actor,id,cursor='') {
