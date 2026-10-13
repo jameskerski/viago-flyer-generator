@@ -1,3 +1,5 @@
+import { applyHeadshotMappingAudit } from './headshot-mapping.mjs';
+
 const identity = (value) => {
   const id = String(value || '').trim();
   if (!/^[a-f0-9-]{36}$/i.test(id)) throw new Error('invalid_leader_identity');
@@ -56,12 +58,14 @@ export function createHeadshotManagement(database,env,registry) {
     const previous=await leader(actor,id);
     const snapshot=await apps('HEADSHOT_DISCOVER',previous.wix_item_id);
     if(snapshot.wixItemId!==previous.wix_item_id) throw new Error('leader_identity_mismatch');
+    const mapping=await applyHeadshotMappingAudit(database,previous,snapshot);
+    if(mapping.status!=='VERIFIED') return {...await leader(actor,id),photos:[],changed:mapping.changed,writesEnabled:false};
     const folder=driveId(snapshot.folderId);
     if(folder!==previous.candidate_drive_folder_id && folder!==previous.verified_drive_folder_id) throw new Error('leader_folder_changed_requires_review');
     const photos=safePhotos(snapshot.photos);
     const leaderName=String(snapshot.leaderName||previous.leader_name),active=typeof snapshot.active==='boolean'?snapshot.active:previous.active===1;
     const fingerprint=await digest({folder,photos,primaryImage:snapshot.primaryImage,primaryFileId:snapshot.primaryFileId||'',leaderName,active,imageReference:snapshot.imageReference||null});
-    if(fingerprint===previous.source_fingerprint) return {...previous,photos,changed:false,writesEnabled:enabled};
+    if(fingerprint===previous.source_fingerprint) return {...await leader(actor,id),photos,changed:false,writesEnabled:enabled};
     const reference=snapshot.imageReference;
     if(reference && (reference.fileId!==snapshot.primaryFileId || reference.sourceFolderId!==folder || !photos.some(photo=>photo.fileId===reference.fileId) || !/^https:\/\/drive\.google\.com\/thumbnail\?id=/.test(reference.displayUrl||''))) throw new Error('invalid_confirmed_image_reference');
     await database.prepare(`UPDATE headshot_leaders SET verified_drive_folder_id=?,mapping_state='VERIFIED',photo_count=?,photo_inventory_json=?,source_fingerprint=?,primary_image_source=?,primary_image_url=?,primary_drive_file_id=?,leader_name=?,active=?,source_updated_at=COALESCE(?,source_updated_at),sync_status='CONFIRMED',sync_error=NULL,indexed_at=CURRENT_TIMESTAMP WHERE wix_item_id=?`).bind(folder,photos.length,JSON.stringify(photos),fingerprint,String(snapshot.primaryImage||''),reference?.displayUrl||imageUrl(snapshot.primaryImage),snapshot.primaryFileId||null,leaderName,active?1:0,snapshot.sourceUpdatedAt||null,id).run();
@@ -78,12 +82,18 @@ export function createHeadshotManagement(database,env,registry) {
     const caps=await registry.headshotCapabilities(actor);
     const grant=isAdmin(actor)?{operation_state:'VERIFIED'}:await database.prepare(`SELECT operation_state FROM headshot_drive_access_grants WHERE user_id=? AND wix_item_id=?`).bind(actor.id,id).first();
     const canUpload=caps.includes('HEADSHOT_UPLOAD')&&(await allowed(actor,id,'HEADSHOT_UPLOAD'))&&grant?.operation_state==='VERIFIED'&&row.mapping_state==='VERIFIED';
-    return {leader:row,photos:all.slice(offset,offset+48),total:all.length,nextCursor:offset+48<all.length?String(offset+48):'',discoveryEnabled,writesEnabled:enabled&&discoveryEnabled&&qualifiedLeaders.has(id),canManage:await allowed(actor,id,'HEADSHOT_MANAGE'),canUpload,uploadUrl:canUpload?`https://drive.google.com/drive/folders/${row.verified_drive_folder_id}`:'',capabilities:caps};
+    const mappingReady=row.mapping_status==='VERIFIED'&&row.mapping_state==='VERIFIED';
+    const mayInitialize=row.mapping_status==='MISSING'&&!row.candidate_drive_folder_id;
+    const history=(await database.prepare(`SELECT id,operation_type,operation_state,safe_error,updated_at FROM headshot_operations WHERE wix_item_id=? ORDER BY updated_at DESC LIMIT 10`).bind(id).all()).results||[];
+    const visibleRow=isAdmin(actor)?row:{...row,mapping_evidence_json:'{}'};
+    return {leader:visibleRow,photos:all.slice(offset,offset+48),total:all.length,nextCursor:offset+48<all.length?String(offset+48):'',discoveryEnabled,writesEnabled:enabled&&discoveryEnabled&&qualifiedLeaders.has(id)&&(mappingReady||mayInitialize),canManage:await allowed(actor,id,'HEADSHOT_MANAGE'),canUpload:canUpload&&mappingReady,uploadUrl:canUpload&&mappingReady?`https://drive.google.com/drive/folders/${row.verified_drive_folder_id}`:'',capabilities:caps,operationHistory:history};
   }
   async function perform(actor,id,type,input,key) {
     if(!enabled) throw new Error('headshot_writes_pending_controlled_qualification');
     if(!discoveryEnabled||!qualifiedLeaders.has(id)) throw new Error('leader_write_not_qualified');
     const row=await leader(actor,id,'HEADSHOT_MANAGE');
+    if(type!=='CREATE_FOLDER'&&row.mapping_status!=='VERIFIED') throw new Error('leader_mapping_not_verified');
+    if(type==='CREATE_FOLDER'&&row.mapping_status!=='VERIFIED'&&!(row.mapping_status==='MISSING'&&!row.candidate_drive_folder_id)) throw new Error('leader_mapping_requires_review');
     if(!['CREATE_FOLDER','SET_PRIMARY','REMOVE_PHOTO'].includes(type)) throw new Error('unsupported_headshot_operation');
     if(type==='CREATE_FOLDER'&&!isAdmin(actor)) throw new Error('administrator_required');
     if(type!=='CREATE_FOLDER'&&row.mapping_state!=='VERIFIED') throw new Error('leader_mapping_not_verified');
@@ -117,7 +127,10 @@ export function createHeadshotManagement(database,env,registry) {
   }
   async function directory(actor) {
     const rows=await registry.headshotLeaders();
-    const visible=[];for(const row of rows) if(await allowed(actor,row.wix_item_id)) visible.push(row);
+    const visible=[];for(const row of rows) if(await allowed(actor,row.wix_item_id)) {
+      const view={...row,management_enabled:enabled&&discoveryEnabled&&qualifiedLeaders.has(row.wix_item_id)&&row.mapping_status==='VERIFIED'};
+      visible.push(isAdmin(actor)?view:{...view,mapping_evidence_json:'{}'});
+    }
     return visible;
   }
   async function setAccess(actor,id,userId,preset) {
@@ -125,7 +138,7 @@ export function createHeadshotManagement(database,env,registry) {
     if(preset!=='REVOKE'&&(!discoveryEnabled||!qualifiedLeaders.has(id))) throw new Error('leader_write_not_qualified');
     if(!isAdmin(actor)) throw new Error('administrator_required');
     const row=await leader(actor,id);
-    if(row.mapping_state!=='VERIFIED') throw new Error('leader_mapping_not_verified');
+    if(row.mapping_state!=='VERIFIED'||row.mapping_status!=='VERIFIED') throw new Error('leader_mapping_not_verified');
     const target=await database.prepare(`SELECT u.status,i.verified_email AS email,g.status AS grant_status FROM platform_users u JOIN identity_bindings i ON i.user_id=u.id AND i.status='ACTIVE' JOIN module_grants g ON g.user_id=u.id AND g.module_key='PHOTO_STUDIO' AND g.role_key='PHOTOGRAPHER' WHERE u.id=?`).bind(userId).first();
     if(!target||(preset!=='REVOKE'&&(target.status!=='ACTIVE'||target.grant_status!=='ACTIVE'))) throw new Error('active_photographer_required');
     const profiles={VIEW:['HEADSHOT_VIEW'],UPLOAD:['HEADSHOT_VIEW','HEADSHOT_UPLOAD'],MANAGE:['HEADSHOT_VIEW','HEADSHOT_UPLOAD','HEADSHOT_MANAGE'],REVOKE:[]};

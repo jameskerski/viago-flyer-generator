@@ -123,6 +123,6 @@ for(const width of [375,390,430,1024,1280,1440]) {
     await expect(page.getByRole('heading',{name:'Leader Headshots'})).toBeVisible();
     await page.getByRole('button',{name:'Open Leader'}).click();
     await expect(page.getByRole('dialog')).toContainText('disabled until');
-    await expect(page.getByRole('button',{name:'Create leader folder'})).toBeDisabled();
+    await expect(page.getByRole('button',{name:'CREATE HEADSHOT FOLDER'})).toBeDisabled();
   });
 }

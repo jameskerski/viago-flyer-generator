@@ -89,6 +89,7 @@ function scriptFixture() {
     else {const body=JSON.parse(options.payload);if(body.action==='READ')result={success:true,leaders:[row]};if(body.action==='CONFIRM_PRIMARY'){row.imageReference={...body.imageReference,displayUrl:`https://drive.google.com/thumbnail?id=${body.fileId}&sz=w1600`,sourceFingerprint:`${folderId}:${body.fileId}:image/png`};result={success:true};}}
     return {getResponseCode:()=>200,getContentText:()=>JSON.stringify(result)};
   }}};
+  sandbox.drivePermissionInventory_=(id)=>({folderId:id,canShare:true,permissions:[]});
   vm.createContext(sandbox);vm.runInContext(readFileSync('../my-site-1/automation/headshot-management.gs','utf8'),sandbox);
   return {sandbox,row,properties,operations,trashed,get uploads(){return uploads;}};
 }
@@ -113,6 +114,35 @@ test('Apps Script keeps Janie ambiguity blocked and denies unqualified writes',(
   expect(()=>f.sandbox.headshotLeader_(f.row.wixItemId)).toThrow('leader_folder_ownership_ambiguous');
   f.row.wixItemId=leaderId;
   expect(()=>f.sandbox.routeHeadshotManagement_({wixItemId:leaderId,operationId:'headshot-00000000-0000-4000-8000-000000000001',action:'HEADSHOT_CREATE_FOLDER'})).toThrow('leader_write_not_qualified');
+});
+
+test('mapping audit distinguishes explicit scopes, shared scopes, missing and inaccessible folders',()=>{
+  const f=scriptFixture();
+  expect(f.sandbox.auditHeadshotMapping_(leaderId).mappingStatus).toBe('VERIFIED');
+  const originalDestination=f.row.downloadUrl;
+  f.row.downloadUrl='';
+  expect(f.sandbox.auditHeadshotMapping_(leaderId).mappingStatus).toBe('MISSING');
+  f.row.downloadUrl=originalDestination;
+  const originalReader=f.sandbox.headshotWix_;
+  const another={...f.row,wixItemId:'00000000-0000-4000-8000-000000000010'};
+  f.sandbox.headshotWix_=(action,id)=>action==='READ'&&!id?{leaders:[f.row,another]}:originalReader(action,id);
+  expect(f.sandbox.auditHeadshotMapping_(leaderId).mappingStatus).toBe('AMBIGUOUS');
+  expect(f.sandbox.discoverHeadshot_(leaderId).photos).toEqual([]);
+  f.sandbox.headshotWix_=originalReader;
+  f.sandbox.DriveApp.getFolderById=()=>{throw new Error('insufficient_authority');};
+  expect(f.sandbox.auditHeadshotMapping_(leaderId).mappingStatus).toBe('INACCESSIBLE');
+});
+
+test('failed and ambiguous mapping evidence cannot activate writes or erase successful inventory',async()=>{
+  const {db,adapter,registry}=setup();await reconcileHeadshotSnapshot(adapter,snapshot());
+  const before=db.prepare('SELECT photo_count,photo_inventory_json,primary_image_source FROM headshot_leaders WHERE wix_item_id=?').get(leaderId);
+  const inaccessible={...snapshot().leaders[0],mappingStatus:'INACCESSIBLE',mappingEvidence:{reason:'source_unavailable'},photos:[]};
+  expect((await reconcileHeadshotSnapshot(adapter,{kind:'headshots',leaders:[inaccessible]})).mappingStatus).toBe('INACCESSIBLE');
+  expect(db.prepare('SELECT photo_count,photo_inventory_json,primary_image_source FROM headshot_leaders WHERE wix_item_id=?').get(leaderId)).toEqual(before);
+  expect((await reconcileHeadshotSnapshot(adapter,{kind:'headshots',leaders:[inaccessible]})).changed).toBe(false);
+  const manager=createHeadshotManagement(adapter,{PHOTO_HEADSHOT_WRITES_ENABLED:'true',PHOTO_HEADSHOT_DISCOVERY_ENABLED:'true',PHOTO_HEADSHOT_QUALIFIED_LEADER_IDS:leaderId},registry);
+  await expect(manager.perform({id:'owner',role:'PHOTO_ADMIN'},leaderId,'SET_PRIMARY',{confirmed:true},'controlled-operation-key')).rejects.toThrow('mapping_not_verified');
+  db.close();
 });
 
 test('Apps Script grants only the leader folder and preserves inherited access on revocation',()=>{
@@ -146,7 +176,7 @@ test('leader folder creation reuses an existing authoritative destination',()=>{
 for(const width of [375,390,430,1024,1280,1440]) {
   test(`native leader photograph management fits ${width}px`,async({page})=>{
     await page.setViewportSize({width,height:900});
-    const leader={wix_item_id:leaderId,leader_name:'Matt Morris',mapping_state:'VERIFIED',verified_drive_folder_id:folderId,primary_drive_file_id:'canonical-file-0001',photo_count:2,sync_status:'CONFIRMED',primary_image_url:'https://static.wixstatic.com/media/8e9777_602dadcb2a4a44a882d12631d4fb85a6~mv2.png'};
+    const leader={wix_item_id:leaderId,leader_name:'Matt Morris',mapping_state:'VERIFIED',mapping_status:'VERIFIED',verified_drive_folder_id:folderId,primary_drive_file_id:'canonical-file-0001',photo_count:2,sync_status:'CONFIRMED',primary_image_url:'https://static.wixstatic.com/media/8e9777_602dadcb2a4a44a882d12631d4fb85a6~mv2.png'};
     await page.route('**/api/photos/**',async(route)=>{
       const path=new URL(route.request().url()).pathname.split('/api/photos/')[1];
       const body=path==='session'?{actor:{id:'owner',role:'PHOTO_ADMIN',displayName:'Owner',canCreateEvent:false,headshotCapabilities:['HEADSHOT_VIEW','HEADSHOT_UPLOAD','HEADSHOT_MANAGE']}}:

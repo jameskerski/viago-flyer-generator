@@ -1,8 +1,13 @@
+import { applyHeadshotMappingAudit } from './headshot-mapping.mjs';
+
 export async function reconcileHeadshotSnapshot(database,payload) {
   if(payload.kind!=='headshots'||!Array.isArray(payload.leaders)||payload.leaders.length!==1) throw new Error('bounded_headshot_snapshot_required');
   const input=payload.leaders[0];
   const row=await database.prepare(`SELECT * FROM headshot_leaders WHERE wix_item_id=?`).bind(input.wixItemId).first();
   if(!row) throw new Error('authoritative_leader_not_indexed');
+  if(!input.mappingStatus && input.folderId!==row.candidate_drive_folder_id && input.folderId!==row.verified_drive_folder_id) throw new Error('leader_folder_mapping_conflict');
+  const mapping=await applyHeadshotMappingAudit(database,row,input);
+  if(mapping.status!=='VERIFIED') return {changed:mapping.changed,leaderId:row.wix_item_id,mappingStatus:mapping.status};
   if(input.folderId!==row.candidate_drive_folder_id && input.folderId!==row.verified_drive_folder_id) throw new Error('leader_folder_mapping_conflict');
   if(!Array.isArray(input.photos)||input.photos.length>5000) throw new Error('invalid_headshot_inventory');
   const seen=new Set();
