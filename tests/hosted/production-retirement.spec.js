@@ -41,8 +41,8 @@ test('production Worker route retires one template through GitHub App with an ev
     const authHeaders = { 'cf-access-jwt-assertion': accessToken };
     const diagnostics = await onRequest({ request: new Request('https://studio.example/api/studio/diagnostics', { headers: authHeaders }), env });
     expect(await diagnostics.json()).toMatchObject({ worker: 'legacy-optional-text-v3', retirementRoute: '/api/studio/retire' });
-    const preflight = await onRequest({ request: new Request('https://studio.example/api/studio/retire-preflight?templateId=passport', { headers: authHeaders }), env });
-    expect(await preflight.json()).toMatchObject({ ok: true, worker: 'legacy-optional-text-v3', target: { id: 'passport' }, errors: [] });
+    const preflight = await onRequest({ request: new Request('https://studio.example/api/studio/retire-preflight?templateId=cyprus-we', { headers: authHeaders }), env });
+    expect(await preflight.json()).toMatchObject({ ok: true, worker: 'legacy-optional-text-v3', target: { id: 'cyprus-we' }, errors: [] });
     const request = new Request('https://studio.example/api/studio/retire', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'cf-access-jwt-assertion': accessToken },
       body: JSON.stringify({ templateId: 'cyprus-im', baseRevision: 'base-sha', confirmed: true })
@@ -79,7 +79,7 @@ test('legacy compatibility is catalog-only while current enabled regions require
   currentEdit.text3.label = 'Placement';
   expect(validateTemplate(currentEdit)).toEqual([]);
 
-  for (const templateId of ['passport', 'expose-tempate']) {
+  for (const templateId of ['cyprus-im', 'cyprus-we']) {
     const preflight = prepareRetirement(registry, templateId);
     expect(preflight.errors).toEqual([]);
     expect(preflight.after.templates.some(({ id }) => id === templateId)).toBe(false);
