@@ -62,7 +62,8 @@ export function createHeadshotManagement(database,env,registry) {
   }
   async function refresh(actor,id) {
     const previous=await leader(actor,id);
-    const snapshot=await apps('HEADSHOT_DISCOVER',previous.wix_item_id);
+    const pendingSources=env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED!=='true'?(await leaderSourcePlan(database,id)).some(source=>source.shared):false;
+    const snapshot=await apps(pendingSources?'HEADSHOT_VERIFY_SOURCES':'HEADSHOT_DISCOVER',previous.wix_item_id);
     if(snapshot.wixItemId!==previous.wix_item_id) throw new Error('leader_identity_mismatch');
     if(snapshot.sourceContractVersion===3) {
       const outcome=await reconcileSharedHeadshotSnapshot(database,snapshot);
@@ -96,7 +97,8 @@ export function createHeadshotManagement(database,env,registry) {
     const mappingReady=row.mapping_status==='VERIFIED'&&row.mapping_state==='VERIFIED';
     const mayInitialize=row.mapping_status==='MISSING'&&!row.candidate_drive_folder_id;
     const history=(await database.prepare(`SELECT id,operation_type,operation_state,safe_error,updated_at FROM headshot_operations WHERE wix_item_id=? ORDER BY updated_at DESC LIMIT 10`).bind(id).all()).results||[];
-    const managementEnabled=enabled&&discoveryEnabled&&qualifiedLeaders.has(id)&&(mappingReady||mayInitialize);
+    const stagedShared=env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED!=='true'&&JSON.parse(row.mapping_evidence_json||'{}').source==='verified-d1-source-relationships'&&all.some(p=>p.shared);
+    const managementEnabled=enabled&&discoveryEnabled&&qualifiedLeaders.has(id)&&(mappingReady||mayInitialize)&&!stagedShared;
     const sourceMode=env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED==='true';
     const collections=sourceMode?await leaderSourcePlan(database,id):[];
     const sourceViews=[];
@@ -120,6 +122,7 @@ export function createHeadshotManagement(database,env,registry) {
     if(type!=='CREATE_FOLDER'&&row.mapping_state!=='VERIFIED') throw new Error('leader_mapping_not_verified');
     if(input.confirmed!==true) throw new Error('explicit_confirmation_required');
     const inventory=JSON.parse(row.photo_inventory_json||'[]');
+    if(env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED!=='true'&&inventory.some(p=>p.shared)) throw new Error('shared_sources_pending_qualification');
     const selected=inventory.find(p=>p.fileId===input.fileId&&p.sourceItemId===(input.sourceItemId||input.fileId));
     if(type!=='CREATE_FOLDER'&&env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED==='true') {
       const plan=await leaderSourcePlan(database,id);
@@ -157,7 +160,8 @@ export function createHeadshotManagement(database,env,registry) {
   async function directory(actor) {
     const rows=await registry.headshotLeaders();
     const visible=[];for(const row of rows) if(await allowed(actor,row.wix_item_id)) {
-      const view={...row,management_enabled:enabled&&discoveryEnabled&&qualifiedLeaders.has(row.wix_item_id)&&row.mapping_status==='VERIFIED'};
+      const sharedPending=env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED!=='true'&&JSON.parse(row.photo_inventory_json||'[]').some(p=>p.shared);
+      const view={...row,management_enabled:enabled&&discoveryEnabled&&qualifiedLeaders.has(row.wix_item_id)&&row.mapping_status==='VERIFIED'&&!sharedPending};
       visible.push(isAdmin(actor)?view:{...view,mapping_evidence_json:'{}'});
     }
     return visible;
@@ -168,6 +172,7 @@ export function createHeadshotManagement(database,env,registry) {
     if(!isAdmin(actor)) throw new Error('administrator_required');
     const row=await leader(actor,id);
     if(row.mapping_state!=='VERIFIED'||row.mapping_status!=='VERIFIED') throw new Error('leader_mapping_not_verified');
+    if(env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED!=='true'&&JSON.parse(row.photo_inventory_json||'[]').some(p=>p.shared)) throw new Error('shared_sources_pending_qualification');
     const target=await database.prepare(`SELECT u.status,i.verified_email AS email,g.status AS grant_status FROM platform_users u JOIN identity_bindings i ON i.user_id=u.id AND i.status='ACTIVE' JOIN module_grants g ON g.user_id=u.id AND g.module_key='PHOTO_STUDIO' AND g.role_key='PHOTOGRAPHER' WHERE u.id=?`).bind(userId).first();
     if(!target||(preset!=='REVOKE'&&(target.status!=='ACTIVE'||target.grant_status!=='ACTIVE'))) throw new Error('active_photographer_required');
     const profiles={VIEW:['HEADSHOT_VIEW'],UPLOAD:['HEADSHOT_VIEW','HEADSHOT_UPLOAD'],MANAGE:['HEADSHOT_VIEW','HEADSHOT_UPLOAD','HEADSHOT_MANAGE'],REVOKE:[]};
