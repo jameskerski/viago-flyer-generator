@@ -20,10 +20,11 @@ test('stable image route gates identity, relationship approval, source, version 
   globalThis.fetch=async url=>{requests++;expect(String(url)).toMatch(/^https:\/\/static\.wixstatic\.com\/media\/known-media~mv2.png\/v1\/fit\//);return new Response(new Uint8Array([1,2,3]),{headers:{'Content-Type':'image/png'}});};
   try {
     const response=await publicHeadshotApi(new Request(base+'?variant=480'),env);
-    expect(response.status).toBe(200);expect(response.headers.get('etag')).toBe(`"${version}-480"`);
-    expect(response.headers.get('cache-control')).toBe('private, max-age=60');
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('https://static.wixstatic.com/media/known-media~mv2.png/v1/fit/w_480,h_672,q_85,enc_auto/known-media~mv2.png');
+    expect(response.headers.get('cache-control')).toBe('no-store');
     for(const url of [base+'?variant=999',base+'?variant=480&variant=960',base+'?url=https://drive.google.com',base.replace(file,'arbitrary-private-file-001'),base.replace(leader,'ffffffff-ffff-ffff-ffff-ffffffffffff')]) expect((await publicHeadshotApi(new Request(url),env)).status).toBe(404);
-    expect(requests).toBe(1);
+    expect(requests).toBe(0);
     expect((await publicHeadshotApi(new Request(base,{method:'POST'}),env)).status).toBe(405);
     for(const change of [{trashed:true},{mimeType:'application/pdf'},{sourceVersion:'b'.repeat(64)},{sources:[]}]) {
       db.prepare('UPDATE headshot_leaders SET photo_inventory_json=? WHERE wix_item_id=?').run(JSON.stringify([{...photo,...change}]),leader);
@@ -35,6 +36,6 @@ test('stable image route gates identity, relationship approval, source, version 
     db.prepare(`UPDATE headshot_public_photos SET approval_state='APPROVED' WHERE file_id=?`).run(file);
     db.prepare(`UPDATE headshot_leaders SET active=0 WHERE wix_item_id=?`).run(leader);
     expect((await publicHeadshotApi(new Request(base),env)).status).toBe(404);
-    expect(requests).toBe(1);
+    expect(requests).toBe(0);
   } finally {globalThis.fetch=previous;db.close();}
 });

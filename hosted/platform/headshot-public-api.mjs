@@ -9,15 +9,21 @@ async function verifyPublicSource(database,env,id) {
   if(check?.check_state==='UNAVAILABLE' && Date.parse(check.checked_at.replace(' ','T')+'Z')>Date.now()-60000) throw new Error('source_unavailable');
   const claim=await database.prepare(`INSERT INTO headshot_public_checks(wix_item_id,check_state,lease_until) VALUES(?,'CHECKING',datetime('now','+1 minute')) ON CONFLICT(wix_item_id) DO UPDATE SET check_state='CHECKING',lease_until=excluded.lease_until WHERE lease_until IS NULL OR lease_until<CURRENT_TIMESTAMP`).bind(id).run();
   if(!(claim.meta?.changes||claim.changes)) throw new Error('source_check_in_progress');
+  let phase='configuration';
   try {
     if(!env.PHOTO_EVENT_PROVISION_ENDPOINT||!env.PHOTO_STUDIO_SYNC_SECRET) throw new Error('source_configuration_missing');
+    phase='source_fetch';
     const response=await fetch(env.PHOTO_EVENT_PROVISION_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'HEADSHOT_VERIFY_SOURCES',operationId:'headshot-'+crypto.randomUUID(),wixItemId:id,token:env.PHOTO_STUDIO_SYNC_SECRET}),signal:AbortSignal.timeout(15000)});
+    phase='source_response';
     if(!response.ok) throw new Error('source_unavailable');
     const snapshot=await response.json();
+    phase='source_contract';
     if(snapshot.success!==true || snapshot.wixItemId!==id || snapshot.active!==true || snapshot.sourceContractVersion!==3) throw new Error('source_unavailable');
+    phase='source_persistence';
     await reconcileSharedHeadshotSnapshot(database,snapshot);
     await database.prepare(`UPDATE headshot_public_checks SET check_state='AVAILABLE',checked_at=CURRENT_TIMESTAMP,lease_until=NULL WHERE wix_item_id=?`).bind(id).run();
   } catch(error) {
+    console.warn('HEADSHOTS_PUBLIC_SOURCE_CHECK_FAILED',phase,error?.name==='TimeoutError'?'deadline':'verification');
     await database.prepare(`UPDATE headshot_public_checks SET check_state='UNAVAILABLE',checked_at=CURRENT_TIMESTAMP,lease_until=NULL WHERE wix_item_id=?`).bind(id).run();
     throw error;
   }
@@ -36,12 +42,10 @@ export async function publicHeadshotApi(request,env) {
       await verifyPublicSource(env.PLATFORM_DB,env,imageMatch[1]);
       const photo=await publicLeaderImage(env.PLATFORM_DB,imageMatch[1],imageMatch[2]);
       const mediaName=photo.displayUrl.split('/').pop();
-      const image=await fetch(`${photo.displayUrl}/v1/fit/w_${variant},h_${Math.round(Number(variant)*1.4)},q_85,enc_auto/${mediaName}`,{redirect:'error',signal:AbortSignal.timeout(15000)});
-      const type=image.headers.get('content-type')||'';
-      if(!image.ok || !/^image\/(png|jpeg|webp|avif)(;|$)/i.test(type) || Number(image.headers.get('content-length'))>2097152) throw new Error('image_unavailable');
-      const bytes=await image.arrayBuffer();
-      if(!bytes.byteLength || bytes.byteLength>2097152) throw new Error('image_unavailable');
-      return new Response(bytes,{headers:{...headers,'Content-Type':type,'Content-Length':String(bytes.byteLength),'Cache-Control':'private, max-age=60','ETag':`"${photo.sourceVersion}-${variant}"`}});
+      // The stable, no-store gateway rechecks publication on every request.
+      // Only the already bounded, approved, versioned Wix derivative is exposed;
+      // Wix CDN serves/caches its bytes directly rather than another full proxy.
+      return new Response(null,{status:302,headers:{...headers,Location:`${photo.displayUrl}/v1/fit/w_${variant},h_${Math.round(Number(variant)*1.4)},q_85,enc_auto/${mediaName}`}});
     } catch (_) { return Response.json({error:'not_found'},{status:404,headers}); }
   }
   if(url.pathname==='/public/headshots/directory' && !url.search) return Response.json({leaders:await publicPrimaryDirectory(env.PLATFORM_DB)},{headers});
