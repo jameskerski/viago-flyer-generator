@@ -42,7 +42,9 @@ export async function publicLeaderPhotos(database, leaderId, offset = 0) {
   const approvals = (await database.prepare('SELECT * FROM headshot_public_photos WHERE wix_item_id=?').bind(leaderId).all()).results || [];
   const media = (await database.prepare(`SELECT m.* FROM headshot_public_media m JOIN headshot_public_photos p ON p.file_id=m.file_id WHERE p.wix_item_id=?`).bind(leaderId).all()).results || [];
   const photos = approvedPublicInventory({ leader, sources, approvals, media });
-  return { leaderId, photos: photos.slice(offset,offset+24), total: photos.length, nextOffset: offset+24 < photos.length ? offset+24 : null };
+  const approvedIds=new Map(approvals.filter(a=>a.approval_state==='APPROVED').map(a=>[a.file_id,a.approved_at]));
+  const currentIds=new Set(JSON.parse(leader.photo_inventory_json||'[]').filter(p=>approvedIds.has(p.fileId)&&Date.parse(p.modifiedTime)<=Date.parse(approvedIds.get(p.fileId))).map(p=>p.fileId));
+  return { leaderId, photos: photos.slice(offset,offset+24), total: photos.length, approvedTotal:currentIds.size, pendingTotal:Math.max(0,currentIds.size-photos.length),nextOffset: offset+24 < photos.length ? offset+24 : null };
 }
 
 export async function publicPrimaryDirectory(database) {
