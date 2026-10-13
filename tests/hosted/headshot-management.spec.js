@@ -31,6 +31,23 @@ test('headshot snapshots are idempotent and conflicting identities preserve prev
   db.close();
 });
 
+test('Drive primary metadata confirms separately and falls back to untouched Wix image',async()=>{
+  const {db,adapter}=setup();
+  const input=snapshot();
+  input.leaders[0].primaryFileId='canonical-file-0001';
+  input.leaders[0].imageReference={fileId:'canonical-file-0001',sourceFolderId:folderId,displayUrl:'https://drive.google.com/thumbnail?id=canonical-file-0001&sz=w1600'};
+  expect((await reconcileHeadshotSnapshot(adapter,input)).changed).toBe(true);
+  const row=db.prepare('SELECT * FROM headshot_leaders WHERE wix_item_id=?').get(leaderId);
+  expect(row.primary_image_source).toContain('wix:image:');
+  expect(row.primary_image_url).toBe(input.leaders[0].imageReference.displayUrl);
+  expect((await reconcileHeadshotSnapshot(adapter,input)).changed).toBe(false);
+  const invalid=structuredClone(input);invalid.leaders[0].imageReference.fileId='outside-leader-file';
+  await expect(reconcileHeadshotSnapshot(adapter,invalid)).rejects.toThrow('invalid_confirmed_image_reference');
+  expect((await reconcileHeadshotSnapshot(adapter,snapshot())).changed).toBe(true);
+  expect(db.prepare('SELECT primary_image_url FROM headshot_leaders WHERE wix_item_id=?').get(leaderId).primary_image_url).toBe('https://static.wixstatic.com/media/fixture.png');
+  db.close();
+});
+
 test('headshot writes fail closed and capabilities need a leader assignment',async()=>{
   const {db,adapter,registry}=setup();
   const manager=createHeadshotManagement(adapter,{},registry);
