@@ -130,6 +130,21 @@ test('Apps Script keeps Janie ambiguity blocked and denies unqualified writes',(
   expect(()=>f.sandbox.routeHeadshotManagement_({wixItemId:leaderId,operationId:'headshot-00000000-0000-4000-8000-000000000001',action:'HEADSHOT_CREATE_FOLDER'})).toThrow('leader_write_not_qualified');
 });
 
+test('shared Apps Script rejects photographer deletion and checks every fresh Wix primary',()=>{
+  const f=scriptFixture();
+  vm.runInContext(readFileSync('../my-site-1/automation/headshot-shared-sources.gs','utf8'),f.sandbox);
+  f.properties.set('PHOTO_HEADSHOT_WRITES_ENABLED','true');f.properties.set('PHOTO_HEADSHOT_QUALIFIED_LEADER_IDS',leaderId);
+  f.row.imageReference={fileId:'canonical-file-0001',sourceFolderId:folderId};
+  const plan=[{folderId,label:'Both',shared:true,linkedLeaderIds:[leaderId,'other-leader']}];
+  const body={action:'HEADSHOT_REMOVE_PHOTO',wixItemId:leaderId,sourceFolderId:folderId,fileId:'canonical-file-0002',sourceItemId:'canonical-file-0002',actorRole:'PHOTOGRAPHER',operationId:'headshot-00000000-0000-4000-8000-000000000123'};
+  expect(()=>f.sandbox.routeSharedHeadshot_(body,plan)).toThrow('administrator_required');
+  const originalReader=f.sandbox.headshotWix_;
+  f.sandbox.headshotWix_=(action,id,values)=>action==='READ'&&!id?{leaders:[f.row,{wixItemId:'other-leader',imageReference:{fileId:body.fileId}}]}:originalReader(action,id,values);
+  expect(()=>f.sandbox.routeSharedHeadshot_({...body,actorRole:'PHOTO_ADMIN'},plan)).toThrow('primary_requires_replacement');
+  expect(f.trashed.size).toBe(0);
+  expect(()=>f.sandbox.routeSharedHeadshot_({...body,sourceFolderId:'unapproved-folder'},plan)).toThrow('not_authorized');
+});
+
 test('mapping audit distinguishes explicit scopes, shared scopes, missing and inaccessible folders',()=>{
   const f=scriptFixture();
   expect(f.sandbox.auditHeadshotMapping_(leaderId).mappingStatus).toBe('VERIFIED');

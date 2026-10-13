@@ -1,8 +1,10 @@
 import { applyHeadshotMappingAudit } from './headshot-mapping.mjs';
+import { reconcileSharedHeadshotSnapshot } from './headshot-sources.mjs';
 
 export async function reconcileHeadshotSnapshot(database,payload) {
   if(payload.kind!=='headshots'||!Array.isArray(payload.leaders)||payload.leaders.length!==1) throw new Error('bounded_headshot_snapshot_required');
   const input=payload.leaders[0];
+  if(input.sourceContractVersion===3) return reconcileSharedHeadshotSnapshot(database,input);
   const row=await database.prepare(`SELECT * FROM headshot_leaders WHERE wix_item_id=?`).bind(input.wixItemId).first();
   if(!row) throw new Error('authoritative_leader_not_indexed');
   if(!input.mappingStatus && input.folderId!==row.candidate_drive_folder_id && input.folderId!==row.verified_drive_folder_id) throw new Error('leader_folder_mapping_conflict');

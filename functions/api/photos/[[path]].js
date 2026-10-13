@@ -9,6 +9,7 @@ import { createGalleryManagement } from '../../../hosted/platform/photo-gallery-
 import { createPhotoDriveAccess } from '../../../hosted/platform/photo-drive-access.mjs';
 import { createHeadshotManagement } from '../../../hosted/platform/headshot-management.mjs';
 import { reconcileHeadshotSnapshot } from '../../../hosted/platform/headshot-sync.mjs';
+import { leaderSourcePlan } from '../../../hosted/platform/headshot-sources.mjs';
 
 const json = (body, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
@@ -48,6 +49,10 @@ export async function onRequest({ request, env }) {
     try {
       if(Number(request.headers.get('content-length')||0)>2000000) return json({error:'payload_too_large'},413);
       const headshotCandidate=await request.clone().json();
+      if(headshotCandidate.kind==='headshot-source-plan') {
+        const sources=await leaderSourcePlan(env.PLATFORM_DB,String(headshotCandidate.wixItemId||''));
+        return json({success:true,sources:sources.map(s=>({folderId:s.folder_id,label:s.display_label,shared:s.shared,linkedLeaderIds:s.linkedLeaderIds,verificationState:s.verification_state}))});
+      }
       if(headshotCandidate.kind==='headshots') return json({success:true,...await reconcileHeadshotSnapshot(env.PLATFORM_DB,headshotCandidate)});
       const payload = await parseSyncPayload(request);
       return json({ success: true, ...(await reconcilePhotoReadModel(env.PLATFORM_DB, payload)) });

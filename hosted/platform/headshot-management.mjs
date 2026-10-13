@@ -1,4 +1,5 @@
 import { applyHeadshotMappingAudit } from './headshot-mapping.mjs';
+import { leaderSourcePlan, reconcileSharedHeadshotSnapshot, assertSourcePhotoOperation } from './headshot-sources.mjs';
 
 const identity = (value) => {
   const id = String(value || '').trim();
@@ -63,6 +64,10 @@ export function createHeadshotManagement(database,env,registry) {
     const previous=await leader(actor,id);
     const snapshot=await apps('HEADSHOT_DISCOVER',previous.wix_item_id);
     if(snapshot.wixItemId!==previous.wix_item_id) throw new Error('leader_identity_mismatch');
+    if(snapshot.sourceContractVersion===3) {
+      const outcome=await reconcileSharedHeadshotSnapshot(database,snapshot);
+      return {...await leader(actor,id),photos:JSON.parse((await leader(actor,id)).photo_inventory_json),changed:outcome.changed,writesEnabled:enabled};
+    }
     const mapping=await applyHeadshotMappingAudit(database,previous,snapshot);
     if(mapping.status!=='VERIFIED') return {...await leader(actor,id),photos:[],changed:mapping.changed,writesEnabled:false};
     const folder=driveId(snapshot.folderId);
@@ -92,9 +97,17 @@ export function createHeadshotManagement(database,env,registry) {
     const mayInitialize=row.mapping_status==='MISSING'&&!row.candidate_drive_folder_id;
     const history=(await database.prepare(`SELECT id,operation_type,operation_state,safe_error,updated_at FROM headshot_operations WHERE wix_item_id=? ORDER BY updated_at DESC LIMIT 10`).bind(id).all()).results||[];
     const managementEnabled=enabled&&discoveryEnabled&&qualifiedLeaders.has(id)&&(mappingReady||mayInitialize);
+    const sourceMode=env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED==='true';
+    const collections=sourceMode?await leaderSourcePlan(database,id):[];
+    const sourceViews=[];
+    for(const source of collections) {
+      const sourceGrant=isAdmin(actor)?{operation_state:'VERIFIED'}:await database.prepare('SELECT operation_state FROM headshot_source_access_grants WHERE user_id=? AND folder_id=?').bind(actor.id,source.folder_id).first();
+      const upload=managementEnabled&&source.verification_state==='VERIFIED'&&sourceGrant?.operation_state==='VERIFIED'&&caps.includes('HEADSHOT_UPLOAD')&&Boolean(isAdmin(actor)||await allowed(actor,id,'HEADSHOT_VIEW'));
+      sourceViews.push({folderId:source.folder_id,label:source.display_label,shared:source.shared,photoCount:JSON.parse(source.photo_inventory_json).length,canUpload:upload,uploadUrl:upload?`https://drive.google.com/drive/folders/${source.folder_id}`:''});
+    }
     const view={...row,management_enabled:managementEnabled};
     const visibleRow=isAdmin(actor)?view:{...view,mapping_evidence_json:'{}'};
-    return {leader:visibleRow,photos:all.slice(offset,offset+48),total:all.length,nextCursor:offset+48<all.length?String(offset+48):'',discoveryEnabled,writesEnabled:managementEnabled,canManage:await allowed(actor,id,'HEADSHOT_MANAGE'),canUpload:canUpload&&mappingReady&&managementEnabled,uploadUrl:canUpload&&mappingReady&&managementEnabled?`https://drive.google.com/drive/folders/${row.verified_drive_folder_id}`:'',capabilities:caps,operationHistory:history};
+    return {leader:visibleRow,collections:sourceViews,photos:all.slice(offset,offset+48),total:all.length,nextCursor:offset+48<all.length?String(offset+48):'',discoveryEnabled,writesEnabled:managementEnabled,canManage:await allowed(actor,id,'HEADSHOT_MANAGE'),canUpload:canUpload&&mappingReady&&managementEnabled,uploadUrl:canUpload&&mappingReady&&managementEnabled?`https://drive.google.com/drive/folders/${row.verified_drive_folder_id}`:'',capabilities:caps,operationHistory:history};
   }
   async function perform(actor,id,type,input,key) {
     if(!enabled) throw new Error('headshot_writes_pending_controlled_qualification');
@@ -106,8 +119,16 @@ export function createHeadshotManagement(database,env,registry) {
     if(type==='CREATE_FOLDER'&&!isAdmin(actor)) throw new Error('administrator_required');
     if(type!=='CREATE_FOLDER'&&row.mapping_state!=='VERIFIED') throw new Error('leader_mapping_not_verified');
     if(input.confirmed!==true) throw new Error('explicit_confirmation_required');
+    const inventory=JSON.parse(row.photo_inventory_json||'[]');
+    const selected=inventory.find(p=>p.fileId===input.fileId&&p.sourceItemId===(input.sourceItemId||input.fileId));
+    if(type!=='CREATE_FOLDER'&&env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED==='true') {
+      const plan=await leaderSourcePlan(database,id);
+      if(!selected||!plan.some(s=>s.folder_id===selected.sourceFolderId&&s.verification_state==='VERIFIED')) throw new Error('headshot_photo_outside_leader_scope');
+      const linked=(await database.prepare('SELECT wix_item_id,primary_drive_file_id FROM headshot_leaders WHERE primary_drive_file_id=?').bind(input.fileId).all()).results;
+      assertSourcePhotoOperation({actorRole:actor.role,operation:type,photo:selected,linkedPrimaries:linked.map(p=>({leaderId:p.wix_item_id,fileId:p.primary_drive_file_id}))});
+    }
     if(!/^[A-Za-z0-9_-]{16,128}$/.test(String(key||''))) throw new Error('idempotency_key_required');
-    const values=type==='CREATE_FOLDER'?{}:{fileId:driveId(input.fileId),sourceItemId:driveId(input.sourceItemId||input.fileId),expectedPrimaryImage:String(row.primary_image_source||'')};
+    const values=type==='CREATE_FOLDER'?{}:{fileId:driveId(input.fileId),sourceItemId:driveId(input.sourceItemId||input.fileId),sourceFolderId:selected?.sourceFolderId||'',actorRole:actor.role,expectedPrimaryImage:String(row.primary_image_source||'')};
     const normalized={leaderId:id,type,values},requestHash=await digest(normalized);
     let operation=await database.prepare(`SELECT * FROM headshot_operations WHERE idempotency_key=?`).bind(key).first();
     if(operation && (operation.requested_by_user_id!==actor.id||operation.wix_item_id!==id||operation.operation_type!==type||JSON.parse(operation.request_json).fileId!==values.fileId||JSON.parse(operation.request_json).sourceItemId!==values.sourceItemId)) throw new Error('idempotency_key_conflict');
@@ -156,6 +177,45 @@ export function createHeadshotManagement(database,env,registry) {
     const assignments=await database.prepare(`SELECT capabilities_json FROM headshot_leader_assignments WHERE user_id=? AND status='ACTIVE'`).bind(userId).all();
     const aggregate=new Set((assignments.results||[]).flatMap((a)=>JSON.parse(a.capabilities_json)));
     for(const cap of ['HEADSHOT_VIEW','HEADSHOT_UPLOAD','HEADSHOT_MANAGE']) await database.prepare(`INSERT INTO headshot_capability_grants(user_id,capability,status,granted_by_user_id) VALUES(?,?,?,?) ON CONFLICT(user_id,capability) DO UPDATE SET status=excluded.status,granted_by_user_id=excluded.granted_by_user_id`).bind(userId,cap,aggregate.has(cap)?'ACTIVE':'REVOKED',actor.id).run();
+    if(env.PHOTO_HEADSHOT_SHARED_SOURCES_ENABLED==='true') {
+      const plan=await leaderSourcePlan(database,id);
+      if(!plan.length||plan.some(s=>s.verification_state!=='VERIFIED')) throw new Error('leader_sources_not_verified');
+      const outcomes=[];
+      for(const source of plan) {
+        const old=await database.prepare('SELECT * FROM headshot_source_access_grants WHERE user_id=? AND folder_id=?').bind(userId,source.folder_id).first();
+        const others=(await database.prepare(`SELECT a.capabilities_json FROM headshot_leader_assignments a JOIN headshot_leader_sources r ON r.wix_item_id=a.wix_item_id WHERE a.user_id=? AND a.status='ACTIVE' AND r.status='ACTIVE' AND r.folder_id=?`).bind(userId,source.folder_id).all()).results;
+        const required=new Set(others.flatMap(a=>JSON.parse(a.capabilities_json)));
+        let state='REVOKED',result=null;
+        try {
+          if(required.size) {
+            const role=required.has('HEADSHOT_UPLOAD')?'writer':'reader';
+            if(old?.operation_state==='VERIFIED'&&old.access_role===role) {state='VERIFIED';result={permissionId:old.permission_id,role,studioManaged:old.grant_origin==='STUDIO_MANAGED'};}
+            else {
+              if(old?.grant_origin==='STUDIO_MANAGED'&&old.operation_state==='VERIFIED') await apps('HEADSHOT_REVOKE_ACCESS',id,{sourceFolderId:source.folder_id,email:target.email,permissionId:old.permission_id,studioManaged:true});
+              result=await apps('HEADSHOT_GRANT_ACCESS',id,{sourceFolderId:source.folder_id,email:target.email,accessRole:role});
+              state=result.verified?'VERIFIED':'FAILED_NEEDS_ATTENTION';
+            }
+          } else if(old&&old.operation_state==='VERIFIED') {
+            if(old.grant_origin!=='STUDIO_MANAGED') {state='EXTERNAL_ACCESS_REMAINS';result={permissionId:old.permission_id,role:old.access_role};}
+            else {
+              result=await apps('HEADSHOT_REVOKE_ACCESS',id,{sourceFolderId:source.folder_id,email:target.email,permissionId:old.permission_id,studioManaged:true});
+              state=result.effectiveAccess==='EXTERNAL_ACCESS_UNVERIFIED'?'EXTERNAL_ACCESS_UNVERIFIED':result.remainingAccess?'EXTERNAL_ACCESS_REMAINS':'REVOKED';
+            }
+          } else {state=old?.operation_state||'REVOKED';}
+          await database.prepare(`INSERT INTO headshot_source_access_grants(user_id,folder_id,permission_id,access_role,verified_email,grant_origin,operation_state) VALUES(?,?,?,?,?,?,?) ON CONFLICT(user_id,folder_id) DO UPDATE SET permission_id=excluded.permission_id,access_role=excluded.access_role,grant_origin=excluded.grant_origin,operation_state=excluded.operation_state,safe_error=NULL`).bind(userId,source.folder_id,result?.permissionId||old?.permission_id||null,result?.role||old?.access_role||null,target.email,result?.studioManaged?'STUDIO_MANAGED':result?.inherited?'INHERITED':old?.grant_origin||'PRE_EXISTING',state).run();
+          outcomes.push({folderId:source.folder_id,state});
+        } catch(error) {
+          if(old) await database.prepare("UPDATE headshot_source_access_grants SET operation_state='FAILED_NEEDS_ATTENTION',safe_error=? WHERE user_id=? AND folder_id=?").bind(String(error.message).slice(0,200),userId,source.folder_id).run();
+          await registry.audit(actor,'headshot.access','leader',id,'FAILED',{userId,preset,folderId:source.folder_id,error:String(error.message).slice(0,200)});
+          throw error;
+        }
+      }
+      const state=preset==='REVOKE'?(outcomes.some(o=>o.state.startsWith('EXTERNAL'))?'EXTERNAL_ACCESS_REMAINS':'REVOKED'):(outcomes.every(o=>o.state==='VERIFIED')?'VERIFIED':'FAILED_NEEDS_ATTENTION');
+      // Legacy grant is now an aggregate compatibility cache only.
+      await database.prepare(`INSERT INTO headshot_drive_access_grants(user_id,wix_item_id,drive_folder_id,access_role,verified_email,grant_origin,operation_state) VALUES(?,?,?,?,?,'STUDIO_MANAGED',?) ON CONFLICT(user_id,wix_item_id) DO UPDATE SET operation_state=excluded.operation_state`).bind(userId,id,plan[0].folder_id,caps.includes('HEADSHOT_UPLOAD')?'writer':'reader',target.email,state).run();
+      await registry.audit(actor,'headshot.access','leader',id,'SUCCEEDED',{userId,preset,state,sources:outcomes});
+      return {userId,leaderId:id,state,sources:outcomes};
+    }
     const old=await database.prepare(`SELECT * FROM headshot_drive_access_grants WHERE user_id=? AND wix_item_id=?`).bind(userId,id).first();
     let result=null,state='REVOKED';
     try {

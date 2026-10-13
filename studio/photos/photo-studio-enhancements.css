@@ -127,3 +127,9 @@ button:disabled { opacity:.5;cursor:not-allowed; }
 @media(max-width:1100px) { .photographers-layout { grid-template-columns:1fr; }.leader-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media(max-width:700px) { .leader-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.activity-row { grid-template-columns:1fr; }.leader-image { height:180px; } }
 @media(max-width:430px) { .person-actions { align-items:stretch; }.person-actions button { flex:1 1 120px; }.person-main h3 { font-size:.95rem; }.leader-grid { grid-template-columns:1fr; } }
+/* Shared photo collections use the existing leader dialog, not a separate system. */
+.headshot-collections { margin: 1rem 0; padding: 1rem; border: 1px solid #2b4535; border-radius: 12px; }
+.headshot-collections > div { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: .65rem 0; border-bottom: 1px solid #25352b; }
+.headshot-collections strong { flex: 1 1 140px; overflow-wrap: anywhere; }
+.headshot-collections span { color: #a4b7ab; }
+.headshot-collections .headshot-upload { font-size: .8rem; }
