@@ -43,4 +43,9 @@ test('selected collection has no management controls and preserves shared labels
   await expect(page.getByRole('link',{name:'DOWNLOAD',exact:true})).toBeVisible();
   await expect(page.getByRole('button',{name:/Primary|Remove|Upload/})).toHaveCount(0);
   await expect(page.getByRole('link',{name:'← BACK TO DIRECTORY'})).toHaveAttribute('href','/blank-14-1');
+  await page.getByRole('link',{name:'VIEW',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'Leader photograph viewer'})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.getByRole('link',{name:'VIEW',exact:true})).toBeFocused();
 });

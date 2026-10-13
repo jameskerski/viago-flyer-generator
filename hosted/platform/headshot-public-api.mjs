@@ -1,4 +1,4 @@
-import { publicLeaderPhotos, publicPrimaryDirectory } from './headshot-publication.mjs';
+import { publicLeaderPhotos, publicPrimaryDirectory, publicLeaderImage } from './headshot-publication.mjs';
 import { reconcileSharedHeadshotSnapshot } from './headshot-sources.mjs';
 
 async function verifyPublicSource(database,env,id) {
@@ -28,12 +28,28 @@ export async function publicHeadshotApi(request,env) {
   if(request.method!=='GET') return Response.json({error:'method_not_allowed'},{status:405,headers});
   if(env.PHOTO_PUBLIC_HEADSHOTS_ENABLED!=='true') return Response.json({error:'not_available'},{status:404,headers});
   const url=new URL(request.url);
+  const imageMatch=url.pathname.match(/^\/public\/headshots\/([a-f0-9-]{36})\/([A-Za-z0-9_-]{10,160})$/i);
+  if(imageMatch) {
+    const variant=url.searchParams.get('variant')||'960';
+    if([...url.searchParams.keys()].some(key=>key!=='variant') || url.searchParams.getAll('variant').length>1 || !['240','480','960','1280'].includes(variant)) return Response.json({error:'not_found'},{status:404,headers});
+    try {
+      await verifyPublicSource(env.PLATFORM_DB,env,imageMatch[1]);
+      const photo=await publicLeaderImage(env.PLATFORM_DB,imageMatch[1],imageMatch[2]);
+      const mediaName=photo.displayUrl.split('/').pop();
+      const image=await fetch(`${photo.displayUrl}/v1/fit/w_${variant},h_${Math.round(Number(variant)*1.4)},q_85,enc_auto/${mediaName}`,{redirect:'error',signal:AbortSignal.timeout(15000)});
+      const type=image.headers.get('content-type')||'';
+      if(!image.ok || !/^image\/(png|jpeg|webp|avif)(;|$)/i.test(type) || Number(image.headers.get('content-length'))>2097152) throw new Error('image_unavailable');
+      const bytes=await image.arrayBuffer();
+      if(!bytes.byteLength || bytes.byteLength>2097152) throw new Error('image_unavailable');
+      return new Response(bytes,{headers:{...headers,'Content-Type':type,'Content-Length':String(bytes.byteLength),'Cache-Control':'private, max-age=60','ETag':`"${photo.sourceVersion}-${variant}"`}});
+    } catch (_) { return Response.json({error:'not_found'},{status:404,headers}); }
+  }
   if(url.pathname==='/public/headshots/directory' && !url.search) return Response.json({leaders:await publicPrimaryDirectory(env.PLATFORM_DB)},{headers});
   const match=url.pathname.match(/^\/public\/headshots\/([a-f0-9-]{36})$/i);
   if(!match || [...url.searchParams.keys()].some(key=>key!=='offset')) return Response.json({error:'not_found'},{status:404,headers});
   try {
     await verifyPublicSource(env.PLATFORM_DB,env,match[1]);
     const result=await publicLeaderPhotos(env.PLATFORM_DB,match[1],Number(url.searchParams.get('offset')||0));
-    return Response.json(result,{headers});
+    return Response.json({...result,photos:result.photos.map(photo=>({...photo,displayUrl:`${url.origin}/public/headshots/${match[1]}/${photo.fileId}`}))},{headers});
   } catch (_) { return Response.json({error:'not_found'},{status:404,headers}); }
 }

@@ -7,7 +7,7 @@ import { readFileSync,readdirSync } from 'node:fs';
 const leaderId = '02a9ab6c-42a6-4568-8b14-f46e0ca08dc2';
 const fileId = 'approved-canonical-file-001';
 const folderId = 'verified-source-folder-001';
-const photo = { fileId, filename: 'Portrait.png', modifiedTime:'2026-06-18T00:00:00.000Z',sourceVersion:'verified-version',sources: [{ folderId, label: 'Both', shared: true }] };
+const photo = { fileId, filename: 'Portrait.png', mimeType:'image/png', modifiedTime:'2026-06-18T00:00:00.000Z',sourceVersion:'verified-version',sources: [{ folderId, label: 'Both', shared: true }] };
 const input = () => ({
   leader: { wix_item_id: leaderId, active: 1, mapping_status: 'VERIFIED', photo_inventory_json: JSON.stringify([photo,photo,{...photo,fileId:'new-upload-file-002'}]) },
   sources: [{ folder_id: folderId, verification_state: 'VERIFIED' }],

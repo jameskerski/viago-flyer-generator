@@ -17,6 +17,7 @@ export function approvedPublicInventory({ leader, sources, approvals, media }) {
   const ready = new Map(media.filter(m => m.media_state === 'READY' && publicWixImageUrl(m.wix_file_url)).map(m => [m.file_id, m]));
   const seen = new Set();
   return JSON.parse(leader.photo_inventory_json || '[]').filter(photo => {
+    if (photo.trashed === true || !['image/png','image/jpeg'].includes(photo.mimeType)) return false;
     if (!fileIdPattern.test(photo.fileId) || seen.has(photo.fileId) || !allowed.has(photo.fileId) || !ready.has(photo.fileId) || !photo.sourceVersion || ready.get(photo.fileId).source_version!==photo.sourceVersion) return false;
     if (!photo.modifiedTime || !(Date.parse(photo.modifiedTime)<=Date.parse(allowed.get(photo.fileId).approved_at))) return false;
     if (!(photo.sources || []).some(source => verifiedSources.has(source.folderId))) return false;
@@ -45,6 +46,17 @@ export async function publicLeaderPhotos(database, leaderId, offset = 0) {
   const approvedIds=new Map(approvals.filter(a=>a.approval_state==='APPROVED').map(a=>[a.file_id,a.approved_at]));
   const currentIds=new Set(JSON.parse(leader.photo_inventory_json||'[]').filter(p=>approvedIds.has(p.fileId)&&Date.parse(p.modifiedTime)<=Date.parse(approvedIds.get(p.fileId))).map(p=>p.fileId));
   return { leaderId, photos: photos.slice(offset,offset+24), total: photos.length, approvedTotal:currentIds.size, pendingTotal:Math.max(0,currentIds.size-photos.length),nextOffset: offset+24 < photos.length ? offset+24 : null };
+}
+
+export async function publicLeaderImage(database, leaderId, fileId) {
+  if (!uuid.test(leaderId) || !fileIdPattern.test(fileId)) throw new Error('invalid_public_image_identity');
+  const leader = await database.prepare('SELECT * FROM headshot_leaders WHERE wix_item_id=?').bind(leaderId).first();
+  const sources = await leaderSourcePlan(database, leaderId);
+  const approvals = (await database.prepare('SELECT * FROM headshot_public_photos WHERE wix_item_id=? AND file_id=?').bind(leaderId,fileId).all()).results || [];
+  const media = (await database.prepare('SELECT * FROM headshot_public_media WHERE file_id=?').bind(fileId).all()).results || [];
+  const photo = approvedPublicInventory({leader,sources,approvals,media}).find(item=>item.fileId===fileId);
+  if (!photo) throw new Error('public_image_not_found');
+  return photo;
 }
 
 export async function publicPrimaryDirectory(database) {
