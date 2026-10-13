@@ -59,13 +59,16 @@ test('two leaders can share one source and choose independent primary images ide
     db.prepare('DELETE FROM headshot_leader_sources WHERE wix_item_id=?').run(id);
     db.prepare("INSERT INTO headshot_leader_sources(wix_item_id,folder_id,relationship_type) VALUES(?,'shared-folder','SHARED')").run(id);
   }
-  const input=id=>({wixItemId:id,sourceContractVersion:3,primaryImage:db.prepare('SELECT primary_image_source FROM headshot_leaders WHERE wix_item_id=?').get(id).primary_image_source,sources:[snapshot('shared-folder',['shared-photo-01','shared-photo-02'])]});
+  const input=id=>({wixItemId:id,sourceContractVersion:3,active:true,primaryImage:db.prepare('SELECT primary_image_source FROM headshot_leaders WHERE wix_item_id=?').get(id).primary_image_source,sources:[snapshot('shared-folder',['shared-photo-01','shared-photo-02'])]});
   const first=input(ids[0]);first.primaryFileId='shared-photo-01';first.imageReference={fileId:first.primaryFileId,sourceFolderId:'shared-folder',displayUrl:'https://drive.google.com/thumbnail?id=shared-photo-01&sz=w1600'};
   const second=input(ids[1]);second.primaryFileId='shared-photo-02';second.imageReference={fileId:second.primaryFileId,sourceFolderId:'shared-folder',displayUrl:'https://drive.google.com/thumbnail?id=shared-photo-02&sz=w1600'};
   expect((await reconcileSharedHeadshotSnapshot(adapter,first)).photoCount).toBe(2);
   expect((await reconcileSharedHeadshotSnapshot(adapter,second)).photoCount).toBe(2);
   const before=db.prepare('SELECT * FROM headshot_leaders WHERE wix_item_id=?').get(ids[0]);
+  db.prepare(`UPDATE headshot_public_checks SET checked_at='2000-01-01 00:00:00' WHERE wix_item_id=?`).run(first.wixItemId);
   expect((await reconcileSharedHeadshotSnapshot(adapter,first)).changed).toBe(false);
+  const proof=db.prepare('SELECT check_state,checked_at FROM headshot_public_checks WHERE wix_item_id=?').get(first.wixItemId);
+  expect(proof.check_state).toBe('AVAILABLE');expect(proof.checked_at).not.toBe('2000-01-01 00:00:00');
   expect(db.prepare('SELECT * FROM headshot_leaders WHERE wix_item_id=?').get(ids[0])).toEqual(before);
   expect(before.verified_drive_folder_id).toBeNull();
   expect(db.prepare('SELECT primary_drive_file_id FROM headshot_leaders WHERE wix_item_id=?').get(ids[1]).primary_drive_file_id).toBe('shared-photo-02');

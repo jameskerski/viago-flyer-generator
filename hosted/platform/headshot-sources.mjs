@@ -57,7 +57,13 @@ export async function reconcileSharedHeadshotSnapshot(database, input) {
   const normalized = { collections: inventory.collections, photos, primaryFileId, reference, primaryImage: String(input.primaryImage || ''), leaderName: String(input.leaderName || row.leader_name), active: typeof input.active === 'boolean' ? input.active : row.active === 1 };
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(normalized)));
   const fingerprint = [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2,'0')).join('');
-  if (row.source_fingerprint === fingerprint && row.mapping_status === 'VERIFIED') return { changed: false, leaderId: row.wix_item_id, photoCount: photos.length, fingerprint, collections: inventory.collections };
+  const freshPublicProof=async()=>{
+    // Reuse the same complete, authenticated Drive evidence already reconciled
+    // by the producer. An unchanged fingerprint is not an unchanged check time.
+    if(input.sourceContractVersion===3 && typeof input.active==='boolean')
+      await database.prepare(`INSERT INTO headshot_public_checks(wix_item_id,check_state,checked_at) VALUES(?,?,CURRENT_TIMESTAMP) ON CONFLICT(wix_item_id) DO UPDATE SET check_state=excluded.check_state,checked_at=excluded.checked_at,lease_until=NULL`).bind(input.wixItemId,input.active?'AVAILABLE':'UNAVAILABLE').run();
+  };
+  if (row.source_fingerprint === fingerprint && row.mapping_status === 'VERIFIED') { await freshPublicProof();return { changed: false, leaderId: row.wix_item_id, photoCount: photos.length, fingerprint, collections: inventory.collections }; }
   // Validate every source before replacing any cached inventory. Partial scans never publish partial totals.
   for (const source of input.sources) {
     await database.prepare(`UPDATE headshot_photo_sources SET verification_state='VERIFIED',photo_inventory_json=?,source_fingerprint=?,evidence_json=? WHERE folder_id=?`).bind(JSON.stringify(source.photos),String(source.fingerprint || ''),JSON.stringify(source.evidence || {}),source.folderId).run();
@@ -68,5 +74,6 @@ export async function reconcileSharedHeadshotSnapshot(database, input) {
   const individual = plan.find(s => s.relationship_type === 'INDIVIDUAL' && !s.shared);
   const evidence = JSON.stringify({ source: 'verified-d1-source-relationships', collections: inventory.collections });
   await database.prepare(`UPDATE headshot_leaders SET verified_drive_folder_id=?,mapping_state='VERIFIED',mapping_status='VERIFIED',mapping_evidence_json=?,photo_count=?,photo_inventory_json=?,source_fingerprint=?,primary_image_source=?,primary_image_url=?,primary_drive_file_id=?,leader_name=?,active=?,source_updated_at=COALESCE(?,source_updated_at),sync_status='CONFIRMED',sync_error=NULL,indexed_at=CURRENT_TIMESTAMP WHERE wix_item_id=?`).bind(individual?.folder_id||null,evidence,photos.length,JSON.stringify(photos),fingerprint,normalized.primaryImage,reference?.displayUrl || (media ? `https://static.wixstatic.com/media/${media}` : ''),primaryFileId || null,normalized.leaderName,normalized.active ? 1 : 0,input.sourceUpdatedAt || null,input.wixItemId).run();
+  await freshPublicProof();
   return { changed: true, leaderId: row.wix_item_id, photoCount: photos.length, fingerprint, collections: inventory.collections };
 }
