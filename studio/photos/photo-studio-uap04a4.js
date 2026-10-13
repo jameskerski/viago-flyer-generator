@@ -156,7 +156,27 @@ async function loadMediaAssets() {
 function leaderMappingLabel(leader) {
   if(leader.mapping_status==='INACCESSIBLE') return 'ACCESS UNAVAILABLE';
   if(leader.mapping_status==='MISSING') return 'NEEDS FOLDER';
+  if(leader.mapping_status==='VERIFIED'&&leader.management_enabled===false) return 'VERIFIED — ACTIVATION PENDING';
   return leader.mapping_status==='VERIFIED'&&leader.mapping_state==='VERIFIED'&&leader.management_enabled!==false&&leader.sync_status!=='FAILED' ? 'READY TO MANAGE' : 'MAPPING NEEDS REVIEW';
+}
+async function verifyLeaderMappings() {
+  if(state.actor?.role!=='PHOTO_ADMIN') return;
+  const button=$('#verifyLeaderMappings'),output=$('#leaderMappingProgress');
+  button.disabled=true;let completed=0,failed=0;
+  const targets=state.leaders.slice();
+  try {
+    for(const target of targets) {
+      output.textContent=`Verifying ${completed+1} of ${targets.length}: ${target.leader_name}`;
+      try {
+        const result=await api(`headshots/${encodeURIComponent(target.wix_item_id)}`);
+        if(result.leader?.wix_item_id!==target.wix_item_id) throw new Error('leader_identity_mismatch');
+        const index=state.leaders.findIndex(row=>row.wix_item_id===target.wix_item_id);
+        if(index>=0)state.leaders[index]=result.leader;
+      }catch{failed++;}
+      completed++;renderLeaders();
+    }
+    output.textContent=`Verification complete: ${completed} records checked${failed?`; ${failed} requests need attention`:''}. No photographs or CMS records were modified.`;
+  }finally{button.disabled=false;}
 }
 function renderLeaders() {
   const query = ($('#leaderSearch').value || '').trim().toLocaleLowerCase();
@@ -382,6 +402,7 @@ $('#inviteForm').addEventListener('submit', async (event) => {
   catch (error) { output.textContent = error.message; }
 });
 $('#leaderSearch').addEventListener('input', renderLeaders);
+$('#verifyLeaderMappings').addEventListener('click', verifyLeaderMappings);
 $('#auditDriveAccess').addEventListener('click', async (event) => {
   const button = event.currentTarget; const output = $('#driveAuditResult'); button.disabled = true; output.value = 'Auditing authoritative event roots…';
   try {

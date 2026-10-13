@@ -60,6 +60,20 @@ test('headshot writes fail closed and capabilities need a leader assignment',asy
   db.close();
 });
 
+test('photographer management remains blocked while Drive access is pending or failed',async()=>{
+  const {db,adapter,registry}=setup();
+  const manager=createHeadshotManagement(adapter,{},registry);
+  db.exec(`INSERT INTO headshot_capability_grants(user_id,capability,status,granted_by_user_id) VALUES('photographer','HEADSHOT_MANAGE','ACTIVE','owner');`);
+  db.prepare(`INSERT INTO headshot_leader_assignments(user_id,wix_item_id,status,capabilities_json,updated_by_user_id) VALUES(?,?,'ACTIVE','["HEADSHOT_MANAGE"]','owner')`).run('photographer',leaderId);
+  const actor={id:'photographer',role:'PHOTOGRAPHER'};
+  expect(await manager.allowed(actor,leaderId,'HEADSHOT_MANAGE')).toBe(false);
+  db.prepare(`INSERT INTO headshot_drive_access_grants(user_id,wix_item_id,drive_folder_id,verified_email,grant_origin,operation_state) VALUES(?,?,?,'fixture@example.com','STUDIO_MANAGED','VERIFIED')`).run('photographer',leaderId,folderId);
+  expect(await manager.allowed(actor,leaderId,'HEADSHOT_MANAGE')).toBe(true);
+  db.exec(`UPDATE headshot_drive_access_grants SET operation_state='FAILED_NEEDS_ATTENTION';`);
+  expect(await manager.allowed(actor,leaderId,'HEADSHOT_MANAGE')).toBe(false);
+  db.close();
+});
+
 test('governed operations replay durably without repeating a Drive/Wix write',async()=>{
   const {db,adapter,registry}=setup();await reconcileHeadshotSnapshot(adapter,snapshot());
   const prior=globalThis.fetch;let writes=0;

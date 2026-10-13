@@ -29,7 +29,12 @@ export function createHeadshotManagement(database,env,registry) {
     if (isAdmin(actor)) return true;
     if (!(await registry.headshotCapabilities(actor)).includes(capability)) return false;
     const assignment=await database.prepare(`SELECT capabilities_json FROM headshot_leader_assignments WHERE user_id=? AND wix_item_id=? AND status='ACTIVE'`).bind(actor.id,id).first();
-    return Boolean(assignment&&JSON.parse(assignment.capabilities_json||'[]').includes(capability));
+    if(!assignment||!JSON.parse(assignment.capabilities_json||'[]').includes(capability)) return false;
+    if(capability==='HEADSHOT_UPLOAD'||capability==='HEADSHOT_MANAGE') {
+      const grant=await database.prepare(`SELECT operation_state FROM headshot_drive_access_grants WHERE user_id=? AND wix_item_id=?`).bind(actor.id,id).first();
+      return grant?.operation_state==='VERIFIED';
+    }
+    return true;
   }
   async function leader(actor,id,capability='HEADSHOT_VIEW') {
     const key=identity(id);
@@ -74,8 +79,9 @@ export function createHeadshotManagement(database,env,registry) {
   async function browse(actor,id,cursor='') {
     let row=await leader(actor,id);
     try {if(!cursor&&discoveryEnabled) row=await refresh(actor,id);} catch(error) {
-      await database.prepare(`UPDATE headshot_leaders SET sync_status='FAILED',sync_error=? WHERE wix_item_id=?`).bind(String(error.message).slice(0,300),id).run();
-      row={...row,sync_status:'FAILED',sync_error:error.message};
+      const mappingStatus=/identity|mapping_conflict|folder_changed/.test(String(error.message))?'AMBIGUOUS':'INACCESSIBLE';
+      await database.prepare(`UPDATE headshot_leaders SET sync_status='FAILED',sync_error=?,mapping_status=?,mapping_state='CMS_REFERENCE_UNVERIFIED' WHERE wix_item_id=?`).bind(String(error.message).slice(0,300),mappingStatus,id).run();
+      row={...row,sync_status:'FAILED',sync_error:error.message,mapping_status:mappingStatus,mapping_state:'CMS_REFERENCE_UNVERIFIED'};
     }
     const all=row.photos||JSON.parse(row.photo_inventory_json||'[]');
     const offset=Number(cursor||0);if(!Number.isInteger(offset)||offset<0) throw new Error('invalid_photo_cursor');
@@ -85,8 +91,10 @@ export function createHeadshotManagement(database,env,registry) {
     const mappingReady=row.mapping_status==='VERIFIED'&&row.mapping_state==='VERIFIED';
     const mayInitialize=row.mapping_status==='MISSING'&&!row.candidate_drive_folder_id;
     const history=(await database.prepare(`SELECT id,operation_type,operation_state,safe_error,updated_at FROM headshot_operations WHERE wix_item_id=? ORDER BY updated_at DESC LIMIT 10`).bind(id).all()).results||[];
-    const visibleRow=isAdmin(actor)?row:{...row,mapping_evidence_json:'{}'};
-    return {leader:visibleRow,photos:all.slice(offset,offset+48),total:all.length,nextCursor:offset+48<all.length?String(offset+48):'',discoveryEnabled,writesEnabled:enabled&&discoveryEnabled&&qualifiedLeaders.has(id)&&(mappingReady||mayInitialize),canManage:await allowed(actor,id,'HEADSHOT_MANAGE'),canUpload:canUpload&&mappingReady,uploadUrl:canUpload&&mappingReady?`https://drive.google.com/drive/folders/${row.verified_drive_folder_id}`:'',capabilities:caps,operationHistory:history};
+    const managementEnabled=enabled&&discoveryEnabled&&qualifiedLeaders.has(id)&&(mappingReady||mayInitialize);
+    const view={...row,management_enabled:managementEnabled};
+    const visibleRow=isAdmin(actor)?view:{...view,mapping_evidence_json:'{}'};
+    return {leader:visibleRow,photos:all.slice(offset,offset+48),total:all.length,nextCursor:offset+48<all.length?String(offset+48):'',discoveryEnabled,writesEnabled:managementEnabled,canManage:await allowed(actor,id,'HEADSHOT_MANAGE'),canUpload:canUpload&&mappingReady&&managementEnabled,uploadUrl:canUpload&&mappingReady&&managementEnabled?`https://drive.google.com/drive/folders/${row.verified_drive_folder_id}`:'',capabilities:caps,operationHistory:history};
   }
   async function perform(actor,id,type,input,key) {
     if(!enabled) throw new Error('headshot_writes_pending_controlled_qualification');

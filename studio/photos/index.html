@@ -58,10 +58,11 @@
       </section>
 
       <section class="view" data-view-panel="media-assets" hidden>
-        <div class="section-head"><div><p class="eyebrow">MEDIA ASSETS</p><h2>Leader Headshots</h2></div><button disabled title="Leader creation awaits identity and publication qualification">Add leader</button></div>
-        <p class="form-note">Existing Wix primary headshots are preserved. Folder management awaits qualification.</p>
+        <div class="section-head"><div><p class="eyebrow">MEDIA ASSETS</p><h2>Leader Headshots</h2></div><div><button id="verifyLeaderMappings" class="admin-only" type="button">Verify mappings</button><button disabled title="Leader creation awaits identity and publication qualification">Add leader</button></div></div>
+        <p class="form-note">Manage verified leader folders. Existing public Wix headshots remain unchanged.</p>
         <label class="leader-search">Search leaders<input id="leaderSearch" type="search" placeholder="Search by name" autocomplete="off"></label>
         <p id="leaderCount" class="form-note" aria-live="polite"></p>
+        <output id="leaderMappingProgress" class="form-note" aria-live="polite"></output>
         <div id="mediaAssets" class="leader-grid"></div>
       </section>
 
