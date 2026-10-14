@@ -52,3 +52,31 @@ test('selected collection has no management controls and preserves shared labels
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await expect(page.getByRole('link',{name:'VIEW',exact:true})).toBeFocused();
 });
+
+for(const width of [320,375,390,430,768,1024,1280,1440]) test(`collection feedback and viewer preserve bounds at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:900});
+  const leader=leaders.find(l=>l.name==='Janie Braun');
+  await load(page,{selectedLeader:leader,collectionStatus:'loading',photos:[],nextOffset:null});
+  await expect(page.getByText('LOADING HEADSHOTS',{exact:true})).toBeVisible();
+  await expect(page.getByText("Preparing Janie Braun's photo collection…",{exact:true})).toBeVisible();
+  await expect(page.getByText('No approved photographs are available for this leader yet.')).toHaveCount(0);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBe(true);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  expect(await page.locator('.loading-ring').evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
+  await load(page,{selectedLeader:leader,collectionStatus:'error',photos:[],nextOffset:null});
+  await expect(page.getByRole('button',{name:'TRY AGAIN'})).toBeVisible();
+  await load(page,{selectedLeader:leader,collectionStatus:'ready',photos:[],nextOffset:null});
+  await expect(page.getByText('No approved photographs are available for this leader yet.')).toBeVisible();
+  await load(page,{selectedLeader:leader,collectionStatus:'ready',photos:[{fileId:'photo-01',filename:'Portrait.png',displayUrl:leader.primaryImage}],nextOffset:null});
+  await page.getByRole('link',{name:'VIEW',exact:true}).click();
+  const dialog=page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const bounds=await dialog.boundingBox();
+  if(width>720){expect(bounds.width).toBeCloseTo(width*.88,0);expect(bounds.height).toBeCloseTo(900*.88,0);}
+  else {expect(bounds.width).toBeLessThanOrEqual(width-24);expect(await dialog.evaluate(e=>getComputedStyle(e).maxHeight)).toBe('876px');}
+  expect(await page.evaluate(()=>document.documentElement.style.overflow)).toBe('hidden');
+  await page.mouse.click(1,1);
+  await expect(dialog).not.toBeVisible();
+  await expect.poll(()=>page.evaluate(()=>document.documentElement.style.overflow)).toBe('');
+  await expect(page.getByRole('link',{name:'VIEW',exact:true})).toBeFocused();
+});

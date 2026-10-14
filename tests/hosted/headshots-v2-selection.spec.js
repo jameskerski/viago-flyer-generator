@@ -19,8 +19,24 @@ test('same-page selection, direct query, back, directory and stale responses sta
   expect(requests).toBe(2); // Returning to A reuses only its bounded manifest.
   now+=31000;
   pending.set(b,true);const slow=handler({detail:{action:'select-leader',leaderId:b}});
-  expect(current.photos).toEqual([]);expect(current.approvedTotal).toBe(0);
+  expect(current.collectionStatus).toBe('loading');expect(current.photos).toEqual([]);expect(current.approvedTotal).toBe(0);
   await handler({detail:{action:'directory'}});
   pending.get(b)({photos:[{fileId:b}],total:1,nextOffset:null});await slow;
   expect(current.selectedLeader).toBeNull();expect(current.photos).toEqual([]);
+});
+
+test('failed collection retry immediately enters loading and reuses successful bounded manifests',async()=>{
+  const id='02a9ab6c-42a6-4568-8b14-f46e0ca08dc2';
+  const source=readFileSync('../my-site-1/src/public/headshots-v2-page.js','utf8').replace(/^import .*;\n/gm,'').replace('export async function','async function');
+  let current,handler,requests=0,resolveRetry;
+  const host={setAttribute(n,v){current=JSON.parse(v);},on(n,fn){handler=fn;}};
+  const location={url:'https://www.goodlifetrainings.com/blank-14-1',query:{leaderId:id},onChange(){},to(){}};
+  const context=vm.createContext({URL,Date,wixLocationFrontend:location,headshotsDirectory:async()=>[{id,name:'Janie Braun'}],headshotsCollection:async()=>{if(++requests===1)throw Error('controlled_failure');return new Promise(resolve=>{resolveRetry=resolve;});},headshotsDownload:async()=>''});
+  vm.runInContext(source+'\nthis.initialize=initializeHeadshotsV2;',context);
+  await context.initialize(host);expect(current.collectionStatus).toBe('error');
+  const retry=handler({detail:{action:'retry-collection'}});
+  expect(current.collectionStatus).toBe('loading');expect(current.selectedLeader.name).toBe('Janie Braun');
+  resolveRetry({photos:[],total:0,approvedTotal:0,pendingTotal:0,nextOffset:null});await retry;
+  expect(current.collectionStatus).toBe('ready');expect(requests).toBe(2);
+  await handler({detail:{action:'retry-collection'}});expect(requests).toBe(2);
 });
