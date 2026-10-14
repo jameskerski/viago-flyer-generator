@@ -40,9 +40,13 @@ test('stable image route gates identity, relationship approval, source, version 
     db.prepare('UPDATE headshot_leaders SET photo_inventory_json=? WHERE wix_item_id=?').run(JSON.stringify([photo]),leader);
     db.prepare(`UPDATE headshot_public_photos SET approval_state='REVOKED' WHERE file_id=?`).run(file);
     expect((await publicHeadshotApi(new Request(base),env)).status).toBe(404);
+    const empty=await publicHeadshotApi(new Request(base.slice(0,base.lastIndexOf('/'))),env);
+    expect(empty.status).toBe(200);expect((await empty.json()).photos).toEqual([]);
+    expect((await publicHeadshotApi(new Request(base.slice(0,base.lastIndexOf('/'))+'?offset=bad'),env)).status).toBe(404);
     db.prepare(`UPDATE headshot_public_photos SET approval_state='APPROVED' WHERE file_id=?`).run(file);
     db.prepare(`UPDATE headshot_leaders SET active=0 WHERE wix_item_id=?`).run(leader);
     expect((await publicHeadshotApi(new Request(base),env)).status).toBe(404);
+    expect((await publicHeadshotApi(new Request(base.slice(0,base.lastIndexOf('/'))),env)).status).toBe(404);
     expect(requests).toBe(0);
   } finally {globalThis.fetch=previous;db.close();}
 });

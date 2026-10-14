@@ -67,8 +67,14 @@ export async function publicHeadshotApi(request,env) {
   const match=url.pathname.match(/^\/public\/headshots\/([a-f0-9-]{36})$/i);
   if(!match || [...url.searchParams.keys()].some(key=>key!=='offset')) return Response.json({error:'not_found'},{status:404,headers});
   try {
+    const offset=Number(url.searchParams.get('offset')||0);
+    if(!Number.isInteger(offset)||offset<0||offset>5000) throw new Error('invalid_offset');
+    const empty=await env.PLATFORM_DB.prepare(`SELECT wix_item_id FROM headshot_leaders l WHERE wix_item_id=? AND active=1 AND NOT EXISTS(SELECT 1 FROM headshot_public_photos p WHERE p.wix_item_id=l.wix_item_id AND p.approval_state='APPROVED')`).bind(match[1]).first();
+    // An active leader with no publication approvals has an empty collection,
+    // not a failed collection. This exposes no inventory or photographs.
+    if(empty) return Response.json({leaderId:match[1],photos:[],total:0,approvedTotal:0,pendingTotal:0,nextOffset:null},{headers});
     await verifyPublicSource(env.PLATFORM_DB,env,match[1]);
-    const result=await publicLeaderPhotos(env.PLATFORM_DB,match[1],Number(url.searchParams.get('offset')||0));
+    const result=await publicLeaderPhotos(env.PLATFORM_DB,match[1],offset);
     return Response.json({...result,photos:result.photos.map(photo=>({...photo,displayUrl:`${url.origin}/public/headshots/${match[1]}/${photo.fileId}`}))},{headers});
   } catch (_) { return Response.json({error:'not_found'},{status:404,headers}); }
 }
