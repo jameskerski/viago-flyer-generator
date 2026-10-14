@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { approvedPublicInventory, publicWixImageUrl, failPublicMediaJob } from '../../hosted/platform/headshot-publication.mjs';
+import { approvedPublicInventory, publicWixImageUrl, failPublicMediaJob, claimPublicMediaJob } from '../../hosted/platform/headshot-publication.mjs';
 import { createHeadshotManagement } from '../../hosted/platform/headshot-management.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync,readdirSync } from 'node:fs';
@@ -7,6 +7,25 @@ import { readFileSync,readdirSync } from 'node:fs';
 const leaderId = '02a9ab6c-42a6-4568-8b14-f46e0ca08dc2';
 const fileId = 'approved-canonical-file-001';
 const folderId = 'verified-source-folder-001';
+test('obsolete jobs cannot starve current inventory and shared files receive one lease',async()=>{
+  const db=new DatabaseSync(':memory:');
+  for(const name of readdirSync('migrations').filter(n=>n.endsWith('.sql')).sort()) db.exec(readFileSync(`migrations/${name}`,'utf8'));
+  const adapter={prepare(sql){let params=[];return {bind(...p){params=p;return this;},async first(){return db.prepare(sql).get(...params)||null;},async all(){return{results:db.prepare(sql).all(...params)};},async run(){return db.prepare(sql).run(...params);}};}};
+  const second='e42172c5-67dc-4971-a87c-a507551e1ad3',shared='1WM7epm1HUkb97dOkC4CaLyCyZ95kENB0',live='live-photo-file-001';
+  db.prepare(`UPDATE headshot_photo_sources SET verification_state='VERIFIED' WHERE folder_id=?`).run(shared);
+  for(const id of [leaderId,second]) {
+    db.prepare(`UPDATE headshot_leaders SET active=1,mapping_status='VERIFIED',photo_inventory_json=? WHERE wix_item_id=?`).run(JSON.stringify([{fileId:live,sources:[{folderId:shared}]}]),id);
+    db.prepare(`INSERT INTO headshot_public_photos(wix_item_id,file_id,approval_state,approved_at) VALUES(?,?,'APPROVED',?)`).run(id,live,new Date().toISOString());
+  }
+  db.prepare('INSERT INTO headshot_public_media(file_id) VALUES(?)').run(live);
+  for(let i=0;i<20;i++) {
+    const stale='000-obsolete-file-'+String(i).padStart(2,'0');
+    db.prepare('INSERT INTO headshot_public_media(file_id) VALUES(?)').run(stale);
+    db.prepare(`INSERT INTO headshot_public_photos(wix_item_id,file_id,approval_state,approved_at) VALUES(?,?,'APPROVED',?)`).run(leaderId,stale,new Date().toISOString());
+  }
+  expect((await claimPublicMediaJob(adapter)).fileId).toBe(live);
+  expect(await claimPublicMediaJob(adapter)).toBeNull();db.close();
+});
 test('budget checkpoint releases only its reserved job without consuming retry allowance',async()=>{
   const db=new DatabaseSync(':memory:');
   for(const name of readdirSync('migrations').filter(n=>n.endsWith('.sql')).sort()) db.exec(readFileSync(`migrations/${name}`,'utf8'));

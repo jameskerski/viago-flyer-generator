@@ -78,7 +78,7 @@ export async function confirmPublicMedia(database, receipt) {
 }
 
 export async function claimPublicMediaJob(database) {
-  const candidates = (await database.prepare(`SELECT m.*,p.wix_item_id,p.approved_at,l.photo_inventory_json FROM headshot_public_media m JOIN headshot_public_photos p ON p.file_id=m.file_id JOIN headshot_leaders l ON l.wix_item_id=p.wix_item_id WHERE p.approval_state='APPROVED' AND l.active=1 AND l.mapping_status='VERIFIED' AND (m.media_state='PENDING' OR (m.media_state='FAILED' AND m.failure_count<3 AND m.next_retry_at<=CURRENT_TIMESTAMP) OR (m.media_state='PROCESSING' AND m.updated_at<datetime('now','-10 minutes'))) ORDER BY m.failure_count,m.file_id,p.wix_item_id LIMIT 16`).all()).results || [];
+  const candidates = (await database.prepare(`SELECT m.*,p.wix_item_id,p.approved_at,l.photo_inventory_json FROM headshot_public_media m JOIN headshot_public_photos p ON p.file_id=m.file_id JOIN headshot_leaders l ON l.wix_item_id=p.wix_item_id WHERE p.approval_state='APPROVED' AND l.active=1 AND l.mapping_status='VERIFIED' AND EXISTS(SELECT 1 FROM json_each(l.photo_inventory_json) photo WHERE json_extract(photo.value,'$.fileId')=m.file_id) AND (m.media_state='PENDING' OR (m.media_state='FAILED' AND m.failure_count<3 AND m.next_retry_at<=CURRENT_TIMESTAMP) OR (m.media_state='PROCESSING' AND m.updated_at<datetime('now','-10 minutes'))) ORDER BY m.failure_count,p.wix_item_id,m.file_id LIMIT 16`).all()).results || [];
   for (const row of candidates) {
     const photo = JSON.parse(row.photo_inventory_json||'[]').find(p=>p.fileId===row.file_id);
     if (!photo) continue;
