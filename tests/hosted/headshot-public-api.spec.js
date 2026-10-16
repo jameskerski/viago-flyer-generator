@@ -3,6 +3,36 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import {publicHeadshotApi} from '../../hosted/platform/headshot-public-api.mjs';
 
+test('concurrent cold source checks share work and never masquerade as missing collections',async()=>{
+  let state=null,requests=0,release;
+  const database={prepare(sql){return {bind(){return this;},async first(){
+    if(sql.includes('NOT EXISTS')) return null;
+    if(sql.includes('JOIN headshot_public_photos')) return {active:1,file_id:'approved-file-0001'};
+    return state;
+  },async run(){
+    if(sql.includes("VALUES(?,'CHECKING'")) {if(state?.lease_until) return {meta:{changes:0}};state={check_state:'CHECKING',lease_until:'2099-01-01 00:00:00'};}
+    else state={check_state:'UNAVAILABLE',checked_at:new Date().toISOString().slice(0,19).replace('T',' ')};
+    return {meta:{changes:1}};
+  }};}};
+  const previous=globalThis.fetch;
+  globalThis.fetch=async()=>{requests++;await new Promise(resolve=>release=resolve);return Response.json({success:false});};
+  const env={PLATFORM_DB:database,PHOTO_PUBLIC_HEADSHOTS_ENABLED:'true',PHOTO_EVENT_PROVISION_ENDPOINT:'https://example.test/verify',PHOTO_STUDIO_SYNC_SECRET:'test-only-secret'};
+  const url='https://example.test/public/headshots/02a9ab6c-42a6-4568-8b14-f46e0ca08dc2';
+  try {
+    const first=publicHeadshotApi(new Request(url),env);
+    while(!release) await new Promise(resolve=>setImmediate(resolve));
+    const second=publicHeadshotApi(new Request(url),env);
+    release();
+    const responses=await Promise.all([first,second]);
+    expect(requests).toBe(1);
+    for(const response of responses) {expect(response.status).toBe(503);expect(response.headers.get('retry-after')).toBe('2');expect(await response.json()).toEqual({error:'temporarily_unavailable'});}
+    // A different isolate holding the D1 lease must also fail closed as retryable.
+    state={check_state:'CHECKING',lease_until:'2099-01-01 00:00:00'};
+    expect((await publicHeadshotApi(new Request(url),env)).status).toBe(503);
+    expect(requests).toBe(1);
+  } finally {globalThis.fetch=previous;}
+});
+
 test('stable image route gates identity, relationship approval, source, version and variants',async()=>{
   const db=new DatabaseSync(':memory:');
   for(const name of readdirSync('migrations').filter(n=>n.endsWith('.sql')).sort()) db.exec(readFileSync(`migrations/${name}`,'utf8'));

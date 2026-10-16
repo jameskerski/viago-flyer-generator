@@ -1,7 +1,18 @@
 import { publicLeaderPhotos, publicPrimaryDirectory, publicLeaderImage, MAX_PUBLIC_IMAGE_BYTES } from './headshot-publication.mjs';
 import { reconcileSharedHeadshotSnapshot } from './headshot-sources.mjs';
 
+const pendingSourceChecks=new WeakMap();
+
 async function verifyPublicSource(database,env,id) {
+  let pending=pendingSourceChecks.get(database);
+  if(!pending) { pending=new Map();pendingSourceChecks.set(database,pending); }
+  if(pending.has(id)) return pending.get(id);
+  const request=verifyPublicSourceOnce(database,env,id).finally(()=>pending.delete(id));
+  pending.set(id,request);
+  return request;
+}
+
+async function verifyPublicSourceOnce(database,env,id) {
   const row=await database.prepare(`SELECT l.active,p.file_id FROM headshot_leaders l JOIN headshot_public_photos p ON p.wix_item_id=l.wix_item_id WHERE l.wix_item_id=? AND l.active=1 AND p.approval_state='APPROVED' LIMIT 1`).bind(id).first();
   if(!row) throw new Error('not_public');
   const check=await database.prepare('SELECT * FROM headshot_public_checks WHERE wix_item_id=?').bind(id).first();
@@ -27,6 +38,13 @@ async function verifyPublicSource(database,env,id) {
     await database.prepare(`UPDATE headshot_public_checks SET check_state='UNAVAILABLE',checked_at=CURRENT_TIMESTAMP,lease_until=NULL WHERE wix_item_id=?`).bind(id).run();
     throw error;
   }
+}
+
+function sourceFailure(error,headers) {
+  // Verification contention/availability is not evidence that a public leader
+  // does not exist. Fail closed, but let the caller retry without caching a 404.
+  const unavailable=['source_check_in_progress','source_unavailable','source_configuration_missing'].includes(error?.message)||error?.name==='TimeoutError';
+  return Response.json({error:unavailable?'temporarily_unavailable':'not_found'},{status:unavailable?503:404,headers:{...headers,...(unavailable?{'Retry-After':'2'}:{})}});
 }
 
 export async function publicHeadshotApi(request,env) {
@@ -61,7 +79,7 @@ export async function publicHeadshotApi(request,env) {
       // Only the already bounded, approved, versioned Wix derivative is exposed;
       // Wix CDN serves/caches its bytes directly rather than another full proxy.
       return new Response(null,{status:302,headers:{...headers,Location:`${photo.displayUrl}/v1/fit/w_${variant},h_${Math.round(Number(variant)*1.4)},q_85,enc_auto/${mediaName}`}});
-    } catch (_) { return Response.json({error:'not_found'},{status:404,headers}); }
+    } catch (error) { return sourceFailure(error,headers); }
   }
   if(url.pathname==='/public/headshots/directory' && !url.search) return Response.json({leaders:await publicPrimaryDirectory(env.PLATFORM_DB)},{headers});
   const match=url.pathname.match(/^\/public\/headshots\/([a-f0-9-]{36})$/i);
@@ -76,5 +94,5 @@ export async function publicHeadshotApi(request,env) {
     await verifyPublicSource(env.PLATFORM_DB,env,match[1]);
     const result=await publicLeaderPhotos(env.PLATFORM_DB,match[1],offset);
     return Response.json({...result,photos:result.photos.map(photo=>({...photo,displayUrl:`${url.origin}/public/headshots/${match[1]}/${photo.fileId}`}))},{headers});
-  } catch (_) { return Response.json({error:'not_found'},{status:404,headers}); }
+  } catch (error) { return sourceFailure(error,headers); }
 }
