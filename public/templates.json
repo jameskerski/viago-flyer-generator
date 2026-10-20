@@ -47,6 +47,67 @@
       }
     },
     {
+      "id": "got-my-1",
+      "label": "Got My 1",
+      "category": "General",
+      "accent": "#8dfa00",
+      "art": "art/got-my-1.jpg",
+      "w": 1236,
+      "h": 1600,
+      "photo": {
+        "shape": "rect",
+        "x": 0.11749,
+        "y": 0.42864,
+        "w": 0.56878,
+        "h": 0.38758,
+        "rotation": -1.71
+      },
+      "name": {
+        "x": 0.48047,
+        "y": 0.87857,
+        "maxWidth": 0.7,
+        "size": 0.05,
+        "rotation": -1.26,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#00f900",
+        "align": "center",
+        "case": "upper",
+        "tracking": 0.02,
+        "wrap": false,
+        "maxLines": 3,
+        "lineHeight": 1.15
+      },
+      "text2": {
+        "enabled": false,
+        "label": "Text 2",
+        "x": 0.1,
+        "y": 0.78,
+        "w": 0.8,
+        "h": 0.08,
+        "size": 0.05,
+        "rotation": 0,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center"
+      },
+      "text3": {
+        "enabled": false,
+        "label": "Text 3",
+        "x": 0.78,
+        "y": 0.08,
+        "w": 0.12,
+        "h": 0.08,
+        "size": 0.05,
+        "rotation": 0,
+        "font": "Josefin Sans",
+        "weight": 700,
+        "color": "#ffffff",
+        "align": "center"
+      }
+    },
+    {
       "id": "welcome-new-member",
       "label": "Welcome Template",
       "category": "General",
