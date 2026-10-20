@@ -126,13 +126,16 @@ function apply(registry, input) {
 
 function validateTemplate(template, { allowLegacyEnabledLabel = false } = {}) {
   const errors = [];
+  const validRotation = (value) => value === undefined || (Number.isFinite(value) && value >= -45 && value <= 45);
   if (!safeId(template.id)) errors.push('Template ID must use lowercase words and hyphens.');
   if (!template.label || !template.category) errors.push('Label and category are required.');
   if (!Number.isInteger(template.w) || !Number.isInteger(template.h) || template.w < 100 || template.h < 100) errors.push('Artwork dimensions are invalid.');
-  for (const [name, value] of Object.entries({ ...template.photo, x: template.name?.x, y: template.name?.y, maxWidth: template.name?.maxWidth, size: template.name?.size })) {
+  for (const [name, value] of Object.entries({ shape: template.photo?.shape, x: template.photo?.x, y: template.photo?.y, w: template.photo?.w, h: template.photo?.h, nameX: template.name?.x, nameY: template.name?.y, maxWidth: template.name?.maxWidth, size: template.name?.size })) {
     if (name === 'shape') continue;
     if (!Number.isFinite(value) || value < 0 || value > 1) errors.push(`${name} must be between 0 and 1.`);
   }
+  if (!validRotation(template.photo?.rotation)) errors.push('Photo Region rotation must be between -45 and 45 degrees.');
+  if (!validRotation(template.name?.rotation)) errors.push('Name Region rotation must be between -45 and 45 degrees.');
   for (const key of ['text2', 'text3']) if (template[key] !== undefined) {
     const text3 = template[key]; const title = key === 'text2' ? 'Text Region 2' : 'Text Region 3';
     if (!text3 || typeof text3 !== 'object' || typeof text3.enabled !== 'boolean') errors.push(`${title} must declare an enabled boolean.`);
@@ -146,6 +149,7 @@ function validateTemplate(template, { allowLegacyEnabledLabel = false } = {}) {
       }
       if (!text3.font || !Number.isInteger(text3.weight) || text3.weight < 1 || text3.weight > 1000) errors.push(`${title} typography is invalid.`);
       if (!/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(text3.color || '') || !['left', 'center', 'right'].includes(text3.align)) errors.push(`${title} color or alignment is invalid.`);
+      if (!validRotation(text3.rotation)) errors.push(`${title} rotation must be between -45 and 45 degrees.`);
       if (text3.x + text3.w > 1 || text3.y + text3.h > 1) errors.push(`${title} must stay within the canvas.`);
     }
   }

@@ -293,6 +293,36 @@ test('Text Region 3 visually moves, resizes small, publishes, reloads, and disab
   expect(await page.evaluate(() => window.__templateStudio.state.draft.text3.enabled)).toBe(false);
 });
 
+test('independent region rotations accept decimals, persist, and keep rotated authoring interactive', async ({ page }) => {
+  await openStudio(page); await candidate(page);
+  for (const [key, angle] of [['photo', '3.25'], ['name', '-3'], ['text2', '1.5'], ['text3', '-2.5']]) {
+    if (key === 'text2' || key === 'text3') await page.locator(`#${key}Enabled`).check();
+    await page.locator(`#${key}Rotation`).fill(angle);
+    await page.locator(`#${key}Rotation`).dispatchEvent('input');
+    await expect(page.locator(`#${key}RotationRange`)).toHaveValue(angle);
+  }
+  expect(await page.evaluate(() => {
+    const draft = window.__templateStudio.readDraft();
+    return { photo: draft.photo.rotation, name: draft.name.rotation, text2: draft.text2.rotation, text3: draft.text3.rotation };
+  })).toEqual({ photo: 3.25, name: -3, text2: 1.5, text3: -2.5 });
+
+  const before = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.text3));
+  await page.locator('#moveText3').click();
+  const box = await page.locator('#authorCanvas').boundingBox();
+  const center = { x: before.x + before.w / 2, y: before.y + before.h / 2 };
+  await page.mouse.move(box.x + box.width * center.x, box.y + box.height * center.y); await page.mouse.down();
+  await page.mouse.move(box.x + box.width * (center.x - .08), box.y + box.height * (center.y + .06)); await page.mouse.up();
+  const moved = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft.text3));
+  expect(moved.rotation).toBe(-2.5); expect(moved.x).toBeCloseTo(before.x - .08, 2); expect(moved.y).toBeCloseTo(before.y + .06, 2);
+
+  const persisted = await page.evaluate(() => structuredClone(window.__templateStudio.state.draft));
+  await page.evaluate((draft) => window.__templateStudio.writeDraft(draft), persisted);
+  await expect(page.locator('#photoRotation')).toHaveValue('3.25');
+  await expect(page.locator('#nameRotation')).toHaveValue('-3');
+  await expect(page.locator('#text2Rotation')).toHaveValue('1.5');
+  await expect(page.locator('#text3Rotation')).toHaveValue('-2.5');
+});
+
 test('name placement, presets, production preview, category, and insertion order stay inspectable', async ({ page }) => {
   await openStudio(page);
   await candidate(page);

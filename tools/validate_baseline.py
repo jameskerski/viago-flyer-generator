@@ -23,10 +23,11 @@ TOP_FIELDS = {"version", "source", "templates"}
 TEMPLATE_REQUIRED = {"id", "label", "category", "accent", "art", "w", "h", "photo", "name"}
 TEMPLATE_OPTIONAL = {"text2", "text3"}
 PHOTO_FIELDS = {"shape", "x", "y", "w", "h"}
+PHOTO_OPTIONAL = {"rotation"}
 NAME_REQUIRED = {"x", "y", "maxWidth", "size", "font", "weight", "color", "align", "case"}
-NAME_OPTIONAL = {"tracking", "wrap", "maxLines", "lineHeight", "vAlign"}
+NAME_OPTIONAL = {"tracking", "wrap", "maxLines", "lineHeight", "vAlign", "rotation"}
 TEXT_REGION_REQUIRED = {"enabled", "x", "y", "w", "h", "size", "font", "weight", "color", "align"}
-TEXT_REGION_OPTIONAL = {"label", "value"}
+TEXT_REGION_OPTIONAL = {"label", "value", "rotation"}
 ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 ART_RE = re.compile(r"^art/([a-z0-9]+(?:-[a-z0-9]+)*)\.jpg$")
@@ -90,6 +91,11 @@ def positive_number(v: Validation, value: object, where: str) -> None:
         v.error(where, "must be a finite number greater than 0")
 
 
+def rotation(v: Validation, value: object, where: str) -> None:
+    if not is_number(value) or value < -45 or value > 45:
+        v.error(where, "must be a finite degree value in [-45, 45]")
+
+
 def validate_name(v: Validation, name: object, where: str) -> None:
     if not exact_fields(v, name, where, NAME_REQUIRED, NAME_REQUIRED | NAME_OPTIONAL):
         return
@@ -116,10 +122,12 @@ def validate_name(v: Validation, name: object, where: str) -> None:
         positive_number(v, name["lineHeight"], f"{where}.lineHeight")
     if "vAlign" in name and name["vAlign"] not in {"top", "middle"}:
         v.error(f"{where}.vAlign", "must be one of: top, middle, or omitted")
+    if "rotation" in name:
+        rotation(v, name["rotation"], f"{where}.rotation")
 
 
 def validate_photo(v: Validation, photo: object, where: str) -> None:
-    if not exact_fields(v, photo, where, PHOTO_FIELDS, PHOTO_FIELDS):
+    if not exact_fields(v, photo, where, PHOTO_FIELDS, PHOTO_FIELDS | PHOTO_OPTIONAL):
         return
     assert isinstance(photo, dict)
     if photo.get("shape") not in {"rect", "circle"}:
@@ -128,6 +136,8 @@ def validate_photo(v: Validation, photo: object, where: str) -> None:
     normalized(v, photo.get("y"), f"{where}.y")
     normalized(v, photo.get("w"), f"{where}.w", positive=True)
     normalized(v, photo.get("h"), f"{where}.h", positive=True)
+    if "rotation" in photo:
+        rotation(v, photo["rotation"], f"{where}.rotation")
 
 
 def validate_text_region(v: Validation, text3: object, where: str) -> None:
@@ -144,6 +154,8 @@ def validate_text_region(v: Validation, text3: object, where: str) -> None:
             v.error(f"{where}.label", "must be non-empty when the region is enabled")
     if "value" in text3 and not isinstance(text3["value"], str):
         v.error(f"{where}.value", "legacy value must be a string when present")
+    if "rotation" in text3:
+        rotation(v, text3["rotation"], f"{where}.rotation")
     for key in ("x", "y"):
         normalized(v, text3.get(key), f"{where}.{key}")
     for key in ("w", "h", "size"):

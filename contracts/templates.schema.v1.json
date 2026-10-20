@@ -36,6 +36,13 @@
       "pattern": "^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$",
       "description": "Hex CSS color supported by the Version 1 contract."
     },
+    "rotation": {
+      "type": "number",
+      "minimum": -45,
+      "maximum": 45,
+      "default": 0,
+      "description": "Clockwise degrees around the region center; omission is 0 for backward compatibility."
+    },
     "photo": {
       "type": "object",
       "additionalProperties": false,
@@ -48,7 +55,8 @@
         "x": {"$ref": "#/$defs/normalizedCoordinate"},
         "y": {"$ref": "#/$defs/normalizedCoordinate"},
         "w": {"$ref": "#/$defs/positiveNormalizedSize"},
-        "h": {"$ref": "#/$defs/positiveNormalizedSize"}
+        "h": {"$ref": "#/$defs/positiveNormalizedSize"},
+        "rotation": {"$ref": "#/$defs/rotation"}
       }
     },
     "name": {
@@ -60,6 +68,7 @@
         "y": {"$ref": "#/$defs/normalizedCoordinate"},
         "maxWidth": {"$ref": "#/$defs/positiveNormalizedSize"},
         "size": {"$ref": "#/$defs/positiveNormalizedSize"},
+        "rotation": {"$ref": "#/$defs/rotation"},
         "font": {"type": "string", "minLength": 1},
         "weight": {"type": "integer", "minimum": 1, "maximum": 1000},
         "color": {"$ref": "#/$defs/color"},
@@ -93,6 +102,26 @@
         }
       }
     },
+    "textRegion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "x", "y", "w", "h", "size", "font", "weight", "color", "align"],
+      "properties": {
+        "enabled": {"type": "boolean", "default": false},
+        "label": {"type": "string", "maxLength": 40},
+        "value": {"type": "string", "description": "Legacy authoring value; ignored by the public renderer."},
+        "x": {"$ref": "#/$defs/normalizedCoordinate"},
+        "y": {"$ref": "#/$defs/normalizedCoordinate"},
+        "w": {"$ref": "#/$defs/positiveNormalizedSize"},
+        "h": {"$ref": "#/$defs/positiveNormalizedSize"},
+        "size": {"$ref": "#/$defs/positiveNormalizedSize"},
+        "rotation": {"$ref": "#/$defs/rotation"},
+        "font": {"type": "string", "minLength": 1},
+        "weight": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "color": {"$ref": "#/$defs/color"},
+        "align": {"enum": ["left", "center", "right"]}
+      }
+    },
     "template": {
       "type": "object",
       "additionalProperties": false,
@@ -114,7 +143,9 @@
         "w": {"type": "integer", "minimum": 1},
         "h": {"type": "integer", "minimum": 1},
         "photo": {"$ref": "#/$defs/photo"},
-        "name": {"$ref": "#/$defs/name"}
+        "name": {"$ref": "#/$defs/name"},
+        "text2": {"$ref": "#/$defs/textRegion"},
+        "text3": {"$ref": "#/$defs/textRegion"}
       }
     }
   }

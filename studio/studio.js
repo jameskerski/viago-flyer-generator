@@ -5,9 +5,9 @@ const unknown = (value) => value.trim() || 'Unknown';
 const els = Object.fromEntries([
   'authorCanvas','canvasEmpty','previewTitle','editMode','previewMode','drawPhoto','movePhoto','moveName','moveText2','moveText3','runtimeFrame',
   'draftSource','existingWrap','existingTemplate','artworkFile','artworkMeta','templateId','label','category','categoryList','accent','categoryPosition','orderPreview',
-  'photoShape','photoX','photoY','photoW','photoH','samplePhoto','sampleName','nameX','nameY','nameMaxWidth','nameSize','nameFont','nameWeight','nameColor','nameAlign','nameCase','nameTracking','nameMaxLines','nameLineHeight','nameVAlign','nameWrap',
-  'text2Enabled','text2Controls','text2Label','text2Font','text2Size','text2Weight','text2Color','text2Align','text2X','text2Y','text2W','text2H',
-  'text3Enabled','text3Controls','text3Label','text3Font','text3Size','text3Weight','text3Color','text3Align','text3X','text3Y','text3W','text3H',
+  'photoShape','photoX','photoY','photoW','photoH','photoRotation','photoRotationRange','samplePhoto','sampleName','nameX','nameY','nameMaxWidth','nameSize','nameRotation','nameRotationRange','nameFont','nameWeight','nameColor','nameAlign','nameCase','nameTracking','nameMaxLines','nameLineHeight','nameVAlign','nameWrap',
+  'text2Enabled','text2Controls','text2Label','text2Font','text2Size','text2Weight','text2Color','text2Align','text2X','text2Y','text2W','text2H','text2Rotation','text2RotationRange',
+  'text3Enabled','text3Controls','text3Label','text3Font','text3Size','text3Weight','text3Color','text3Align','text3X','text3Y','text3W','text3H','text3Rotation','text3RotationRange',
   'provDesigner','provCanva','provApproval','provOwner','provReference','provNotes','validate','reviewArtifact','preparePromotion','validationResult','jsonPreview','planPreview','planDetails','promotionConfirmation','promote',
   'retireActions','retireTemplate','retireDialog','retireLabel','retireId','retireCategory','retireArtwork','cancelRetire','confirmRetire'
 ].map((id) => [id, $(`#${id}`)]));
@@ -23,10 +23,10 @@ const state = {
 function defaultDraft() {
   return {
     id: '', label: '', category: 'General', accent: '#8dfa00', art: '', w: 800, h: 1080,
-    photo: { shape: 'rect', x: 0.2, y: 0.25, w: 0.5, h: 0.5 },
-    name: { x: 0.5, y: 0.85, maxWidth: 0.7, size: 0.05, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center', case: 'upper', tracking: 0.02, wrap: false, maxLines: 3, lineHeight: 1.15 },
-    text2: { enabled: false, label: 'Text 2', x: 0.1, y: 0.78, w: 0.8, h: 0.08, size: 0.05, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' },
-    text3: { enabled: false, label: 'Text 3', x: 0.78, y: 0.08, w: 0.12, h: 0.08, size: 0.05, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' }
+    photo: { shape: 'rect', x: 0.2, y: 0.25, w: 0.5, h: 0.5, rotation: 0 },
+    name: { x: 0.5, y: 0.85, maxWidth: 0.7, size: 0.05, rotation: 0, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center', case: 'upper', tracking: 0.02, wrap: false, maxLines: 3, lineHeight: 1.15 },
+    text2: { enabled: false, label: 'Text 2', x: 0.1, y: 0.78, w: 0.8, h: 0.08, size: 0.05, rotation: 0, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' },
+    text3: { enabled: false, label: 'Text 3', x: 0.78, y: 0.08, w: 0.12, h: 0.08, size: 0.05, rotation: 0, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' }
   };
 }
 
@@ -38,7 +38,7 @@ function normalizedTextRegion(key, value) {
 }
 
 function readTextRegion(key, number) {
-  return { enabled: els[`${key}Enabled`].checked, label: els[`${key}Label`].value.trim(), x: number(`${key}X`), y: number(`${key}Y`), w: number(`${key}W`), h: number(`${key}H`), size: number(`${key}Size`), font: els[`${key}Font`].value.trim(), weight: number(`${key}Weight`), color: els[`${key}Color`].value, align: els[`${key}Align`].value };
+  return { enabled: els[`${key}Enabled`].checked, label: els[`${key}Label`].value.trim(), x: number(`${key}X`), y: number(`${key}Y`), w: number(`${key}W`), h: number(`${key}H`), size: number(`${key}Size`), rotation: number(`${key}Rotation`), font: els[`${key}Font`].value.trim(), weight: number(`${key}Weight`), color: els[`${key}Color`].value, align: els[`${key}Align`].value };
 }
 
 async function fileDataUrl(file) {
@@ -64,10 +64,30 @@ function setTool(tool) {
 }
 
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+function rotatePoint(x, y, cx, cy, degrees) {
+  const radians = (Number(degrees) || 0) * Math.PI / 180; const cos = Math.cos(radians), sin = Math.sin(radians);
+  return [cx + (x - cx) * cos - (y - cy) * sin, cy + (x - cx) * sin + (y - cy) * cos];
+}
+
 function handlePoints(photo) {
   const left = photo.x, centerX = photo.x + photo.w / 2, right = photo.x + photo.w;
   const top = photo.y, centerY = photo.y + photo.h / 2, bottom = photo.y + photo.h;
-  return { nw: [left, top], n: [centerX, top], ne: [right, top], e: [right, centerY], se: [right, bottom], s: [centerX, bottom], sw: [left, bottom], w: [left, centerY] };
+  return Object.fromEntries(Object.entries({ nw: [left, top], n: [centerX, top], ne: [right, top], e: [right, centerY], se: [right, bottom], s: [centerX, bottom], sw: [left, bottom], w: [left, centerY] }).map(([key, [x, y]]) => [key, rotatePoint(x, y, centerX, centerY, photo.rotation)]));
+}
+
+function localPoint(at, region) {
+  const cx = region.x + region.w / 2, cy = region.y + region.h / 2;
+  const [x, y] = rotatePoint(at.x, at.y, cx, cy, -(Number(region.rotation) || 0));
+  return { x, y };
+}
+
+function constrainRotatedRegion(region) {
+  const radians = (Number(region.rotation) || 0) * Math.PI / 180;
+  const extentX = Math.min(.5, Math.abs(Math.cos(radians)) * region.w / 2 + Math.abs(Math.sin(radians)) * region.h / 2);
+  const extentY = Math.min(.5, Math.abs(Math.sin(radians)) * region.w / 2 + Math.abs(Math.cos(radians)) * region.h / 2);
+  const centerX = clamp(region.x + region.w / 2, extentX, 1 - extentX);
+  const centerY = clamp(region.y + region.h / 2, extentY, 1 - extentY);
+  return { ...region, x: round(centerX - region.w / 2), y: round(centerY - region.h / 2) };
 }
 
 function photoHit(at, photo) {
@@ -77,8 +97,8 @@ function photoHit(at, photo) {
   for (const [handle, [x, y]] of Object.entries(handlePoints(photo))) {
     if (Math.abs(at.x - x) <= thresholdX && Math.abs(at.y - y) <= thresholdY) return { action: 'resizePhoto', handle };
   }
-  const inBox = at.x >= photo.x && at.x <= photo.x + photo.w && at.y >= photo.y && at.y <= photo.y + photo.h;
-  const inside = photo.shape !== 'circle' ? inBox : inBox && (((at.x - photo.x - photo.w / 2) / (photo.w / 2)) ** 2 + ((at.y - photo.y - photo.h / 2) / (photo.h / 2)) ** 2 <= 1);
+  const local = localPoint(at, photo); const inBox = local.x >= photo.x && local.x <= photo.x + photo.w && local.y >= photo.y && local.y <= photo.y + photo.h;
+  const inside = photo.shape !== 'circle' ? inBox : inBox && (((local.x - photo.x - photo.w / 2) / (photo.w / 2)) ** 2 + ((local.y - photo.y - photo.h / 2) / (photo.h / 2)) ** 2 <= 1);
   return inside ? { action: 'movePhoto' } : null;
 }
 
@@ -88,7 +108,8 @@ function rectHit(at, region) {
   for (const [handle, [x, y]] of Object.entries(handlePoints(region))) {
     if (Math.abs(at.x - x) <= thresholdX && Math.abs(at.y - y) <= thresholdY) return { action: 'resizeText3', handle };
   }
-  return at.x >= region.x && at.x <= region.x + region.w && at.y >= region.y && at.y <= region.y + region.h ? { action: 'moveText3' } : null;
+  const local = localPoint(at, region);
+  return local.x >= region.x && local.x <= region.x + region.w && local.y >= region.y && local.y <= region.y + region.h ? { action: 'moveText3' } : null;
 }
 
 function photoCursor(hit) {
@@ -125,15 +146,21 @@ function readDraft() {
   const draft = {
     id: els.templateId.value.trim(), label: els.label.value.trim(), category: els.category.value.trim(), accent: els.accent.value,
     art: `art/${els.templateId.value.trim()}.jpg`, w: state.draft.w, h: state.draft.h,
-    photo: { shape: els.photoShape.value, x: number('photoX'), y: number('photoY'), w: number('photoW'), h: number('photoH') },
+    photo: { shape: els.photoShape.value, x: number('photoX'), y: number('photoY'), w: number('photoW'), h: number('photoH'), rotation: number('photoRotation') },
     name: {
-      x: number('nameX'), y: number('nameY'), maxWidth: number('nameMaxWidth'), size: number('nameSize'), font: els.nameFont.value.trim(),
+      x: number('nameX'), y: number('nameY'), maxWidth: number('nameMaxWidth'), size: number('nameSize'), rotation: number('nameRotation'), font: els.nameFont.value.trim(),
       weight: number('nameWeight'), color: els.nameColor.value, align: els.nameAlign.value, case: els.nameCase.value,
       tracking: number('nameTracking'), wrap: els.nameWrap.checked, maxLines: number('nameMaxLines'), lineHeight: number('nameLineHeight')
     },
     text2: readTextRegion('text2', number),
     text3: readTextRegion('text3', number)
   };
+  draft.photo = constrainRotatedRegion(draft.photo);
+  draft.text2 = constrainRotatedRegion(draft.text2);
+  draft.text3 = constrainRotatedRegion(draft.text3);
+  const nameRadians = draft.name.rotation * Math.PI / 180;
+  draft.name.x = round(clamp(draft.name.x, Math.abs(Math.cos(nameRadians)) * draft.name.maxWidth / 2, 1 - Math.abs(Math.cos(nameRadians)) * draft.name.maxWidth / 2));
+  draft.name.y = round(clamp(draft.name.y, Math.abs(Math.sin(nameRadians)) * draft.name.maxWidth / 2, 1 - Math.abs(Math.sin(nameRadians)) * draft.name.maxWidth / 2));
   if (els.nameVAlign.value !== 'baseline') draft.name.vAlign = els.nameVAlign.value;
   state.draft = draft;
   els.jsonPreview.textContent = JSON.stringify(state.draft, null, 2);
@@ -146,15 +173,15 @@ function writeDraft(draft) {
   state.draft.text3 = normalizedTextRegion('text3', draft.text3);
   const values = {
     templateId: draft.id, label: draft.label, category: draft.category, accent: draft.accent,
-    photoShape: draft.photo.shape, photoX: draft.photo.x, photoY: draft.photo.y, photoW: draft.photo.w, photoH: draft.photo.h,
-    nameX: draft.name.x, nameY: draft.name.y, nameMaxWidth: draft.name.maxWidth, nameSize: draft.name.size,
+    photoShape: draft.photo.shape, photoX: draft.photo.x, photoY: draft.photo.y, photoW: draft.photo.w, photoH: draft.photo.h, photoRotation: draft.photo.rotation ?? 0, photoRotationRange: draft.photo.rotation ?? 0,
+    nameX: draft.name.x, nameY: draft.name.y, nameMaxWidth: draft.name.maxWidth, nameSize: draft.name.size, nameRotation: draft.name.rotation ?? 0, nameRotationRange: draft.name.rotation ?? 0,
     nameFont: draft.name.font, nameWeight: draft.name.weight, nameColor: draft.name.color, nameAlign: draft.name.align, nameCase: draft.name.case,
     nameTracking: draft.name.tracking ?? 0.02, nameMaxLines: draft.name.maxLines ?? 3, nameLineHeight: draft.name.lineHeight ?? 1.15,
     nameVAlign: draft.name.vAlign ?? 'baseline'
   };
   for (const key of ['text2', 'text3']) {
     const region = state.draft[key];
-    Object.assign(values, { [`${key}Label`]: region.label, [`${key}Font`]: region.font, [`${key}Size`]: region.size, [`${key}Weight`]: region.weight, [`${key}Color`]: region.color, [`${key}Align`]: region.align, [`${key}X`]: region.x, [`${key}Y`]: region.y, [`${key}W`]: region.w, [`${key}H`]: region.h });
+    Object.assign(values, { [`${key}Label`]: region.label, [`${key}Font`]: region.font, [`${key}Size`]: region.size, [`${key}Weight`]: region.weight, [`${key}Color`]: region.color, [`${key}Align`]: region.align, [`${key}X`]: region.x, [`${key}Y`]: region.y, [`${key}W`]: region.w, [`${key}H`]: region.h, [`${key}Rotation`]: region.rotation ?? 0, [`${key}RotationRange`]: region.rotation ?? 0 });
   }
   for (const [id, value] of Object.entries(values)) els[id].value = value;
   els.nameWrap.checked = Boolean(draft.name.wrap);
@@ -258,9 +285,11 @@ function drawGuides(template) {
   const x = p.x * W, y = p.y * H, w = p.w * W, h = p.h * H;
   ctx.save();
   if (state.photoRegionCommitted || state.drag?.action === 'drawPhoto') {
-    const regionPath = () => { ctx.beginPath(); if (p.shape === 'circle') ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); else ctx.rect(x, y, w, h); };
+    const regionPath = () => { ctx.beginPath(); if (p.shape === 'circle') ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); else ctx.rect(-w / 2, -h / 2, w, h); };
+    ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.rotate((Number(p.rotation) || 0) * Math.PI / 180);
     ctx.setLineDash([]); ctx.lineWidth = Math.max(7, W / 120); ctx.strokeStyle = '#05070acc'; regionPath(); ctx.stroke();
     ctx.lineWidth = Math.max(3, W / 300); ctx.strokeStyle = '#8dfa00'; regionPath(); ctx.stroke();
+    ctx.restore();
     if (state.photoRegionCommitted) {
       const handleSize = Math.max(14, W / 55);
       for (const [hx, hy] of Object.values(handlePoints(p))) {
@@ -272,12 +301,14 @@ function drawGuides(template) {
     }
   }
   const nx = n.x * W, ny = n.y * H, half = n.maxWidth * W / 2;
-  ctx.strokeStyle = '#34d3ff'; ctx.beginPath(); ctx.moveTo(nx - half, ny); ctx.lineTo(nx + half, ny); ctx.stroke();
-  ctx.fillStyle = '#34d3ff'; ctx.beginPath(); ctx.arc(nx, ny, W / 100, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(nx + half - W / 120, ny - W / 120, W / 60, W / 60);
+  ctx.save(); ctx.translate(nx, ny); ctx.rotate((Number(n.rotation) || 0) * Math.PI / 180);
+  ctx.strokeStyle = '#34d3ff'; ctx.beginPath(); ctx.moveTo(-half, 0); ctx.lineTo(half, 0); ctx.stroke();
+  ctx.fillStyle = '#34d3ff'; ctx.beginPath(); ctx.arc(0, 0, W / 100, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(half - W / 120, -W / 120, W / 60, W / 60); ctx.restore();
   for (const [key, guideColor] of [['text2', '#b98cff'], ['text3', '#ffb347']]) if (template[key]?.enabled) {
     const t = template[key]; const tx = t.x * W, ty = t.y * H, tw = t.w * W, th = t.h * H;
-    ctx.setLineDash([]); ctx.lineWidth = Math.max(7, W / 120); ctx.strokeStyle = '#05070acc'; ctx.strokeRect(tx, ty, tw, th);
-    ctx.lineWidth = Math.max(3, W / 300); ctx.strokeStyle = guideColor; ctx.strokeRect(tx, ty, tw, th);
+    ctx.save(); ctx.translate(tx + tw / 2, ty + th / 2); ctx.rotate((Number(t.rotation) || 0) * Math.PI / 180);
+    ctx.setLineDash([]); ctx.lineWidth = Math.max(7, W / 120); ctx.strokeStyle = '#05070acc'; ctx.strokeRect(-tw / 2, -th / 2, tw, th);
+    ctx.lineWidth = Math.max(3, W / 300); ctx.strokeStyle = guideColor; ctx.strokeRect(-tw / 2, -th / 2, tw, th); ctx.restore();
     const handleSize = Math.max(10, W / 70);
     for (const [hx, hy] of Object.values(handlePoints(t))) {
       const px = hx * W, py = hy * H;
@@ -299,7 +330,10 @@ els.authorCanvas.addEventListener('pointerdown', (event) => {
   const at = point(event); const p = state.draft.photo; const n = state.draft.name;
   let action = state.tool;
   let handle = null;
-  if (state.tool === 'moveName') action = Math.abs(at.x - (n.x + n.maxWidth / 2)) < .04 ? 'resizeName' : 'moveName';
+  if (state.tool === 'moveName') {
+    const [handleX, handleY] = rotatePoint(n.x + n.maxWidth / 2, n.y, n.x, n.y, n.rotation);
+    action = Math.hypot(at.x - handleX, at.y - handleY) < .04 ? 'resizeName' : 'moveName';
+  }
   else if (state.tool === 'moveText2' || state.tool === 'moveText3') {
     const key = state.tool === 'moveText2' ? 'text2' : 'text3'; const region = state.draft[key];
     if (!region.enabled) return;
@@ -320,24 +354,29 @@ window.addEventListener('pointermove', (event) => {
   }
   else if (state.drag.action === 'movePhoto') { state.draft.photo.x = round(clamp(state.drag.photo.x + dx, 0, 1 - state.drag.photo.w)); state.draft.photo.y = round(clamp(state.drag.photo.y + dy, 0, 1 - state.drag.photo.h)); }
   else if (state.drag.action === 'resizePhoto') {
+    const [localDx, localDy] = rotatePoint(dx, dy, 0, 0, -(Number(state.drag.photo.rotation) || 0));
     const minimum = .01; let left = state.drag.photo.x, top = state.drag.photo.y, right = left + state.drag.photo.w, bottom = top + state.drag.photo.h;
-    if (state.drag.handle.includes('w')) left = clamp(left + dx, 0, right - minimum);
-    if (state.drag.handle.includes('e')) right = clamp(right + dx, left + minimum, 1);
-    if (state.drag.handle.includes('n')) top = clamp(top + dy, 0, bottom - minimum);
-    if (state.drag.handle.includes('s')) bottom = clamp(bottom + dy, top + minimum, 1);
+    if (state.drag.handle.includes('w')) left = clamp(left + localDx, 0, right - minimum);
+    if (state.drag.handle.includes('e')) right = clamp(right + localDx, left + minimum, 1);
+    if (state.drag.handle.includes('n')) top = clamp(top + localDy, 0, bottom - minimum);
+    if (state.drag.handle.includes('s')) bottom = clamp(bottom + localDy, top + minimum, 1);
     state.draft.photo = { ...state.draft.photo, x: round(left), y: round(top), w: round(right - left), h: round(bottom - top) };
   }
   else if (state.drag.action === 'moveName') { state.draft.name.x = round(Math.max(0, Math.min(1, state.drag.name.x + dx))); state.draft.name.y = round(Math.max(0, Math.min(1, state.drag.name.y + dy))); }
-  else if (state.drag.action === 'resizeName') state.draft.name.maxWidth = round(Math.max(.00001, Math.min(1, state.drag.name.maxWidth + dx * 2)));
+  else if (state.drag.action === 'resizeName') {
+    const [localDx] = rotatePoint(dx, dy, 0, 0, -(Number(state.drag.name.rotation) || 0));
+    state.draft.name.maxWidth = round(Math.max(.00001, Math.min(1, state.drag.name.maxWidth + localDx * 2)));
+  }
   else if (/^(move|resize)Text[23]$/.test(state.drag.action)) {
     const key = state.drag.action.endsWith('2') ? 'text2' : 'text3'; const original = state.drag[key];
     if (state.drag.action.startsWith('move')) { state.draft[key].x = round(clamp(original.x + dx, 0, 1 - original.w)); state.draft[key].y = round(clamp(original.y + dy, 0, 1 - original.h)); }
     else {
+    const [localDx, localDy] = rotatePoint(dx, dy, 0, 0, -(Number(original.rotation) || 0));
     const minimum = .002; let left = original.x, top = original.y, right = left + original.w, bottom = top + original.h;
-    if (state.drag.handle.includes('w')) left = clamp(left + dx, 0, right - minimum);
-    if (state.drag.handle.includes('e')) right = clamp(right + dx, left + minimum, 1);
-    if (state.drag.handle.includes('n')) top = clamp(top + dy, 0, bottom - minimum);
-    if (state.drag.handle.includes('s')) bottom = clamp(bottom + dy, top + minimum, 1);
+    if (state.drag.handle.includes('w')) left = clamp(left + localDx, 0, right - minimum);
+    if (state.drag.handle.includes('e')) right = clamp(right + localDx, left + minimum, 1);
+    if (state.drag.handle.includes('n')) top = clamp(top + localDy, 0, bottom - minimum);
+    if (state.drag.handle.includes('s')) bottom = clamp(bottom + localDy, top + minimum, 1);
     state.draft[key] = { ...state.draft[key], x: round(left), y: round(top), w: round(right - left), h: round(bottom - top) };
     }
   }
@@ -464,8 +503,13 @@ els.artworkFile.addEventListener('change', guarded(async () => {
 }));
 els.samplePhoto.addEventListener('change', guarded(async () => { state.sampleFile = els.samplePhoto.files[0]; state.lastSampleFile = null; await render(); }));
 for (const button of document.querySelectorAll('[data-name]')) button.addEventListener('click', () => { els.sampleName.value = button.dataset.name; render(); });
-for (const id of ['templateId','label','category','accent','photoShape','photoX','photoY','photoW','photoH','sampleName','nameX','nameY','nameMaxWidth','nameSize','nameFont','nameWeight','nameColor','nameAlign','nameCase','nameTracking','nameMaxLines','nameLineHeight','nameVAlign','nameWrap', ...['text2','text3'].flatMap((key) => ['Label','Font','Size','Weight','Color','Align','X','Y','W','H'].map((suffix) => key + suffix))]) {
+for (const id of ['templateId','label','category','accent','photoShape','photoX','photoY','photoW','photoH','photoRotation','sampleName','nameX','nameY','nameMaxWidth','nameSize','nameRotation','nameFont','nameWeight','nameColor','nameAlign','nameCase','nameTracking','nameMaxLines','nameLineHeight','nameVAlign','nameWrap', ...['text2','text3'].flatMap((key) => ['Label','Font','Size','Weight','Color','Align','X','Y','W','H','Rotation'].map((suffix) => key + suffix))]) {
   els[id].addEventListener('input', () => { readDraft(); if (id === 'category') updatePositionOptions(); else updateOrderPreview(); invalidate(); render(); });
+}
+for (const key of ['photo', 'name', 'text2', 'text3']) {
+  const numberInput = els[`${key}Rotation`]; const rangeInput = els[`${key}RotationRange`];
+  rangeInput.addEventListener('input', () => { numberInput.value = rangeInput.value; numberInput.dispatchEvent(new Event('input', { bubbles: true })); });
+  numberInput.addEventListener('input', () => { if (numberInput.validity.valid) rangeInput.value = numberInput.value; });
 }
 for (const key of ['text2', 'text3']) els[`${key}Enabled`].addEventListener('change', () => {
   const enabled = els[`${key}Enabled`].checked; els[`${key}Controls`].hidden = !enabled; const tool = `move${key[0].toUpperCase()}${key.slice(1)}`; els[tool].disabled = !enabled;

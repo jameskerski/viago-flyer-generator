@@ -192,11 +192,13 @@ function drawName(t, W, H) {
   }
 
   ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((Number(s.rotation) || 0) * Math.PI / 180);
   ctx.shadowColor = 'rgba(0,0,0,.6)';
   ctx.shadowBlur = px * 0.22;
   ctx.textBaseline = 'alphabetic';
   lines.forEach((line, i) => {
-    paint(line, x, firstBaseline + i * lineH, px, weight, family,
+    paint(line, 0, firstBaseline - y + i * lineH, px, weight, family,
           trackFor(px), s.align || 'center', s.color || '#ffffff');
   });
   ctx.restore();
@@ -223,10 +225,12 @@ function drawOptionalText(t, key, W, H) {
   const ascent = metrics.actualBoundingBoxAscent || px * .72;
   const descent = metrics.actualBoundingBoxDescent || px * .08;
   const align = s.align || 'center';
-  const drawX = align === 'left' ? x : align === 'right' ? x + boxW : x + boxW / 2;
-  const baseline = y + (boxH + ascent - descent) / 2;
+  const drawX = align === 'left' ? -boxW / 2 : align === 'right' ? boxW / 2 : 0;
+  const baseline = (ascent - descent) / 2;
   ctx.save();
-  ctx.beginPath(); ctx.rect(x, y, boxW, boxH); ctx.clip();
+  ctx.translate(x + boxW / 2, y + boxH / 2);
+  ctx.rotate((Number(s.rotation) || 0) * Math.PI / 180);
+  ctx.beginPath(); ctx.rect(-boxW / 2, -boxH / 2, boxW, boxH); ctx.clip();
   ctx.textBaseline = 'alphabetic';
   paint(text, drawX, baseline, px, weight, family, tracking, align, s.color || '#ffffff');
   ctx.restore();
@@ -252,9 +256,11 @@ async function render() {
     const img = state.photo.img;
 
     ctx.save();
+    ctx.translate(wx + ww / 2, wy + wh / 2);
+    ctx.rotate((Number(p.rotation) || 0) * Math.PI / 180);
     ctx.beginPath();
-    if (p.shape === 'circle') ctx.ellipse(wx + ww / 2, wy + wh / 2, ww / 2, wh / 2, 0, 0, Math.PI * 2);
-    else ctx.rect(wx, wy, ww, wh);
+    if (p.shape === 'circle') ctx.ellipse(0, 0, ww / 2, wh / 2, 0, 0, Math.PI * 2);
+    else ctx.rect(-ww / 2, -wh / 2, ww, wh);
     ctx.clip();
 
     // Inverse-rotate the window extents to find the exact scale at which the
@@ -264,7 +270,6 @@ async function render() {
     const cover = rotatedCoverScale(ww, wh, img.naturalWidth, img.naturalHeight, radians);
     const scale = cover * state.place.zoom;
     const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
-    ctx.translate(wx + ww / 2, wy + wh / 2);
     ctx.rotate(radians);
     ctx.drawImage(img, state.place.dx * ww - dw / 2, state.place.dy * wh - dh / 2, dw, dh);
     ctx.restore();
@@ -490,8 +495,12 @@ els.canvas.addEventListener('pointermove', (e) => {
   if (dragStart) {
     // movement is expressed relative to the window, not the whole flyer
     const winW = t.photo.w * rect.width, winH = t.photo.h * rect.height;
-    state.place.dx = clamp(dragStart.dx + (e.clientX - dragStart.x) / winW, -1, 1);
-    state.place.dy = clamp(dragStart.dy + (e.clientY - dragStart.y) / winH, -1, 1);
+    const regionRadians = -(Number(t.photo.rotation) || 0) * Math.PI / 180;
+    const screenDx = e.clientX - dragStart.x, screenDy = e.clientY - dragStart.y;
+    const localDx = screenDx * Math.cos(regionRadians) - screenDy * Math.sin(regionRadians);
+    const localDy = screenDx * Math.sin(regionRadians) + screenDy * Math.cos(regionRadians);
+    state.place.dx = clamp(dragStart.dx + localDx / winW, -1, 1);
+    state.place.dy = clamp(dragStart.dy + localDy / winH, -1, 1);
     scheduleRender();
   }
 });

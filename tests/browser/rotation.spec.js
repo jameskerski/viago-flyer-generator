@@ -85,6 +85,33 @@ test('rotation composes with zoom and the existing drag model', async ({ page })
   expect(await canvasDigest(page)).not.toBe(zoomed);
 });
 
+test('template photo and text rotations are independent from user photo rotation and export through the shared renderer', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#statusText')).toHaveText('Ready');
+  await page.waitForFunction(() => window.__studio?.state?.templates?.length > 0); await upload(page, 'landscape.svg');
+  await page.locator('#nameInput').fill('ANGLE TEST');
+  const baseline = await canvasDigest(page);
+  const explicitZero = await page.evaluate(async () => {
+    const runtime = window.__studio; const template = runtime.state.templates.find(({ id }) => id === runtime.state.templateId);
+    template.photo.rotation = 0; template.name.rotation = 0; await runtime.render();
+  });
+  expect(explicitZero).toBeUndefined();
+  expect(await canvasDigest(page)).toBe(baseline);
+
+  await page.evaluate(async () => {
+    const runtime = window.__studio; const template = runtime.state.templates.find(({ id }) => id === runtime.state.templateId);
+    template.photo.rotation = 12.5; template.name.rotation = -3.25;
+    template.text2 = { enabled: true, label: 'Rank', x: .1, y: .1, w: .3, h: .08, size: .04, rotation: 1.5, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' };
+    template.text3 = { enabled: true, label: 'Number', x: .65, y: .1, w: .2, h: .08, size: .04, rotation: -2.5, font: 'Josefin Sans', weight: 700, color: '#ffffff', align: 'center' };
+    runtime.state.userText = { text2: 'RANK', text3: '1' }; runtime.state.place.rotation = 27; await runtime.render();
+  });
+  const rotated = await canvasDigest(page); expect(rotated).not.toBe(baseline);
+  expect(await page.evaluate(() => ({ user: window.__studio.state.place.rotation, template: window.__studio.state.templates.find(({ id }) => id === window.__studio.state.templateId).photo.rotation }))).toEqual({ user: 27, template: 12.5 });
+
+  const pending = page.waitForEvent('download'); await page.locator('#download').click();
+  const bytes = await downloadedPng(await pending);
+  expect(createHash('sha256').update(bytes).digest('hex')).toBe(rotated);
+});
+
 for (const fixture of ['portrait.svg', 'landscape.svg', 'square.svg']) {
   test(`exact rotated-cover geometry covers rectangle and ellipse windows for ${fixture}`, async ({ page }) => {
     await boot(page);

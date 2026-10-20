@@ -11,6 +11,7 @@
   <style>
     .admin-guide-link{color:var(--ink);font-weight:600;text-underline-offset:3px}.admin-guide-link:hover{color:var(--lime)}
     .retire-actions{border-top:1px solid #5f3037;margin-top:14px;padding-top:14px}.retire-actions button,#confirmRetire{border:1px solid var(--red);background:transparent;color:#ff9aa5;border-radius:7px;padding:10px 14px;font-weight:700}.retire-actions p{font-size:11px;color:#d59aa1;margin-top:7px}
+    .rotation-control{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:12px;align-items:end;margin-top:10px}.rotation-control input[type=range]{width:100%;min-height:34px;padding:0}.rotation-control input[type=number]{text-align:right}
     dialog{width:min(540px,calc(100vw - 32px));padding:0;border:1px solid #713943;border-radius:14px;background:#111722;color:var(--ink);box-shadow:0 24px 90px #000}dialog::backdrop{background:#020408d9}.retire-dialog-card{padding:22px}.retire-dialog-card>p{color:var(--muted);margin-top:7px}.retire-dialog-card dl{margin:18px 0;border:1px solid var(--line);border-radius:9px;overflow:hidden}.retire-dialog-card dl div{display:grid;grid-template-columns:130px 1fr;padding:9px 11px;border-bottom:1px solid var(--line)}.retire-dialog-card dl div:last-child{border-bottom:0}.retire-dialog-card dt{color:var(--muted)}.retire-dialog-card dd{margin:0;font:12px Geist Mono,monospace;overflow-wrap:anywhere}.retire-dialog-card .retire-warning{color:#ffc3ca}.dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}.dialog-actions button{border:1px solid #405169;background:#111a26;color:var(--ink);border-radius:7px;padding:10px 14px}.dialog-actions #confirmRetire{border-color:var(--red);background:var(--red);color:#180408}.dialog-actions #confirmRetire:disabled{opacity:.5}
   </style>
 </head>
@@ -33,7 +34,7 @@
         <button id="moveText2" class="tool" disabled>Move/resize Text 2</button>
         <button id="moveText3" class="tool" disabled>Move/resize Text 3</button>
       </div>
-      <p class="hint">Photo area: drag inside to move, or drag any handle to resize. Use Redraw Photo Area only when you intend to replace it. Name mode moves the anchor or max-width handle.</p>
+      <p class="hint">Photo area: drag inside to move, or drag any handle to resize. Rotated boundaries and handles follow each region. Use Redraw Photo Area only when you intend to replace it.</p>
       <iframe id="runtimeFrame" src="/runtime/" title="Production renderer used for draft preview" hidden></iframe>
     </section>
 
@@ -57,6 +58,7 @@
         <div class="section-title"><b>03</b><h2>Photo region</h2></div>
         <div class="row"><label>Shape<select id="photoShape"><option value="rect">Rectangle</option><option value="circle">Circle / ellipse</option></select></label><span class="note">Circle uses an ellipse when width and height differ.</span></div>
         <div class="grid four numeric"><label>x<input id="photoX" type="number" min="0" max="1" step="0.00001"></label><label>y<input id="photoY" type="number" min="0" max="1" step="0.00001"></label><label>w<input id="photoW" type="number" min="0.00001" max="1" step="0.00001"></label><label>h<input id="photoH" type="number" min="0.00001" max="1" step="0.00001"></label></div>
+        <div class="rotation-control"><label>Region rotation<input id="photoRotationRange" type="range" min="-45" max="45" step="0.01" value="0"></label><label>Degrees<input id="photoRotation" type="number" min="-45" max="45" step="0.01" value="0"></label></div>
         <label class="file"><span>Optional local sample photo</span><input id="samplePhoto" type="file" accept="image/*"></label>
       </article>
 
@@ -65,6 +67,7 @@
         <div class="presets"><button data-name="Ava">Short</button><button data-name="Avery Stone">Two-word</button><button data-name="Alexandria Montgomery Rivera">Long</button></div>
         <label>Preview name<input id="sampleName" value="Avery Stone"></label>
         <div class="grid four numeric"><label>x<input id="nameX" type="number" step="0.00001"></label><label>y<input id="nameY" type="number" step="0.00001"></label><label>Max width<input id="nameMaxWidth" type="number" step="0.00001"></label><label>Size<input id="nameSize" type="number" step="0.00001"></label></div>
+        <div class="rotation-control"><label>Region rotation<input id="nameRotationRange" type="range" min="-45" max="45" step="0.01" value="0"></label><label>Degrees<input id="nameRotation" type="number" min="-45" max="45" step="0.01" value="0"></label></div>
         <label>Font<input id="nameFont" value="Josefin Sans"></label>
         <div class="grid four"><label>Weight<input id="nameWeight" type="number" min="1" max="1000" value="700"></label><label>Color<input id="nameColor" type="color" value="#ffffff"></label><label>Align<select id="nameAlign"><option>left</option><option selected>center</option><option>right</option></select></label><label>Case<select id="nameCase"><option value="upper">Uppercase</option><option value="none">Preserve</option></select></label></div>
         <div class="grid four"><label>Tracking<input id="nameTracking" type="number" step="0.001" value="0.02"></label><label>Max lines<input id="nameMaxLines" type="number" min="0" value="3"></label><label>Line height<input id="nameLineHeight" type="number" step="0.01" value="1.15"></label><label>Vertical alignment<select id="nameVAlign"><option value="baseline">Final baseline</option><option value="top">Top</option><option value="middle">Middle</option></select></label></div>
@@ -77,6 +80,7 @@
         <div id="text2Controls" hidden>
           <div class="grid two"><label>Public field label<input id="text2Label" maxlength="40" placeholder="Rank"></label><label>Font<input id="text2Font" value="Josefin Sans"></label></div>
           <div class="grid four"><label>Size<input id="text2Size" type="number" min="0.001" max="1" step="0.001"></label><label>Weight<input id="text2Weight" type="number" min="1" max="1000"></label><label>Color<input id="text2Color" type="color"></label><label>Align<select id="text2Align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label></div>
+          <div class="rotation-control"><label>Region rotation<input id="text2RotationRange" type="range" min="-45" max="45" step="0.01" value="0"></label><label>Degrees<input id="text2Rotation" type="number" min="-45" max="45" step="0.01" value="0"></label></div>
           <p class="note">The label appears in the Public Generator. Its sample is used only while authoring and is never published as flyer content.</p>
           <details><summary>Exact geometry (advanced)</summary><div class="grid four numeric"><label>x<input id="text2X" type="number" min="0" max="1" step="0.00001"></label><label>y<input id="text2Y" type="number" min="0" max="1" step="0.00001"></label><label>w<input id="text2W" type="number" min="0.001" max="1" step="0.00001"></label><label>h<input id="text2H" type="number" min="0.001" max="1" step="0.00001"></label></div></details>
         </div>
@@ -85,6 +89,7 @@
         <div id="text3Controls" hidden>
           <div class="grid two"><label>Public field label<input id="text3Label" maxlength="40" placeholder="Number"></label><label>Font<input id="text3Font" value="Josefin Sans"></label></div>
           <div class="grid four"><label>Size<input id="text3Size" type="number" min="0.001" max="1" step="0.001"></label><label>Weight<input id="text3Weight" type="number" min="1" max="1000"></label><label>Color<input id="text3Color" type="color"></label><label>Align<select id="text3Align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label></div>
+          <div class="rotation-control"><label>Region rotation<input id="text3RotationRange" type="range" min="-45" max="45" step="0.01" value="0"></label><label>Degrees<input id="text3Rotation" type="number" min="-45" max="45" step="0.01" value="0"></label></div>
           <p class="note">Select “Move/resize Text 3,” then drag inside the box or use its handles.</p>
           <details><summary>Exact geometry (advanced)</summary><div class="grid four numeric"><label>x<input id="text3X" type="number" min="0" max="1" step="0.00001"></label><label>y<input id="text3Y" type="number" min="0" max="1" step="0.00001"></label><label>w<input id="text3W" type="number" min="0.001" max="1" step="0.00001"></label><label>h<input id="text3H" type="number" min="0.001" max="1" step="0.00001"></label></div></details>
         </div>

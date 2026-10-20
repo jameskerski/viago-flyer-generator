@@ -14,13 +14,15 @@ The top level contains exactly:
 - `source`: non-empty provenance description; and
 - `templates`: non-empty ordered array.
 
-Each template contains exactly `id`, `label`, `category`, `accent`, `art`, `w`, `h`, `photo`, and `name`.
+Each template requires exactly `id`, `label`, `category`, `accent`, `art`, `w`, `h`, `photo`, and `name`, and may additionally contain canonical optional `text2` and `text3` regions.
 
 `id` is unique lowercase letters/digits separated by hyphens. Label and category are non-empty. Categories are exact and case-sensitive but not restricted to today's General/Ranks/Events. Accent and name color are hex CSS colors. Artwork is same-origin `art/<id>.jpg`; absolute paths, URLs, backslashes, traversal, and mismatched IDs are rejected. Canvas dimensions are positive integers and must equal the JPEG dimensions.
 
 ## Geometry
 
 Photo `shape` is `rect` or `circle`; `circle` calls Canvas `ellipse`, so unequal width/height produces an ellipse. Photo `x/y` are finite values in `[0,1]`; `w/h` are finite values in `(0,1]`. The contract does not require `x+w <= 1` or `y+h <= 1`, because Canvas legitimately clips shapes at its edge and the Version 1 renderer does not enforce those sums.
+
+Photo, name, and enabled optional text regions may declare `rotation` as finite clockwise degrees in `[-45,45]`. Omission deterministically means `0` and therefore preserves every historical template. Photo-region rotation rotates the actual clipping path; the public user's independent photo rotation is then composed inside that local window.
 
 Name `x/y` are finite normalized anchors in `[0,1]`. `maxWidth` and `size` are finite normalized values in `(0,1]`.
 
